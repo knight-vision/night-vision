@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export type PlanType = 'free' | 'standard' | 'premium';
+export type PlanType = "free" | "standard" | "premium";
 
 export type Cast = {
   id: number;
@@ -21,7 +21,7 @@ export type Shop = {
   id: number;
   slug: string;
   name: string;
-  type: 'スナック' | 'ガールズバー' | 'ラウンジ';
+  type: "スナック" | "ガールズバー" | "ラウンジ";
   area: string;
   budget: string;
   open_hour: string;
@@ -37,35 +37,37 @@ export type Shop = {
 
 export async function getShops(): Promise<Shop[]> {
   const { data: shops, error } = await supabase
-    .from('shops')
-    .select('*, casts(*)')
-    .order('id');
+    .from("shops")
+    .select("*, casts(*)")
+    .order("id");
   if (error) throw error;
   return shops as Shop[];
 }
 
 export async function getShopsByType(type: string): Promise<Shop[]> {
   const { data: shops, error } = await supabase
-    .from('shops')
-    .select('*, casts(*)')
-    .eq('type', type)
-    .order('id');
+    .from("shops")
+    .select("*, casts(*)")
+    .eq("type", type)
+    .order("id");
   if (error) throw error;
   return shops as Shop[];
 }
 
 export async function getShopBySlug(slug: string): Promise<Shop | null> {
   const { data: shop, error } = await supabase
-    .from('shops')
-    .select('*, casts(*)')
-    .eq('slug', slug)
+    .from("shops")
+    .select("*, casts(*)")
+    .eq("slug", slug)
     .single();
   if (error) return null;
   return shop as Shop;
 }
 
 export async function getAllSlugs(): Promise<string[]> {
-  const { data, error } = await supabase.from('shops').select('slug');
+  const { data, error } = await supabase
+    .from("shops")
+    .select("slug");
   if (error) return [];
   return data.map((s) => s.slug);
 }
