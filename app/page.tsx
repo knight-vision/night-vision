@@ -51,9 +51,9 @@ export default async function HomePage() {
 
         <section style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
           {[
-            { label: "🍶 スナック",     href: "/snack",     color: "#ff6b9d" },
-            { label: "🍹 ガールズバー", href: "/girls-bar", color: "#00d4ff" },
             { label: "🥂 ラウンジ",     href: "/lounge",    color: "#ffd700" },
+            { label: "🍹 ガールズバー", href: "/girls-bar", color: "#00d4ff" },
+            { label: "🍶 スナック",     href: "/snack",     color: "#ff6b9d" },
           ].map((cat) => (
             <a key={cat.href} href={cat.href} style={{
               flex: 1, minWidth: 100, padding: "12px 8px", borderRadius: 12,
