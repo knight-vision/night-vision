@@ -7,11 +7,12 @@ export const metadata: Metadata = {
   title: '釧路のスナック一覧',
   description:
     '釧路のスナック情報を掲載。末広町・北大通エリアの人気スナックを料金・雰囲気・キャスト情報とともに紹介。釧路でスナックを探すならここ。',
-  keywords: ['釧路 スナック', '釧路 スナック 一覧', '釧路 スナック おすすめ'],
 };
 
-export default function SnackPage() {
-  const shops = getShopsByType('スナック');
+export const revalidate = 60;
+
+export default async function SnackPage() {
+  const shops = await getShopsByType('スナック');
   return (
     <>
       <Header />
@@ -51,23 +52,6 @@ export default function SnackPage() {
             件を掲載。カラオケ・ママとの会話を楽しめるお店を紹介します。
           </p>
         </div>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'ItemList',
-              name: '釧路のスナック一覧',
-              numberOfItems: shops.length,
-              itemListElement: shops.map((s, i) => ({
-                '@type': 'ListItem',
-                position: i + 1,
-                name: s.name,
-                url: `https://night-vision.jp/shop/${s.slug}`,
-              })),
-            }),
-          }}
-        />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {shops.map((shop) => (
             <ShopCard key={shop.id} shop={shop} />
