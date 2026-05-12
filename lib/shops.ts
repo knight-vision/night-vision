@@ -39,6 +39,7 @@ export async function getShops(): Promise<Shop[]> {
   const { data: shops, error } = await supabase
     .from("shops")
     .select("*, casts(*)")
+    .order("plan", { ascending: false })
     .order("id");
   if (error) throw error;
   return shops as Shop[];
