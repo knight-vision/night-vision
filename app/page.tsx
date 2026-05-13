@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import ShopCard from "@/components/ShopCard";
 import { getShops } from "@/lib/shops";
 import type { Metadata } from "next";
+import ShopList from "@/components/ShopList";
 
 export const metadata: Metadata = {
   title: "釧路ナイトビジョン｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
@@ -49,33 +50,53 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
+        {/* ジャンル */}
+        <section style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
           {[
-            { label: "🥂 ラウンジ",     href: "/lounge",    color: "#ffd700" },
-            { label: "🍹 ガールズバー", href: "/girls-bar", color: "#00d4ff" },
-            { label: "🍶 スナック",     href: "/snack",     color: "#ff6b9d" },
+            { label: "🥂 ラウンジ",       href: "/lounge",       color: "#ffd700" },
+            { label: "🍹 ガールズバー",   href: "/girls-bar",    color: "#00d4ff" },
+            { label: "🍶 スナック",       href: "/snack",        color: "#ff6b9d" },
+            { label: "🍸 カジュアルバー", href: "/casual-bar",   color: "#a855f7" },
           ].map((cat) => (
             <a key={cat.href} href={cat.href} style={{
-              flex: 1, minWidth: 100, padding: "12px 8px", borderRadius: 12,
+              flex: 1, minWidth: 100, padding: "10px 8px", borderRadius: 12,
               textAlign: "center", background: "#ffffff06", border: "1px solid #ffffff12",
-              color: cat.color, fontWeight: 700, fontSize: 13, cursor: "pointer",
+              color: cat.color, fontWeight: 700, fontSize: 12, cursor: "pointer",
+              textDecoration: "none",
             }}>{cat.label}</a>
           ))}
         </section>
 
-        <section>
-          <h2 style={{
-            color: "#ffffff55", fontSize: 12, fontWeight: 700,
-            letterSpacing: "0.12em", marginBottom: 14,
-          }}>
-            掲載店舗 {shops.length}件
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {shops.map((shop) => (
-              <ShopCard key={shop.id} shop={shop} />
-            ))}
-          </div>
+        {/* エリア */}
+        <section style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
+          {[
+            { label: "📍 末広エリア",  href: "/area/suehiro",  color: "#ff6b9d" },
+            { label: "📍 愛国エリア",  href: "/area/aikoku",   color: "#00d4ff" },
+            { label: "📍 その他エリア", href: "/area/other",   color: "#ffffff55" },
+          ].map((area) => (
+            <a key={area.href} href={area.href} style={{
+              flex: 1, minWidth: 100, padding: "8px 8px", borderRadius: 10,
+              textAlign: "center", background: "#ffffff04", border: "1px solid #ffffff0a",
+              color: area.color, fontWeight: 600, fontSize: 11, cursor: "pointer",
+              textDecoration: "none",
+            }}>{area.label}</a>
+          ))}
         </section>
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "釧路ナイトビジョン",
+              url: "https://night-vision.jp",
+              description: "釧路のスナック・ガールズバー・ラウンジ・飲み屋さん情報サイト",
+            }),
+          }}
+        />
+
+        <ShopList shops={shops} />
 
         <section style={{
           marginTop: 48, padding: 24,
@@ -86,9 +107,8 @@ export default async function HomePage() {
           </h2>
           <p style={{ color: "#ffffff33", fontSize: 12, lineHeight: 2 }}>
             釧路ナイトビジョンは、北海道釧路市のスナック・ガールズバー・ラウンジ・飲み屋の情報を
-            地域密着でお届けするナイトガイドです。末広町・北大通・新橋大通エリアを中心に、
+            地域密着でお届けするナイトガイドです。末広・愛国エリアを中心に、
             初めての方でも安心して入れるお店を厳選して掲載しています。
-            釧路でお酒を楽しみたい方、スナックやガールズバーを探している方はぜひご活用ください。
           </p>
         </section>
       </main>
@@ -98,7 +118,7 @@ export default async function HomePage() {
         color: "#ffffff22", fontSize: 11,
         borderTop: "1px solid #ffffff08",
       }}>
-        © 2025 釧路ナイトビジョン · 掲載・お問い合わせはDMにてどうぞ
+        © 2026 釧路ナイトビジョン · 掲載・お問い合わせはDMにてどうぞ
       </footer>
     </>
   );

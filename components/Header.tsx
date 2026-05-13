@@ -11,7 +11,7 @@ export default function Header() {
       zIndex: 100,
       backdropFilter: "blur(10px)",
     }}>
-      <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           <div style={{ cursor: "pointer" }}>
             <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "0.05em" }}>
@@ -26,22 +26,6 @@ export default function Header() {
             </div>
           </div>
         </Link>
-
-        <nav style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {[
-            { label: "ラウンジ",     href: "/lounge" },
-            { label: "ガールズバー", href: "/girls-bar" },
-            { label: "スナック",     href: "/snack" },
-          ].map((item) => (
-            <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
-              <span style={{
-                fontSize: 11, color: "#ffffff55",
-                padding: "4px 10px", borderRadius: 20,
-                border: "1px solid #ffffff15", cursor: "pointer", display: "block",
-              }}>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
       </div>
     </header>
   );
