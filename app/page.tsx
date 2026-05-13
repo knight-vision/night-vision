@@ -25,20 +25,37 @@ export default async function HomePage() {
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             marginBottom: 10,
           }}>
-            釧路の夜を、遊び尽くす。
+            釧路の夜、今日どこ行く？
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8 }}>
-            釧路の飲み屋さん情報を一か所に。<br />
+            釧路のスナック・ガールズバー・ラウンジ情報を一か所に。<br />
             地元を知り尽くす、本当のナイトライフガイド。
           </p>
+
+          {/* 統計バッジ */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 20, flexWrap: "wrap" }}>
+            {[
+              { label: "掲載店舗", value: shops.length, unit: "件" },
+              { label: "エリア", value: "2", unit: "区域" },
+              { label: "ジャンル", value: "4", unit: "種類" },
+            ].map((s) => (
+              <div key={s.label} style={{
+                background: "var(--bg-input)", border: "1px solid var(--border)",
+                borderRadius: 12, padding: "8px 16px", textAlign: "center",
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)" }}>
+                  {s.value}<span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 2 }}>{s.unit}</span>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <ShopList shops={shops} />
 
-        <section style={{
-          marginTop: 48, padding: 24,
-          background: "var(--bg-input)", borderRadius: 12, border: "1px solid var(--border)",
-        }}>
+        <section style={{ textAlign: "center", padding: "32px 0 28px", position: "relative" }}>
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, #ff6b9d12 0%, transparent 70%)", pointerEvents: "none" }} />
           <h2 style={{ color: "var(--text-muted)", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>
             釧路のナイトライフ情報
           </h2>

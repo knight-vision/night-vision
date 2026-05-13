@@ -29,13 +29,6 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> 
   カジュアルバー: { bg: "#a855f722", border: "#a855f7", text: "#a855f7" },
 };
 
-const TYPE_COLORS_LIGHT: Record<string, { bg: string; border: string; text: string }> = {
-  スナック:       { bg: "#cc226618", border: "#cc2266", text: "#cc2266" },
-  ガールズバー:   { bg: "#007ab818", border: "#007ab8", text: "#007ab8" },
-  ラウンジ:       { bg: "#aa880018", border: "#aa8800", text: "#aa8800" },
-  カジュアルバー: { bg: "#7722cc18", border: "#7722cc", text: "#7722cc" },
-};
-
 const TYPE_EMOJI: Record<string, string> = {
   スナック: "🍶",
   ガールズバー: "🍹",
@@ -43,51 +36,72 @@ const TYPE_EMOJI: Record<string, string> = {
   カジュアルバー: "🍸",
 };
 
+const DEFAULT_DESC: Record<string, string> = {
+  スナック: "地元に愛されるアットホームなスナック。カラオケや会話を楽しめます。",
+  ガールズバー: "気軽に立ち寄れるガールズバー。お酒とトークを楽しもう。",
+  ラウンジ: "落ち着いた雰囲気のラウンジ。特別な夜のひとときに。",
+  カジュアルバー: "地元の男女が集まるカジュアルなバー。新しい出会いの場。",
+};
+
+const BG_GRADIENTS: Record<string, string> = {
+  スナック: "radial-gradient(ellipse at 30% 50%, #ff6b9d18 0%, transparent 70%), radial-gradient(ellipse at 80% 20%, #a855f712 0%, transparent 60%)",
+  ガールズバー: "radial-gradient(ellipse at 70% 50%, #00d4ff15 0%, transparent 70%), radial-gradient(ellipse at 20% 80%, #0099bb10 0%, transparent 60%)",
+  ラウンジ: "radial-gradient(ellipse at 50% 30%, #ffd70018 0%, transparent 70%), radial-gradient(ellipse at 80% 80%, #aa880010 0%, transparent 60%)",
+  カジュアルバー: "radial-gradient(ellipse at 40% 60%, #a855f718 0%, transparent 70%)",
+};
+
 export default function ShopCard({ shop }: { shop: Shop }) {
   const router = useRouter();
-  const isLight = false;
-  const colors = isLight ? TYPE_COLORS_LIGHT : TYPE_COLORS;
-  const tc = colors[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
+  const tc = TYPE_COLORS[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
   const onCount = (shop.casts ?? []).filter((c) => c.on_today).length;
   const hasBanner = shop.plan === "premium" || shop.referred;
   const isStandard = shop.plan === "standard";
   const openStatus = isOpenNow(shop.open_hour, shop.closed_days);
+  const desc = shop.description || DEFAULT_DESC[shop.type] || "";
+  const bg = BG_GRADIENTS[shop.type] ?? "";
+  const emoji = TYPE_EMOJI[shop.type] ?? "🍺";
 
   return (
     <div
       onClick={() => router.push("/shop/" + shop.slug)}
       style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border)",
+        background: "linear-gradient(160deg, #0f0f1a 0%, #1a1028 100%)",
+        border: `1px solid ${tc.border}22`,
         borderRadius: 16,
         cursor: "pointer",
         overflow: "hidden",
-        boxShadow: "var(--card-shadow)",
+        boxShadow: `var(--card-shadow), 0 4px 20px ${tc.border}10`,
         transition: "transform 0.18s, box-shadow 0.18s",
+        position: "relative",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow = "var(--card-shadow-hover)";
+        e.currentTarget.style.boxShadow = `var(--card-shadow-hover), 0 8px 32px ${tc.border}20`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = "var(--card-shadow)";
+        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
       }}
     >
-      {hasBanner && (
+      {/* 背景グロー */}
+      <div style={{ position: "absolute", inset: 0, background: bg, pointerEvents: "none", borderRadius: 16 }} />
+
+      {/* バナー（プレミアムのみ・写真あり） */}
+      {hasBanner && shop.image && (
         <div style={{ position: "relative", width: "100%", height: 140, overflow: "hidden" }}>
-          {shop.image ? (
-            <img src={shop.image} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <div style={{
-              width: "100%", height: "100%",
-              background: "linear-gradient(135deg, " + tc.border + "22, var(--bg-card2))",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "var(--text-hint)", fontSize: 13,
-            }}>写真準備中</div>
-          )}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, var(--bg-card), transparent)" }} />
+          <img src={shop.image} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, #0f0f1a, transparent)" }} />
         </div>
+      )}
+
+      {/* プレミアムだが写真なし → 絵文字バナー */}
+      {hasBanner && !shop.image && (
+        <div style={{
+          height: 80, display: "flex", alignItems: "center", justifyContent: "center",
+          background: `linear-gradient(135deg, ${tc.border}18, #0f0f1a)`,
+          fontSize: 36, opacity: 0.4,
+          borderBottom: `1px solid ${tc.border}15`,
+        }}>{emoji}</div>
       )}
 
       {isStandard && (
@@ -102,11 +116,11 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
       )}
 
-      <div style={{ padding: 20 }}>
+      <div style={{ padding: 16, position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <span style={{
             padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-            background: tc.bg, border: "1.5px solid " + tc.border, color: tc.text,
+            background: tc.bg, border: `1.5px solid ${tc.border}`, color: tc.text,
           }}>{shop.type}</span>
           <span style={{
             fontSize: 11, color: "var(--text-muted)",
@@ -117,14 +131,14 @@ export default function ShopCard({ shop }: { shop: Shop }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: "hidden",
-            border: "1.5px solid var(--border)",
-            background: "var(--bg-card2)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+            width: 52, height: 52, borderRadius: 12, flexShrink: 0, overflow: "hidden",
+            background: `linear-gradient(135deg, ${tc.border}33, #1a1028)`,
+            border: `1.5px solid ${tc.border}44`,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
           }}>
             {hasBanner && shop.image
               ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : TYPE_EMOJI[shop.type]}
+              : emoji}
           </div>
           <div>
             <div style={{ color: "var(--text-primary)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.2, fontFamily: "var(--font)" }}>
@@ -140,25 +154,29 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
 
         <div style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 12, lineHeight: 1.7 }}>
-          {shop.description}
+          {desc}
         </div>
 
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-        {(shop.tags ?? []).map((t) => (
-            <span key={t} style={{
-              fontSize: 11, color: "var(--text-muted)",
-              background: "var(--bg-input)", border: "1px solid var(--border)",
-              padding: "2px 10px", borderRadius: 20,
-            }}>{t}</span>
-          ))}
-        </div>
+        {(shop.tags ?? []).length > 0 && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+            {(shop.tags ?? []).map((t) => (
+              <span key={t} style={{
+                fontSize: 11, color: "var(--text-muted)",
+                background: "var(--bg-input)", border: "1px solid var(--border)",
+                padding: "2px 10px", borderRadius: 20,
+              }}>{t}</span>
+            ))}
+          </div>
+        )}
 
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          borderTop: "1px solid var(--border)", paddingTop: 12,
+          borderTop: `1px solid ${tc.border}22`, paddingTop: 10,
         }}>
-          <span style={{ color: tc.text, fontWeight: 700, fontSize: 13 }}>{shop.budget}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: tc.text, fontWeight: 700, fontSize: 13 }}>
+            {shop.budget ?? "料金未設定"}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {shop.instagram && (
               <a
                 href={"https://instagram.com/" + shop.instagram}
@@ -173,7 +191,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
                 @{shop.instagram}
               </a>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
+            <div style={{ fontSize: 11 }}>
               {openStatus === true ? (
                 <span style={{ color: "var(--online)", display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--online)", boxShadow: "0 0 6px var(--online)" }} />
