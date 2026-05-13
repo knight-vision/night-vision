@@ -116,7 +116,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>👥 年齢層</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {shop.age_groups.map((age) => (
+              {(shop.age_groups ?? []).map((age) => (
                   <span key={age} style={{
                     fontSize: 12, color: "var(--text-secondary)",
                     background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -128,7 +128,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           )}
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            {shop.tags.map((t) => (
+          {(shop.tags ?? []).map((t) => (
               <span key={t} style={{
                 fontSize: 12, color: "var(--text-muted)",
                 background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -168,7 +168,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         </div>
 
-        {shop.photos && shop.photos.length > 0 && (
+        {(shop.photos ?? []).length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
               店内写真
@@ -182,7 +182,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             キャスト ({shop.casts.length}名)
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {shop.casts.map((cast) => (
+          {(shop.casts ?? []).map((cast) => (
               <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
                 <div style={{
                   background: "var(--bg-card)", border: "1px solid var(--border)",
