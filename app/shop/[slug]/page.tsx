@@ -173,7 +173,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
               店内写真
             </h2>
-            <PhotoSlider photos={shop.photos} shopName={shop.name} />
+            <PhotoSlider photos={shop.photos ?? []} shopName={shop.name} />
           </div>
         )}
 
