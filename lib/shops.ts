@@ -55,8 +55,8 @@ export async function getShops(): Promise<Shop[]> {
     .select("*, casts(*)")
     .order("plan", { ascending: false })
     .order("id");
-  if (error) throw error;
-  return shops as Shop[];
+  if (error) return [];
+  return (shops ?? []) as Shop[];
 }
 
 export async function getShopsByType(type: string): Promise<Shop[]> {
