@@ -45,10 +45,10 @@ const TYPE_EMOJI: Record<string, string> = {
 
 export default function ShopCard({ shop }: { shop: Shop }) {
   const router = useRouter();
-  const isLight = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches;
+  const isLight = false;
   const colors = isLight ? TYPE_COLORS_LIGHT : TYPE_COLORS;
   const tc = colors[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
-  const onCount = shop.casts.filter((c) => c.on_today).length;
+  const onCount = (shop.casts ?? []).filter((c) => c.on_today).length;
   const hasBanner = shop.plan === "premium" || shop.referred;
   const isStandard = shop.plan === "standard";
   const openStatus = isOpenNow(shop.open_hour, shop.closed_days);
@@ -144,7 +144,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-          {shop.tags.map((t) => (
+        {(shop.tags ?? []).map((t) => (
             <span key={t} style={{
               fontSize: 11, color: "var(--text-muted)",
               background: "var(--bg-input)", border: "1px solid var(--border)",
