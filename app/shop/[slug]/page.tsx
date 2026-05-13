@@ -26,18 +26,14 @@ export async function generateMetadata({
 }
 
 const TYPE_COLORS: Record<string, { border: string; text: string }> = {
-  スナック:     { border: "#ff6b9d", text: "#ff6b9d" },
-  ガールズバー: { border: "#00d4ff", text: "#00d4ff" },
-  ラウンジ:     { border: "#ffd700", text: "#ffd700" },
+  スナック:       { border: "#ff6b9d", text: "#ff6b9d" },
+  ガールズバー:   { border: "#00d4ff", text: "#00d4ff" },
+  ラウンジ:       { border: "#ffd700", text: "#ffd700" },
   カジュアルバー: { border: "#a855f7", text: "#a855f7" },
 };
 
 const AGE_LABELS: Record<string, string> = {
-  "20代": "20代",
-  "30代": "30代",
-  "40代": "40代",
-  "50代": "50代",
-  "60代": "60代",
+  "20代": "20代", "30代": "30代", "40代": "40代", "50代": "50代", "60代": "60代",
 };
 
 export default async function ShopPage({ params }: { params: { slug: string } }) {
@@ -45,49 +41,58 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   if (!shop) notFound();
   if (!shop) return null;
 
-  const tc = TYPE_COLORS[shop.type] ?? { border: "#fff", text: "#fff" };
+  const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
   const hasBanner = shop.plan === "premium" || shop.referred;
 
   return (
     <div>
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
-        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#ffffff55", fontSize: 13, marginBottom: 20, border: "1px solid #ffffff1a", padding: "5px 14px", borderRadius: 20 }}>
+        <Link href="/" style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          color: "var(--text-muted)", fontSize: 13, marginBottom: 20,
+          border: "1px solid var(--border)", padding: "5px 14px", borderRadius: 20,
+        }}>
           ← 一覧に戻る
         </Link>
 
-        {/* メインバナー */}
         {hasBanner && (
           <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 20, height: 200 }}>
             {shop.image ? (
               <img src={shop.image} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
-              <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, " + tc.border + "22, #0f0f1a)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff22", fontSize: 14 }}>
-                写真準備中
-              </div>
+              <div style={{
+                width: "100%", height: "100%",
+                background: "linear-gradient(135deg, " + tc.border + "22, var(--bg-card))",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--text-hint)", fontSize: 14,
+              }}>写真準備中</div>
             )}
           </div>
         )}
 
-        {/* 店舗情報 */}
-        <div style={{ background: "linear-gradient(160deg, #0f0f1a, #1a1028)", border: "1px solid #ffffff0f", borderRadius: 20, padding: 24, marginBottom: 20, marginTop: 20 }}>
+        <div style={{
+          background: "var(--bg-card)", border: "1px solid var(--border)",
+          borderRadius: 20, padding: 24, marginBottom: 20, marginTop: 20,
+        }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-            <span style={{ padding: "2px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid " + tc.border, color: tc.text, background: tc.border + "18" }}>
-              {shop.type}
-            </span>
-            <span style={{ fontSize: 12, color: "#ffffff44", background: "#ffffff08", padding: "2px 10px", borderRadius: 10 }}>
-              {shop.area_category ?? shop.area}
-            </span>
+            <span style={{
+              padding: "2px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+              border: "1px solid " + tc.border, color: tc.text, background: tc.border + "18",
+            }}>{shop.type}</span>
+            <span style={{
+              fontSize: 12, color: "var(--text-muted)",
+              background: "var(--bg-input)", padding: "2px 10px", borderRadius: 10,
+            }}>{shop.area_category ?? shop.area}</span>
           </div>
 
-          <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 900, marginBottom: 10, letterSpacing: "-0.03em" }}>
+          <h1 style={{ color: "var(--text-primary)", fontSize: 26, fontWeight: 900, marginBottom: 10, letterSpacing: "-0.03em" }}>
             {shop.name}
           </h1>
-          <p style={{ color: "#ffffff88", fontSize: 14, lineHeight: 1.8, marginBottom: 20 }}>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8, marginBottom: 20 }}>
             {shop.description}
           </p>
 
-          {/* 基本情報グリッド */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
             {[
               { label: "予算目安", value: shop.budget, icon: "💴" },
@@ -97,35 +102,41 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               { label: "定休日", value: shop.closed_days ?? "未設定", icon: "📅" },
               { label: "エリア", value: shop.area, icon: "📍" },
             ].map((item) => (
-              <div key={item.label} style={{ background: "#ffffff06", border: "1px solid #ffffff0a", borderRadius: 10, padding: "10px 14px" }}>
-                <div style={{ fontSize: 11, color: "#ffffff44", marginBottom: 3 }}>{item.icon} {item.label}</div>
-                <div style={{ fontSize: 13, color: "#ffffffcc", fontWeight: 600 }}>{item.value}</div>
+              <div key={item.label} style={{
+                background: "var(--bg-input)", border: "1px solid var(--border)",
+                borderRadius: 10, padding: "10px 14px",
+              }}>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 3 }}>{item.icon} {item.label}</div>
+                <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>{item.value}</div>
               </div>
             ))}
           </div>
 
-          {/* 年齢層 */}
           {shop.age_groups && shop.age_groups.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: "#ffffff44", marginBottom: 6 }}>👥 年齢層</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>👥 年齢層</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {shop.age_groups.map((age) => (
-                  <span key={age} style={{ fontSize: 12, color: "#ffffff88", background: "#ffffff0a", border: "1px solid #ffffff15", padding: "3px 12px", borderRadius: 20 }}>
-                    {AGE_LABELS[age] ?? age}
-                  </span>
+                  <span key={age} style={{
+                    fontSize: 12, color: "var(--text-secondary)",
+                    background: "var(--bg-input)", border: "1px solid var(--border)",
+                    padding: "3px 12px", borderRadius: 20,
+                  }}>{AGE_LABELS[age] ?? age}</span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* タグ */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
             {shop.tags.map((t) => (
-              <span key={t} style={{ fontSize: 12, color: "#ffffff66", background: "#ffffff0a", border: "1px solid #ffffff15", padding: "3px 10px", borderRadius: 20 }}>{t}</span>
+              <span key={t} style={{
+                fontSize: 12, color: "var(--text-muted)",
+                background: "var(--bg-input)", border: "1px solid var(--border)",
+                padding: "3px 10px", borderRadius: 20,
+              }}>{t}</span>
             ))}
           </div>
 
-          {/* SNSリンク */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {shop.instagram && (
               <a href={"https://instagram.com/" + shop.instagram} target="_blank" rel="noopener noreferrer"
@@ -138,7 +149,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             )}
             {shop.x_account && (
               <a href={"https://x.com/" + shop.x_account} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 13, color: "#ffffff88", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.213 5.567 5.95-5.567zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -157,41 +168,48 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         </div>
 
-        {/* 店内写真スライダー */}
         {shop.photos && shop.photos.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ color: "#ffffff55", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
+            <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
               店内写真
             </h2>
             <PhotoSlider photos={shop.photos} shopName={shop.name} />
           </div>
         )}
 
-        {/* キャスト一覧 */}
         <div>
-          <h2 style={{ color: "#ffffff55", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
+          <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
             キャスト ({shop.casts.length}名)
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {shop.casts.map((cast) => (
               <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
-                <div style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "1px solid #ffffff0f", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #ff6b9d, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-                    👩
-                  </div>
+                <div style={{
+                  background: "var(--bg-card)", border: "1px solid var(--border)",
+                  borderRadius: 12, padding: "14px 16px",
+                  display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 20, flexShrink: 0,
+                  }}>👩</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ color: "#fff", fontWeight: 700 }}>{cast.name}</span>
-                      <span style={{ color: "#ffffff44", fontSize: 12 }}>{cast.age}歳</span>
-                      {cast.birthplace && <span style={{ color: "#ffffff33", fontSize: 11 }}>出身: {cast.birthplace}</span>}
+                      <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{cast.name}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{cast.age}歳</span>
+                      {cast.birthplace && <span style={{ color: "var(--text-hint)", fontSize: 11 }}>📍{cast.birthplace}</span>}
                     </div>
-                    <div style={{ color: "#ffffff66", fontSize: 12, marginTop: 2 }}>{cast.comment}</div>
+                    <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>{cast.comment}</div>
                   </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 11, color: cast.on_today ? "#00ff88" : "#555" }}>
-                      <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: cast.on_today ? "#00ff88" : "#444", marginRight: 4, verticalAlign: "middle" }} />
-                      {cast.on_today ? "本日出勤" : "本日休み"}
-                    </div>
+                  <div style={{ fontSize: 11, color: cast.on_today ? "var(--online)" : "var(--text-hint)", flexShrink: 0 }}>
+                    <span style={{
+                      display: "inline-block", width: 7, height: 7, borderRadius: "50%",
+                      background: cast.on_today ? "var(--online)" : "var(--border-hover)",
+                      marginRight: 4, verticalAlign: "middle",
+                    }} />
+                    {cast.on_today ? "本日出勤" : "本日休み"}
                   </div>
                 </div>
               </Link>

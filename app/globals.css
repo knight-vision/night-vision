@@ -1,44 +1,91 @@
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --bg: #08080f;
+  --bg-card: #0f0f1a;
+  --bg-card2: #1a1028;
+  --bg-input: #ffffff08;
+  --border: #ffffff0f;
+  --border-hover: #ffffff22;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff88;
+  --text-muted: #ffffff44;
+  --text-hint: #ffffff22;
+  --accent: #ff6b9d;
+  --accent2: #a855f7;
+  --online: #00ff88;
+  --online-bg: #00ff8812;
+  --online-border: #00ff8830;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f0ff;
+    --bg-card: #ffffff;
+    --bg-card2: #faf7ff;
+    --bg-input: #00000008;
+    --border: #00000012;
+    --border-hover: #00000022;
+    --text-primary: #1a0828;
+    --text-secondary: #1a082888;
+    --text-muted: #1a082844;
+    --text-hint: #1a082822;
+    --accent: #cc2266;
+    --accent2: #7722cc;
+    --online: #00aa55;
+    --online-bg: #00aa5512;
+    --online-border: #00aa5530;
+  }
+}
+
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes glow {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #0f0f1a;
-}
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 2px;
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
+
+a { color: inherit; text-decoration: none; }
+
+body {
+  background: var(--bg) !important;
+  color: var(--text-primary) !important;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+select.input option {
+  background: var(--bg-card);
+  color: var(--text-primary);
 }

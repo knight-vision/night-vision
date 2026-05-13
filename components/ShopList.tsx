@@ -3,117 +3,116 @@ import { useState } from "react";
 import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
 
-const TYPES = ["ラウンジ", "ガールズバー", "スナック", "カジュアルバー"];
-const AREAS = ["末広", "愛国", "その他"];
+const TYPES = [
+  { label: "🥂 ラウンジ",       value: "ラウンジ",      color: "#ffd700" },
+  { label: "🍹 ガールズバー",   value: "ガールズバー",  color: "#00d4ff" },
+  { label: "🍶 スナック",       value: "スナック",      color: "#ff6b9d" },
+  { label: "🍸 カジュアルバー", value: "カジュアルバー", color: "#a855f7" },
+  { label: "🍺 その他",         value: "その他",        color: "#888888" },
+];
+
+const AREAS = [
+  { label: "📍 末広",   value: "末広",  color: "#ff6b9d" },
+  { label: "📍 愛国",   value: "愛国",  color: "#00d4ff" },
+  { label: "📍 その他", value: "その他", color: "#888888" },
+];
 
 export default function ShopList({ shops }: { shops: Shop[] }) {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
-
-  const toggleType = (type: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
-  };
-
-  const toggleArea = (area: string) => {
-    setSelectedAreas((prev) =>
-      prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
-    );
-  };
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [selectedArea, setSelectedArea] = useState<string>("");
 
   const filtered = shops.filter((shop) => {
-    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(shop.type);
-    const areaMatch = selectedAreas.length === 0 || selectedAreas.includes(shop.area_category ?? "その他");
+    const typeMatch = !selectedType || shop.type === selectedType ||
+      (selectedType === "その他" && !["ラウンジ", "ガールズバー", "スナック", "カジュアルバー"].includes(shop.type));
+    const areaMatch = !selectedArea || (shop.area_category ?? "その他") === selectedArea;
     return typeMatch && areaMatch;
   });
 
-  const TYPE_COLORS: Record<string, string> = {
-    ラウンジ: "#ffd700",
-    ガールズバー: "#00d4ff",
-    スナック: "#ff6b9d",
-    カジュアルバー: "#a855f7",
-  };
-
-  const AREA_COLORS: Record<string, string> = {
-    末広: "#ff6b9d",
-    愛国: "#00d4ff",
-    その他: "#ffffff55",
-  };
+  const hasFilter = selectedType !== "" || selectedArea !== "";
 
   return (
     <div>
-      {/* 業種フィルター */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 10, color: "#ffffff33", letterSpacing: "0.12em", marginBottom: 6 }}>ジャンル</div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
+          GENRE · ジャンル
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {TYPES.map((type) => {
-            const active = selectedTypes.includes(type);
-            const color = TYPE_COLORS[type];
+            const active = selectedType === type.value;
             return (
-              <button key={type} onClick={() => toggleType(type)} style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
-                fontWeight: active ? 700 : 400,
-                background: active ? color + "22" : "#ffffff06",
-                border: "1px solid " + (active ? color : "#ffffff15"),
-                color: active ? color : "#ffffff55",
-                transition: "all 0.15s",
-              }}>{type}</button>
+              <button
+                key={type.value}
+                onClick={() => setSelectedType(active ? "" : type.value)}
+                style={{
+                  flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
+                  textAlign: "center", cursor: "pointer",
+                  fontWeight: active ? 700 : 600, fontSize: 12,
+                  transition: "all 0.15s",
+                  background: active ? type.color + "22" : "var(--bg-input)",
+                  border: "1px solid " + (active ? type.color : "var(--border)"),
+                  color: active ? type.color : "var(--text-muted)",
+                  boxShadow: active ? "0 0 12px " + type.color + "22" : "none",
+                }}
+              >
+                {type.label}
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* エリアフィルター */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 10, color: "#ffffff33", letterSpacing: "0.12em", marginBottom: 6 }}>エリア</div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
+          AREA · エリア
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {AREAS.map((area) => {
-            const active = selectedAreas.includes(area);
-            const color = AREA_COLORS[area];
+            const active = selectedArea === area.value;
             return (
-              <button key={area} onClick={() => toggleArea(area)} style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
-                fontWeight: active ? 700 : 400,
-                background: active ? color + "22" : "#ffffff06",
-                border: "1px solid " + (active ? color : "#ffffff15"),
-                color: active ? color : "#ffffff55",
-                transition: "all 0.15s",
-              }}>📍 {area}</button>
+              <button
+                key={area.value}
+                onClick={() => setSelectedArea(active ? "" : area.value)}
+                style={{
+                  flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
+                  textAlign: "center", cursor: "pointer",
+                  fontWeight: active ? 700 : 600, fontSize: 12,
+                  transition: "all 0.15s",
+                  background: active ? area.color + "22" : "var(--bg-input)",
+                  border: "1px solid " + (active ? area.color : "var(--border)"),
+                  color: active ? area.color : "var(--text-muted)",
+                  boxShadow: active ? "0 0 12px " + area.color + "22" : "none",
+                }}
+              >
+                {area.label}
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* 選択中の状態表示 */}
-      {(selectedTypes.length > 0 || selectedAreas.length > 0) && (
+      {hasFilter && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: "#ffffff44" }}>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
             {filtered.length}件表示中
-            {selectedTypes.length > 0 && (
-              <span style={{ color: "#ffffff66" }}> · {selectedTypes.join("・")}</span>
-            )}
-            {selectedAreas.length > 0 && (
-              <span style={{ color: "#ffffff66" }}> · {selectedAreas.join("・")}エリア</span>
-            )}
+            {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
+            {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
           </div>
-          <button onClick={() => { setSelectedTypes([]); setSelectedAreas([]); }} style={{
-            background: "none", border: "1px solid #ffffff15", color: "#ffffff44",
+          <button onClick={() => { setSelectedType(""); setSelectedArea(""); }} style={{
+            background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
           }}>リセット</button>
         </div>
       )}
 
-      {!selectedTypes.length && !selectedAreas.length && (
-        <div style={{ color: "#ffffff33", fontSize: 12, marginBottom: 14 }}>
+      {!hasFilter && (
+        <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 14 }}>
           掲載店舗 {shops.length}件
         </div>
       )}
 
-      {/* 店舗一覧 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#ffffff33", padding: 40, fontSize: 14 }}>
+          <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>
             条件に合う店舗が見つかりませんでした
           </div>
         ) : (
