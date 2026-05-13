@@ -52,7 +52,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
           <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: "hidden", border: "1.5px solid " + (hasBanner && shop.image ? tc.border + "66" : "#ffffff15"), background: "linear-gradient(135deg, #1a1a2e, #0f0f1a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
-            {hasBanner && shop.image ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : TYPE_EMOJI[shop.type]}
+          {shop.icon ? <img src={shop.icon} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : TYPE_EMOJI[shop.type]}
           </div>
           <div>
             <div style={{ color: "#fff", fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.2 }}>{shop.name}</div>
