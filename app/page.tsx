@@ -28,21 +28,9 @@ export default async function HomePage() {
             釧路の夜を、もっと近くに。
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8 }}>
-            釧路のスナック・ガールズバー・ラウンジ情報を一か所に。<br />
-            地元だから知っている、本当のナイトライフガイド。
+            釧路の飲み屋さん情報を一か所に。<br />
+            地元を知り尽くす、本当のナイトライフガイド。
           </p>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            marginTop: 16, padding: "6px 16px", borderRadius: 20,
-            background: "var(--online-bg)", border: "1px solid var(--online-border)",
-            fontSize: 13, color: "var(--online)",
-          }}>
-            <span style={{
-              display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-              background: "var(--online)", boxShadow: "0 0 6px var(--online)",
-            }} />
-            現在 {onTotal}名 出勤中
-          </div>
         </section>
 
         <ShopList shops={shops} />

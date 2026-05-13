@@ -4,22 +4,26 @@ import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
 
 const TYPES = [
-  { label: "🥂 ラウンジ",       value: "ラウンジ",      color: "#ffd700" },
-  { label: "🍹 ガールズバー",   value: "ガールズバー",  color: "#00d4ff" },
-  { label: "🍶 スナック",       value: "スナック",      color: "#ff6b9d" },
-  { label: "🍸 カジュアルバー", value: "カジュアルバー", color: "#a855f7" },
-  { label: "🍺 その他",         value: "その他",        color: "#888888" },
+  { label: "🥂 ラウンジ",       value: "ラウンジ",      dark: "#ffd700", light: "#aa8800" },
+  { label: "🍹 ガールズバー",   value: "ガールズバー",  dark: "#00d4ff", light: "#007ab8" },
+  { label: "🍶 スナック",       value: "スナック",      dark: "#ff6b9d", light: "#cc2266" },
+  { label: "🍸 カジュアルバー", value: "カジュアルバー", dark: "#a855f7", light: "#7722cc" },
+  { label: "🍺 その他",         value: "その他",        dark: "#aaaaaa", light: "#666666" },
 ];
 
 const AREAS = [
-  { label: "📍 末広",   value: "末広",  color: "#ff6b9d" },
-  { label: "📍 愛国",   value: "愛国",  color: "#00d4ff" },
-  { label: "📍 その他", value: "その他", color: "#888888" },
+  { label: "📍 末広",   value: "末広",  dark: "#ff6b9d", light: "#cc2266" },
+  { label: "📍 愛国",   value: "愛国",  dark: "#00d4ff", light: "#007ab8" },
+  { label: "📍 その他", value: "その他", dark: "#aaaaaa", light: "#666666" },
 ];
 
 export default function ShopList({ shops }: { shops: Shop[] }) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedArea, setSelectedArea] = useState<string>("");
+  const [isLight] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-color-scheme: light)").matches;
+  });
 
   const filtered = shops.filter((shop) => {
     const typeMatch = !selectedType || shop.type === selectedType ||
@@ -39,6 +43,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {TYPES.map((type) => {
             const active = selectedType === type.value;
+            const color = isLight ? type.light : type.dark;
             return (
               <button
                 key={type.value}
@@ -46,12 +51,12 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
-                  fontWeight: active ? 700 : 600, fontSize: 12,
+                  fontWeight: active ? 700 : 500, fontSize: 12,
+                  fontFamily: "var(--font)",
                   transition: "all 0.15s",
-                  background: active ? type.color + "22" : "var(--bg-input)",
-                  border: "1px solid " + (active ? type.color : "var(--border)"),
-                  color: active ? type.color : "var(--text-muted)",
-                  boxShadow: active ? "0 0 12px " + type.color + "22" : "none",
+                  background: active ? color + "20" : "var(--bg-input)",
+                  border: "1.5px solid " + (active ? color : "var(--border)"),
+                  color: active ? color : "var(--text-secondary)",
                 }}
               >
                 {type.label}
@@ -68,6 +73,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {AREAS.map((area) => {
             const active = selectedArea === area.value;
+            const color = isLight ? area.light : area.dark;
             return (
               <button
                 key={area.value}
@@ -75,12 +81,12 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
-                  fontWeight: active ? 700 : 600, fontSize: 12,
+                  fontWeight: active ? 700 : 500, fontSize: 12,
+                  fontFamily: "var(--font)",
                   transition: "all 0.15s",
-                  background: active ? area.color + "22" : "var(--bg-input)",
-                  border: "1px solid " + (active ? area.color : "var(--border)"),
-                  color: active ? area.color : "var(--text-muted)",
-                  boxShadow: active ? "0 0 12px " + area.color + "22" : "none",
+                  background: active ? color + "20" : "var(--bg-input)",
+                  border: "1.5px solid " + (active ? color : "var(--border)"),
+                  color: active ? color : "var(--text-secondary)",
                 }}
               >
                 {area.label}
@@ -100,6 +106,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           <button onClick={() => { setSelectedType(""); setSelectedArea(""); }} style={{
             background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
+            fontFamily: "var(--font)",
           }}>リセット</button>
         </div>
       )}
