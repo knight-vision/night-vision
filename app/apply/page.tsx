@@ -1,0 +1,284 @@
+"use client";
+import { useState } from "react";
+import Header from "@/components/Header";
+
+const PLAN_INFO = [
+  {
+    key: "free",
+    name: "フリープラン",
+    price: "無料",
+    features: ["店舗名・業種・エリア掲載", "営業時間・所在地表示"],
+  },
+  {
+    key: "gold",
+    name: "ゴールドプラン",
+    price: "月額 3,000円",
+    features: ["フリーの全機能", "バナー写真掲載", "キャスト3名登録", "Instagram連携", "アクセス数レポート"],
+    recommended: false,
+  },
+  {
+    key: "premium",
+    name: "プレミアムプラン",
+    price: "月額 7,000円",
+    features: ["ゴールドの全機能", "上位表示", "キャスト無制限", "複数写真（最大10枚）", "X・TikTok連携", "出勤速報表示", "誕生日バッジ"],
+    recommended: true,
+  },
+];
+
+export default function ApplyPage() {
+  const [form, setForm] = useState({
+    shopName: "", address: "", shopTel: "",
+    type: "", typeOther: "", area: "", areaOther: "",
+    openHour: "", closedDays: "", seats: "",
+    instagram: "", xAccount: "", tiktok: "", pr: "",
+    contactName: "", contactEmail: "", contactTel: "",
+    plan: "", notes: "",
+  });
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async () => {
+    if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail || !form.plan) {
+      alert("必須項目を入力してください");
+      return;
+    }
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) setStatus("success");
+      else setStatus("error");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "10px 14px",
+    background: "#ffffff08", border: "1px solid #ffffff15",
+    borderRadius: 10, color: "#fff", fontSize: 14, outline: "none",
+  };
+
+  const selectStyle = { ...inputStyle };
+  const labelStyle = { fontSize: 12, color: "#ffffff66", marginBottom: 6, display: "block" };
+  const sectionStyle = { marginBottom: 32 };
+  const fieldStyle = { marginBottom: 16 };
+  const h2Style = {
+    fontSize: 14, fontWeight: 700, color: "#ffffff88",
+    letterSpacing: "0.1em", marginBottom: 16,
+    paddingBottom: 8, borderBottom: "1px solid #ffffff0f",
+  };
+
+  if (status === "success") {
+    return (
+      <>
+        <Header />
+        <main style={{ maxWidth: 680, margin: "0 auto", padding: "60px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
+          <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 800, marginBottom: 12 }}>申し込みを受け付けました</h1>
+          <p style={{ color: "#ffffff66", fontSize: 14, lineHeight: 1.8 }}>
+            ご入力いただいたメールアドレスに確認メールをお送りしました。<br />
+            内容確認後、3営業日以内にご連絡いたします。
+          </p>
+          <a href="/" style={{ display: "inline-block", marginTop: 32, padding: "10px 24px", borderRadius: 20, background: "linear-gradient(135deg, #ff6b9d, #a855f7)", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+            トップに戻る
+          </a>
+        </main>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Header />
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 11, color: "#ff6b9d", letterSpacing: "0.15em", marginBottom: 6 }}>LISTING APPLICATION</div>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em" }}>掲載申し込み</h1>
+          <p style={{ color: "#ffffff55", fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>
+            釧路ナイトビジョンへの掲載をご希望の方はこちらからお申し込みください。<br />
+            内容確認後、3営業日以内にご連絡いたします。
+          </p>
+        </div>
+
+        {/* プラン選択 */}
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>申し込みプラン <span style={{ color: "#ff6b9d" }}>*</span></h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {PLAN_INFO.map((plan) => (
+              <div key={plan.key} onClick={() => set("plan", plan.key)} style={{
+                background: form.plan === plan.key ? "linear-gradient(135deg, #ff6b9d15, #a855f715)" : "#ffffff06",
+                border: "1px solid " + (form.plan === plan.key ? "#ff6b9d55" : "#ffffff12"),
+                borderRadius: 12, padding: 16, cursor: "pointer", position: "relative",
+              }}>
+                {plan.recommended && (
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "linear-gradient(135deg, #ff6b9d, #a855f7)", color: "#fff", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 10 }}>おすすめ</div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (form.plan === plan.key ? "#ff6b9d" : "#ffffff33"), background: form.plan === plan.key ? "#ff6b9d" : "none", flexShrink: 0 }} />
+                  <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>{plan.name}</span>
+                  <span style={{ color: "#ff6b9d", fontWeight: 700, fontSize: 13 }}>{plan.price}</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 28 }}>
+                  {plan.features.map((f) => (
+                    <span key={f} style={{ fontSize: 11, color: "#ffffff66", background: "#ffffff08", padding: "2px 8px", borderRadius: 10 }}>✓ {f}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 店舗情報 */}
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>店舗情報</h2>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>店舗名 <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <input value={form.shopName} onChange={(e) => set("shopName", e.target.value)} placeholder="例：スナック 花火" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>所在地 <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="例：釧路市末広町4-1-1" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>店舗電話番号（任意）</label>
+            <input value={form.shopTel} onChange={(e) => set("shopTel", e.target.value)} placeholder="例：0154-XX-XXXX" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>業種 <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <select value={form.type} onChange={(e) => set("type", e.target.value)} style={selectStyle}>
+              <option value="">選択してください</option>
+              <option value="ラウンジ">ラウンジ</option>
+              <option value="ガールズバー">ガールズバー</option>
+              <option value="スナック">スナック</option>
+              <option value="カジュアルバー">カジュアルバー</option>
+              <option value="other">その他</option>
+            </select>
+            {form.type === "other" && (
+              <input value={form.typeOther} onChange={(e) => set("typeOther", e.target.value)} placeholder="業種を入力" style={{ ...inputStyle, marginTop: 8 }} />
+            )}
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>エリア <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <select value={form.area} onChange={(e) => set("area", e.target.value)} style={selectStyle}>
+              <option value="">選択してください</option>
+              <option value="末広">末広エリア</option>
+              <option value="愛国">愛国エリア</option>
+              <option value="other">その他</option>
+            </select>
+            {form.area === "other" && (
+              <input value={form.areaOther} onChange={(e) => set("areaOther", e.target.value)} placeholder="エリアを入力" style={{ ...inputStyle, marginTop: 8 }} />
+            )}
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>営業時間</label>
+            <input value={form.openHour} onChange={(e) => set("openHour", e.target.value)} placeholder="例：20:00〜翌3:00" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>定休日</label>
+            <input value={form.closedDays} onChange={(e) => set("closedDays", e.target.value)} placeholder="例：日曜日、祝日" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>席数</label>
+            <input value={form.seats} onChange={(e) => set("seats", e.target.value)} placeholder="例：20" style={inputStyle} type="number" />
+          </div>
+        </div>
+
+        {/* SNS */}
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>SNSアカウント（任意）</h2>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Instagram</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#ffffff44", fontSize: 14 }}>@</span>
+              <input value={form.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="アカウント名" style={{ ...inputStyle, flex: 1 }} />
+            </div>
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>X（Twitter）</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#ffffff44", fontSize: 14 }}>@</span>
+              <input value={form.xAccount} onChange={(e) => set("xAccount", e.target.value)} placeholder="アカウント名" style={{ ...inputStyle, flex: 1 }} />
+            </div>
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>TikTok</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#ffffff44", fontSize: 14 }}>@</span>
+              <input value={form.tiktok} onChange={(e) => set("tiktok", e.target.value)} placeholder="アカウント名" style={{ ...inputStyle, flex: 1 }} />
+            </div>
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>一言PR（100文字以内）</label>
+            <textarea
+              value={form.pr}
+              onChange={(e) => set("pr", e.target.value)}
+              placeholder="お店の魅力を一言でアピールしてください"
+              maxLength={100}
+              rows={3}
+              style={{ ...inputStyle, resize: "vertical" }}
+            />
+            <div style={{ fontSize: 11, color: "#ffffff33", textAlign: "right", marginTop: 4 }}>{form.pr.length}/100</div>
+          </div>
+        </div>
+
+        {/* 担当者情報 */}
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>担当者情報</h2>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>担当者氏名 <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <input value={form.contactName} onChange={(e) => set("contactName", e.target.value)} placeholder="例：山田 太郎" style={inputStyle} />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>メールアドレス <span style={{ color: "#ff6b9d" }}>*</span></label>
+            <input value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} placeholder="例：example@email.com" style={inputStyle} type="email" />
+          </div>
+          <div style={fieldStyle}>
+            <label style={labelStyle}>電話番号（任意）</label>
+            <input value={form.contactTel} onChange={(e) => set("contactTel", e.target.value)} placeholder="例：090-XXXX-XXXX" style={inputStyle} />
+          </div>
+        </div>
+
+        {/* 備考 */}
+        <div style={sectionStyle}>
+          <h2 style={h2Style}>備考・要望（任意）</h2>
+          <textarea
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="ご質問・ご要望があればご記入ください"
+            rows={4}
+            style={{ ...inputStyle, resize: "vertical" }}
+          />
+        </div>
+
+        {/* 送信ボタン */}
+        <button
+          onClick={handleSubmit}
+          disabled={status === "loading"}
+          style={{
+            width: "100%", padding: "14px",
+            background: status === "loading" ? "#333" : "linear-gradient(135deg, #ff6b9d, #a855f7)",
+            border: "none", borderRadius: 12, color: "#fff",
+            fontSize: 16, fontWeight: 800, cursor: status === "loading" ? "not-allowed" : "pointer",
+          }}
+        >
+          {status === "loading" ? "送信中..." : "申し込みを送信する"}
+        </button>
+        {status === "error" && (
+          <p style={{ color: "#ff4444", fontSize: 13, textAlign: "center", marginTop: 12 }}>
+            送信に失敗しました。時間をおいて再度お試しください。
+          </p>
+        )}
+
+        <p style={{ color: "#ffffff33", fontSize: 11, textAlign: "center", marginTop: 16, lineHeight: 1.8 }}>
+          送信後、ご入力のメールアドレスに確認メールをお送りします。<br />
+          内容確認後、3営業日以内にご連絡いたします。
+        </p>
+      </main>
+    </>
+  );
+}
