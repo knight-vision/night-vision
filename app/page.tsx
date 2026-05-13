@@ -138,12 +138,16 @@ export default async function HomePage() {
           </a>
         </section>
         
-      <footer style={{
+        <footer style={{
         textAlign: "center", padding: "24px 16px 40px",
         color: "#ffffff22", fontSize: 11,
         borderTop: "1px solid #ffffff08",
       }}>
-        © 2026 釧路ナイトビジョン · 掲載・お問い合わせはDMにてどうぞ
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", gap: 20 }}>
+          <a href="/apply" style={{ color: "#ffffff44", fontSize: 12, textDecoration: "none" }}>掲載申し込み</a>
+          <a href="/contact" style={{ color: "#ffffff44", fontSize: 12, textDecoration: "none" }}>お問い合わせ・修正依頼</a>
+        </div>
+        <div>© 2026 釧路ナイトビジョン · 掲載情報は公開情報をもとに作成しています</div>
       </footer>
     </>
   );
