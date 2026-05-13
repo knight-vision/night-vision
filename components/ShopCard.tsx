@@ -65,7 +65,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
     <div
       onClick={() => router.push("/shop/" + shop.slug)}
       style={{
-        background: "linear-gradient(160deg, #0f0f1a 0%, #1a1028 100%)",
+        background: "var(--bg-card)",
         border: `1px solid ${tc.border}22`,
         borderRadius: 16,
         cursor: "pointer",
@@ -84,7 +84,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
       }}
     >
       {/* 背景グロー */}
-      <div style={{ position: "absolute", inset: 0, background: bg, pointerEvents: "none", borderRadius: 16 }} />
+      <div style={{ position: "absolute", inset: 0, background: "var(--card-glow, " + bg + ")", pointerEvents: "none", borderRadius: 16 }} />
 
       {/* バナー（プレミアムのみ・写真あり） */}
       {hasBanner && shop.image && (

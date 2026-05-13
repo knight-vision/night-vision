@@ -44,6 +44,7 @@
     --online-border: #00994d40;
     --card-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
     --card-shadow-hover: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+    --card-glow: none;
   }
 }
 
