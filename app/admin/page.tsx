@@ -219,7 +219,7 @@ export default function AdminPage() {
                   <div>
                     <label style={labelStyle}>業種 *</label>
                     <select value={editShop.type ?? "スナック"} onChange={(e) => setEditShop({ ...editShop, type: e.target.value })} style={inputStyle}>
-                      <option>ラウンジ/ニュークラ</option>
+                      <option>ラウンジ</option>
                       <option>ガールズバー</option>
                       <option>スナック</option>
                       <option>カジュアルバー</option>
