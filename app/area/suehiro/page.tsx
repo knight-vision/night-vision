@@ -4,8 +4,9 @@ import { getShops } from "@/lib/shops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "釧路 末広エリアの飲み屋一覧",
-  description: "釧路末広エリアのスナック・ガールズバー・ラウンジ情報。",
+  title: "末広エリアの飲み屋・スナック・ガールズバー・ラウンジ一覧｜釧路",
+  description: "釧路末広エリアの飲み屋・スナック・ガールズバー・ラウンジ・キャバクラ・ニュークラ情報。末広町周辺のお店を地域密着で紹介。",
+  keywords: ["末広 飲み屋", "末広 スナック", "末広 ガールズバー", "末広 ラウンジ", "末広 キャバクラ", "末広 ニュークラ", "釧路 末広 バー"],
 };
 
 export const revalidate = 60;

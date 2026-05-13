@@ -4,8 +4,9 @@ import { getShopsByType } from "@/lib/shops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "釧路のカジュアルバー一覧",
-  description: "釧路のカジュアルバー情報を掲載。地元の若者が集まる出会いの場、釧路のバー情報はここで。",
+  title: "釧路のカジュアルバー・バー一覧｜末広・愛国エリア",
+  description: "釧路のカジュアルバー・バー情報を掲載。地元の若者が集まる出会いの場、釧路のバー情報はここで。",
+  keywords: ["釧路 カジュアルバー", "釧路 バー", "末広 バー", "釧路 メンズバー"],
 };
 
 export const revalidate = 60;

@@ -4,8 +4,9 @@ import { getShops } from "@/lib/shops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "釧路 愛国エリアの飲み屋一覧",
-  description: "釧路愛国エリアのスナック・ガールズバー・ラウンジ情報。",
+  title: "愛国エリアの飲み屋・スナック・ガールズバー・ラウンジ一覧｜釧路",
+  description: "釧路愛国エリアの飲み屋・スナック・ガールズバー・ラウンジ情報。愛国周辺のお店を地域密着で紹介。",
+  keywords: ["愛国 飲み屋", "愛国 スナック", "愛国 ガールズバー", "愛国 ラウンジ", "釧路 愛国 バー"],
 };
 
 export const revalidate = 60;
