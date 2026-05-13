@@ -46,6 +46,7 @@ export type Shop = {
   closed_days: string | null;
   page_views: number;
   casts: Cast[];
+  address: string | null;
 };
 
 export async function getShops(): Promise<Shop[]> {

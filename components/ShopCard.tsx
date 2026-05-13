@@ -2,6 +2,26 @@
 import { useRouter } from "next/navigation";
 import { Shop } from "@/lib/shops";
 
+function isOpenNow(openHour: string | null, closedDays: string | null): boolean | null {
+  if (!openHour) return null;
+  const now = new Date();
+  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const todayName = dayNames[now.getDay()];
+  if (closedDays && closedDays.includes(todayName)) return false;
+  const match = openHour.match(/(\d{1,2}):(\d{2}).*?(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const openH = parseInt(match[1]);
+  const openM = parseInt(match[2]);
+  const closeH = parseInt(match[3]);
+  const closeM = parseInt(match[4]);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const openMin = openH * 60 + openM;
+  let closeMin = closeH * 60 + closeM;
+  if (closeMin < openMin) closeMin += 24 * 60;
+  const nowAdj = nowMin < openMin ? nowMin + 24 * 60 : nowMin;
+  return nowAdj >= openMin && nowAdj <= closeMin;
+}
+
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   スナック:       { bg: "#ff6b9d22", border: "#ff6b9d", text: "#ff6b9d" },
   ガールズバー:   { bg: "#00d4ff22", border: "#00d4ff", text: "#00d4ff" },
@@ -31,11 +51,11 @@ export default function ShopCard({ shop }: { shop: Shop }) {
   const onCount = shop.casts.filter((c) => c.on_today).length;
   const hasBanner = shop.plan === "premium" || shop.referred;
   const isStandard = shop.plan === "standard";
+  const openStatus = isOpenNow(shop.open_hour, shop.closed_days);
 
   return (
     <div
       onClick={() => router.push("/shop/" + shop.slug)}
-      className="shop-card"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border)",
@@ -92,7 +112,7 @@ export default function ShopCard({ shop }: { shop: Shop }) {
             fontSize: 11, color: "var(--text-muted)",
             background: "var(--bg-input)", border: "1px solid var(--border)",
             padding: "2px 10px", borderRadius: 10,
-          }}>{shop.area}</span>
+          }}>{shop.area_category ?? shop.area}</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
@@ -110,7 +130,12 @@ export default function ShopCard({ shop }: { shop: Shop }) {
             <div style={{ color: "var(--text-primary)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.2, fontFamily: "var(--font)" }}>
               {shop.name}
             </div>
-            <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 3 }}>{shop.open_hour}</div>
+            {shop.open_hour && (
+              <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 3 }}>{shop.open_hour}</div>
+            )}
+            {shop.area && (
+              <div style={{ color: "var(--text-hint)", fontSize: 11, marginTop: 2 }}>📍 {shop.area}</div>
+            )}
           </div>
         </div>
 
@@ -148,15 +173,18 @@ export default function ShopCard({ shop }: { shop: Shop }) {
                 @{shop.instagram}
               </a>
             )}
-            <span style={{ fontSize: 12, color: onCount > 0 ? "var(--online)" : "var(--text-hint)" }}>
-              <span style={{
-                display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-                background: onCount > 0 ? "var(--online)" : "var(--border-hover)",
-                boxShadow: onCount > 0 ? "0 0 6px var(--online)" : "none",
-                marginRight: 5, verticalAlign: "middle",
-              }} />
-              本日 <strong>{onCount}</strong>名出勤
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
+              {openStatus === true ? (
+                <span style={{ color: "var(--online)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--online)", boxShadow: "0 0 6px var(--online)" }} />
+                  現在営業中
+                </span>
+              ) : onCount > 0 ? (
+                <span style={{ color: "var(--text-muted)" }}>
+                  本日 <strong>{onCount}</strong>名出勤
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ export default async function HomePage() {
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             marginBottom: 10,
           }}>
-            釧路の夜を、もっと近くに。
+            釧路の夜を、遊び尽くす。
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8 }}>
             釧路の飲み屋さん情報を一か所に。<br />

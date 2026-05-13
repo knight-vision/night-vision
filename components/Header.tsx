@@ -22,7 +22,7 @@ export default function Header() {
               }}>KUSHIRO NIGHT VISION</span>
             </div>
             <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginTop: 1 }}>
-              釧路ナイトライフ情報
+              釧路ナイトビジョン
             </div>
           </div>
         </Link>
