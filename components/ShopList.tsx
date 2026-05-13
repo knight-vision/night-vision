@@ -4,7 +4,7 @@ import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
 
 const TYPES = [
-  { label: "🥂 ラウンジ",       value: "ラウンジ",      dark: "#ffd700", light: "#aa8800" },
+  { label: "🥂 ラウンジ/ニュークラ", value: "ラウンジ", dark: "#ffd700", light: "#aa8800" },
   { label: "🍹 ガールズバー",   value: "ガールズバー",  dark: "#00d4ff", light: "#007ab8" },
   { label: "🍶 スナック",       value: "スナック",      dark: "#ff6b9d", light: "#cc2266" },
   { label: "🍸 カジュアルバー", value: "カジュアルバー", dark: "#a855f7", light: "#7722cc" },
