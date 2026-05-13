@@ -9,7 +9,9 @@ export const metadata: Metadata = {
     template: '%s｜釧路ナイトビジョン',
   },
   icons: {
-    icon: '/favicon.svg',
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   description:
     '釧路のスナック・ガールズバー・ラウンジ・飲み屋の最新情報をまとめた地域密着型ナイトガイド。お店の雰囲気・料金・キャスト情報を掲載。',
