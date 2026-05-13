@@ -27,23 +27,23 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f2eff8;
+    --bg: #ffffff;
     --bg-card: #ffffff;
-    --bg-card2: #f8f5ff;
-    --bg-input: #00000006;
-    --border: #e0d8f0;
-    --border-hover: #c8bce0;
-    --text-primary: #1a0828;
-    --text-secondary: #4a3060;
-    --text-muted: #8a70a0;
-    --text-hint: #c0aad0;
+    --bg-card2: #fafafa;
+    --bg-input: #f5f5f5;
+    --border: #e8e8e8;
+    --border-hover: #cccccc;
+    --text-primary: #111111;
+    --text-secondary: #444444;
+    --text-muted: #888888;
+    --text-hint: #bbbbbb;
     --accent: #cc2266;
-    --accent2: #7722cc;
+    --accent2: #aa6600;
     --online: #00994d;
     --online-bg: #00994d12;
     --online-border: #00994d40;
-    --card-shadow: 0 2px 12px rgba(100,60,160,0.10), 0 1px 3px rgba(100,60,160,0.08);
-    --card-shadow-hover: 0 8px 28px rgba(100,60,160,0.18), 0 2px 8px rgba(100,60,160,0.10);
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    --card-shadow-hover: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
   }
 }
 
