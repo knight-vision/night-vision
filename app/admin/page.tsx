@@ -194,12 +194,12 @@ export default function AdminPage() {
             {editShop && (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--accent)44", borderRadius: 16, padding: 20, marginBottom: 20 }}>
                 <h2 style={{ color: "var(--text-primary)", fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-                  {editShop.id ? "店舗編集" : "新規店舗追加"}
+                  {editShop.id ? "店舗編集" : "新規店舗追加（お手伝いありがとう！！）"}
                 </h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {[
                     { key: "name", label: "店舗名 *" },
-                    { key: "slug", label: "スラッグ（URL用）*" },
+                    { key: "slug", label: "店舗名のローマ字（小文字）*" },
                     { key: "area", label: "住所" },
                     { key: "budget", label: "予算" },
                     { key: "open_hour", label: "営業時間" },

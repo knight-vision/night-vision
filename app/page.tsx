@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "釧路の飲み屋・スナック・ガールズバー・ラウンジ・キャバクラ情報ならここ。地域密着のナイトガイドで今夜のお店を見つけよう。",
 };
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export default async function HomePage() {
   const shops = await getShops();
