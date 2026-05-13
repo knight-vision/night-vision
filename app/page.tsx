@@ -113,6 +113,31 @@ export default async function HomePage() {
         </section>
       </main>
 
+{/* 掲載申し込みバナー */}
+<section style={{
+          marginTop: 24,
+          background: "linear-gradient(135deg, #ff6b9d15, #a855f715)",
+          border: "1px solid #ff6b9d33",
+          borderRadius: 16, padding: 24, textAlign: "center",
+        }}>
+          <div style={{ fontSize: 18, marginBottom: 8 }}>🌃</div>
+          <h2 style={{ color: "#fff", fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+            お店を掲載しませんか？
+          </h2>
+          <p style={{ color: "#ffffff66", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
+            釧路ナイトビジョンに掲載して集客アップ。<br />
+            フリープランは無料で始められます。
+          </p>
+          <a href="/apply" style={{
+            display: "inline-block",
+            background: "linear-gradient(135deg, #ff6b9d, #a855f7)",
+            color: "#fff", padding: "10px 28px", borderRadius: 25,
+            fontSize: 14, fontWeight: 700, textDecoration: "none",
+          }}>
+            掲載申し込みはこちら →
+          </a>
+        </section>
+        
       <footer style={{
         textAlign: "center", padding: "24px 16px 40px",
         color: "#ffffff22", fontSize: 11,
