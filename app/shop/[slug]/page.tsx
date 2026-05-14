@@ -216,6 +216,34 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             ))}
           </div>
         </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": ["BarOrPub", "LocalBusiness"],
+              name: shop.name,
+              description: shop.description,
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: shop.area,
+                addressLocality: "釧路市",
+                addressRegion: "北海道",
+                postalCode: "085-0000",
+                addressCountry: "JP"
+              },
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: 42.9849,
+                longitude: 144.3820
+              },
+              url: `https://www.night-vision.jp/shop/${shop.slug}`,
+              telephone: shop.tel,
+              openingHours: shop.open_hour,
+              priceRange: shop.budget,
+            }),
+          }}
+        />
       </main>
     </div>
   );
