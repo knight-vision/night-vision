@@ -12,6 +12,12 @@ export async function generateStaticParams() {
   const slugs = await getAllSlugs();
   return slugs.map((slug) => ({ slug }));
 }
+async function recordPageView(shopId: number) {
+  try {
+    await supabase.from("view_events").insert({ shop_id: shopId });
+    await supabase.rpc("increment_page_view", { shop_id: shopId });
+  } catch {}
+}
 
 export async function generateMetadata({
   params,
@@ -71,6 +77,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const shop = await getShopBySlug(params.slug);
   if (!shop) notFound();
   if (!shop) return null;
+  recordPageView(shop.id);
 
   const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
   const hasBanner = shop.plan === "premium" || shop.referred;

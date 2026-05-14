@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useFavorites } from "./useFavorites";
+import { supabase } from "@/lib/shops";
 
 export default function FavoriteButton({ shopId, size = 20 }: { shopId: number; size?: number }) {
   const { toggle, isFavorite } = useFavorites();
@@ -12,9 +13,30 @@ export default function FavoriteButton({ shopId, size = 20 }: { shopId: number; 
 
   const active = mounted && isFavorite(shopId);
 
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const wasActive = isFavorite(shopId);
+    toggle(shopId);
+    try {
+      // イベントテーブルに記録
+      await supabase.from("favorite_events").insert({
+        shop_id: shopId,
+        action: wasActive ? "remove" : "add",
+      });
+      // 総合カウントも更新
+      if (wasActive) {
+        await supabase.rpc("decrement_favorite", { shop_id: shopId });
+      } else {
+        await supabase.rpc("increment_favorite", { shop_id: shopId });
+      }
+    } catch (err) {
+      console.error("favorite error:", err);
+    }
+  };
+
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); toggle(shopId); }}
+      onClick={handleClick}
       title={active ? "お気に入り解除" : "お気に入り登録"}
       style={{
         background: active ? "#ffd70022" : "var(--bg-input)",
