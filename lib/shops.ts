@@ -112,8 +112,11 @@ export async function getShopBySlug(slug: string): Promise<Shop | null> {
     .order("sort_order");
 
   const photoUrls = (photos ?? []).map((p) => p.url);
-
-  return { ...shop, photos: photoUrls.length > 0 ? photoUrls : (shop.photos ?? []) } as Shop;
+  return {
+    ...shop,
+    photos: photoUrls.length > 0 ? photoUrls : (shop.photos ?? []),
+    image: photoUrls.length > 0 ? photoUrls[0] : shop.image,
+  } as Shop;
 }
 
 export async function getAllSlugs(): Promise<string[]> {

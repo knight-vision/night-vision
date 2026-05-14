@@ -113,7 +113,21 @@ export default function OwnerDashboard() {
 
   async function deletePhoto(id: number) {
     if (!confirm("この画像を削除しますか？")) return;
+    const target = photoRequests.find((p) => p.id === id);
     await supabase.from("photo_requests").delete().eq("id", id);
+
+    // shopsテーブルも更新
+    if (target && target.status === "approved" && shopId) {
+      const remaining = photoRequests
+        .filter((p) => p.id !== id && p.status === "approved")
+        .map((p) => p.url);
+      const newImage = remaining.length > 0 ? remaining[0] : null;
+      await supabase.from("shops").update({
+        image: newImage,
+        photos: remaining,
+      }).eq("id", parseInt(shopId));
+    }
+
     await fetchPhotoRequests(parseInt(shopId!));
     showMsg("削除しました");
   }
