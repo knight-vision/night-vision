@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import { getAllSlugs, getShopBySlug } from "@/lib/shops";
+import { getAllSlugs, getShopBySlug, supabase } from "@/lib/shops";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
