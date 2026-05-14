@@ -122,13 +122,6 @@ export default function OwnerDashboard() {
     if (data) setShop(data);
   }
 
-  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
-  const [showAllTags, setShowAllTags] = useState(false);
-
-  useEffect(() => {
-    fetchTagSuggestions();
-  }, []);
-
   async function fetchTagSuggestions() {
     const { data } = await supabase.from("shops").select("tags");
     if (!data) return;
