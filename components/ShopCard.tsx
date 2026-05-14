@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Shop } from "@/lib/shops";
+import FavoriteButton from "./FavoriteButton";
 
 function isOpenNow(openHour: string | null, closedDays: string | null): boolean | null {
   if (!openHour) return null;
@@ -83,10 +84,8 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
       }}
     >
-      {/* 背景グロー */}
       <div style={{ position: "absolute", inset: 0, background: "var(--card-glow, " + bg + ")", pointerEvents: "none", borderRadius: 16 }} />
 
-      {/* バナー（プレミアムのみ・写真あり） */}
       {hasBanner && shop.image && (
         <div style={{ position: "relative", width: "100%", height: 140, overflow: "hidden" }}>
           <img src={shop.image} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -94,7 +93,6 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
       )}
 
-      {/* プレミアムだが写真なし → 絵文字バナー */}
       {hasBanner && !shop.image && (
         <div style={{
           height: 80, display: "flex", alignItems: "center", justifyContent: "center",
@@ -122,11 +120,14 @@ export default function ShopCard({ shop }: { shop: Shop }) {
             padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
             background: tc.bg, border: `1.5px solid ${tc.border}`, color: tc.text,
           }}>{shop.type}</span>
-          <span style={{
-            fontSize: 11, color: "var(--text-muted)",
-            background: "var(--bg-input)", border: "1px solid var(--border)",
-            padding: "2px 10px", borderRadius: 10,
-          }}>{shop.area_category ?? shop.area}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              fontSize: 11, color: "var(--text-muted)",
+              background: "var(--bg-input)", border: "1px solid var(--border)",
+              padding: "2px 10px", borderRadius: 10,
+            }}>{shop.area_category ?? shop.area}</span>
+            <FavoriteButton shopId={shop.id} size={16} />
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>

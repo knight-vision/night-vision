@@ -2,6 +2,7 @@
 import { useState } from "react";
 import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
+import { useFavorites } from "./useFavorites";
 
 const TYPES = [
   { label: "🥂 ラウンジ/ニュークラ", value: "ラウンジ",      dark: "#ffd700", light: "#aa8800" },
@@ -22,23 +23,26 @@ const PER_PAGE = 20;
 export default function ShopList({ shops }: { shops: Shop[] }) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedArea, setSelectedArea] = useState<string>("");
+  const [favOnly, setFavOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [isLight] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(prefers-color-scheme: light)").matches;
   });
+  const { isFavorite } = useFavorites();
 
   const filtered = shops.filter((shop) => {
     const typeMatch = !selectedType || shop.type === selectedType ||
       (selectedType === "その他" && !["ラウンジ", "ガールズバー", "スナック", "カジュアルバー"].includes(shop.type));
     const areaMatch = !selectedArea || (shop.area_category ?? "その他") === selectedArea;
-    return typeMatch && areaMatch;
+    const favMatch = !favOnly || isFavorite(shop.id);
+    return typeMatch && areaMatch && favMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const handleFilter = (type: "type" | "area", value: string, current: string, setter: (v: string) => void) => {
+  const handleFilter = (value: string, current: string, setter: (v: string) => void) => {
     setter(current === value ? "" : value);
     setPage(1);
   };
@@ -59,7 +63,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             return (
               <button
                 key={type.value}
-                onClick={() => handleFilter("type", type.value, selectedType, setSelectedType)}
+                onClick={() => handleFilter(type.value, selectedType, setSelectedType)}
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
@@ -76,7 +80,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
       </div>
 
       {/* エリアフィルター */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           AREA · エリア
         </div>
@@ -87,7 +91,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             return (
               <button
                 key={area.value}
-                onClick={() => handleFilter("area", area.value, selectedArea, setSelectedArea)}
+                onClick={() => handleFilter(area.value, selectedArea, setSelectedArea)}
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
@@ -103,15 +107,37 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         </div>
       </div>
 
-      {/* 件数・リセット */}
+      {/* お気に入りフィルター */}
+      <div style={{ marginBottom: 20 }}>
+        <button
+          onClick={() => { setFavOnly(!favOnly); setPage(1); }}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "8px 18px", borderRadius: 20, cursor: "pointer",
+            fontWeight: favOnly ? 700 : 500, fontSize: 13,
+            fontFamily: "var(--font)", transition: "all 0.15s",
+            background: favOnly ? "#ffd70022" : "var(--bg-input)",
+            border: "1.5px solid " + (favOnly ? "#ffd700" : "var(--border)"),
+            color: favOnly ? "#ffd700" : "var(--text-secondary)",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={favOnly ? "#ffd700" : "none"} stroke={favOnly ? "#ffd700" : "currentColor"} strokeWidth="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          お気に入りのみ表示
+        </button>
+      </div>
+
+      {/* 件数表示 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          {filtered.length}件中 {(page - 1) * PER_PAGE + 1}〜{Math.min(page * PER_PAGE, filtered.length)}件表示
+          {filtered.length}件中 {Math.min((page - 1) * PER_PAGE + 1, filtered.length)}〜{Math.min(page * PER_PAGE, filtered.length)}件表示
           {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
           {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
+          {favOnly && <span style={{ color: "#ffd700" }}> · お気に入り</span>}
         </div>
-        {hasFilter && (
-          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setPage(1); }} style={{
+        {(hasFilter || favOnly) && (
+          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setFavOnly(false); setPage(1); }} style={{
             background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
             fontFamily: "var(--font)",
@@ -123,7 +149,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {paginated.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>
-            条件に合う店舗が見つかりませんでした
+            {favOnly ? "お気に入りに登録されたお店がありません" : "条件に合う店舗が見つかりませんでした"}
           </div>
         ) : (
           paginated.map((shop) => <ShopCard key={shop.id} shop={shop} />)

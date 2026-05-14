@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import PhotoSlider from "@/components/PhotoSlider";
+import FavoriteButton from "@/components/FavoriteButton";
 
 export const revalidate = 60;
 
@@ -118,9 +119,12 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             }}>{shop.area_category ?? shop.area}</span>
           </div>
 
-          <h1 style={{ color: "var(--text-primary)", fontSize: 26, fontWeight: 900, marginBottom: 10, letterSpacing: "-0.03em" }}>
-            {shop.name}
-          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+            <h1 style={{ color: "var(--text-primary)", fontSize: 26, fontWeight: 900, letterSpacing: "-0.03em", flex: 1 }}>
+              {shop.name}
+            </h1>
+            <FavoriteButton shopId={shop.id} size={22} />
+          </div>
           <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8, marginBottom: 20 }}>
             {shop.description}
           </p>
