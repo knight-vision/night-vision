@@ -42,6 +42,12 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
+  const goToPage = (p: number) => {
+    setPage(p);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
   const handleFilter = (value: string, current: string, setter: (v: string) => void) => {
     setter(current === value ? "" : value);
     setPage(1);
@@ -158,12 +164,9 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
 
       {/* ページネーション */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 32 }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 32, flexWrap: "wrap" }}>
           <button
-            onClick={() => {
-              setPage(p => Math.max(1, p - 1));
-              document.documentElement.scrollTop = 0;
-            }}
+            onClick={() => goToPage(Math.max(1, page - 1))}
             disabled={page === 1}
             style={{
               padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
@@ -175,10 +178,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
-              onClick={() => {
-                setPage(p => Math.max(1, p - 1));
-                document.documentElement.scrollTop = 0;
-              }}
+              onClick={() => goToPage(p)}
               style={{
                 width: 36, height: 36, borderRadius: 10,
                 border: "1.5px solid " + (p === page ? "var(--accent)" : "var(--border)"),
@@ -191,10 +191,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           ))}
 
           <button
-            onClick={() => {
-              setPage(p => Math.max(1, p - 1));
-              document.documentElement.scrollTop = 0;
-            }}
+            onClick={() => goToPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             style={{
               padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
