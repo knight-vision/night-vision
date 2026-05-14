@@ -1,9 +1,16 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useFavorites } from "./useFavorites";
 
 export default function FavoriteButton({ shopId, size = 20 }: { shopId: number; size?: number }) {
   const { toggle, isFavorite } = useFavorites();
-  const active = isFavorite(shopId);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const active = mounted && isFavorite(shopId);
 
   return (
     <button
