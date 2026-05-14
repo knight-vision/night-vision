@@ -36,6 +36,14 @@ const AGE_LABELS: Record<string, string> = {
   "20代": "20代", "30代": "30代", "40代": "40代", "50代": "50代", "60代": "60代",
 };
 
+function stripFloor(address: string): string {
+  return address
+    .replace(/\s*[0-9０-９]+[FＦ].*$/g, "")
+    .replace(/\s*[一二三四五六七八九十百]+階.*$/g, "")
+    .replace(/\s*第?[0-9０-９]+階.*$/g, "")
+    .trim();
+}
+
 export default async function ShopPage({ params }: { params: { slug: string } }) {
   const shop = await getShopBySlug(params.slug);
   if (!shop) notFound();
@@ -43,6 +51,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
 
   const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
   const hasBanner = shop.plan === "premium" || shop.referred;
+  const mapAddress = shop.area ? stripFloor(shop.area) : null;
 
   return (
     <div>
@@ -71,6 +80,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         )}
 
+        {/* 店舗情報カード */}
         <div style={{
           background: "var(--bg-card)", border: "1px solid var(--border)",
           borderRadius: 20, padding: 24, marginBottom: 20, marginTop: 20,
@@ -100,7 +110,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               { label: "電話番号", value: shop.tel, icon: "📞" },
               { label: "席数", value: shop.seats ? shop.seats + "席" : "未設定", icon: "💺" },
               { label: "定休日", value: shop.closed_days ?? "未設定", icon: "📅" },
-              { label: "エリア", value: shop.area, icon: "📍" },
+              { label: "所在地", value: shop.area, icon: "📍" },
             ].map((item) => (
               <div key={item.label} style={{
                 background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -127,7 +137,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
             {(shop.tags ?? []).map((t) => (
               <span key={t} style={{
                 fontSize: 12, color: "var(--text-muted)",
@@ -137,19 +147,30 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {/* SNSボタン */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {shop.instagram && (
               <a href={"https://instagram.com/" + shop.instagram} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 13, color: "#e1306c", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)",
+                  color: "#fff", padding: "10px 20px", borderRadius: 25,
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                 </svg>
-                @{shop.instagram}
+                Instagramを見る · @{shop.instagram}
               </a>
             )}
             {shop.x_account && (
               <a href={"https://x.com/" + shop.x_account} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "var(--bg-input)", border: "1px solid var(--border)",
+                  color: "var(--text-secondary)", padding: "10px 20px", borderRadius: 25,
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.213 5.567 5.95-5.567zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -158,7 +179,12 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             )}
             {shop.tiktok_account && (
               <a href={"https://tiktok.com/@" + shop.tiktok_account} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 13, color: "#69C9D0", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "var(--bg-input)", border: "1px solid var(--border)",
+                  color: "#69C9D0", padding: "10px 20px", borderRadius: 25,
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.79a4.85 4.85 0 01-1.07-.1z"/>
                 </svg>
@@ -169,25 +195,23 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         </div>
 
         {/* システム */}
-        {shop.system && (
-          <div style={{
-            background: "var(--bg-card)", border: "1px solid var(--border)",
-            borderRadius: 16, padding: 20, marginBottom: 20,
-          }}>
-            <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
-              💰 システム
-            </h2>
-            <div style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 2, whiteSpace: "pre-wrap" }}>
-              {shop.system}
-            </div>
+        <div style={{
+          background: "var(--bg-card)", border: "1px solid var(--border)",
+          borderRadius: 16, padding: 20, marginBottom: 20,
+        }}>
+          <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
+            💰 システム
+          </h2>
+          <div style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 2, whiteSpace: "pre-wrap" }}>
+            {shop.system ?? "未登録"}
           </div>
-        )}
+        </div>
 
         {/* Google Map */}
-        {shop.area && (
+        {mapAddress && (
           <div style={{ marginBottom: 20, borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
             <iframe
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(shop.area + " 釧路市")}&output=embed&z=17&hl=ja`}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(mapAddress)}&output=embed&z=18&hl=ja`}
               width="100%"
               height="280"
               style={{ border: "none", display: "block" }}
@@ -262,13 +286,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                 streetAddress: shop.area,
                 addressLocality: "釧路市",
                 addressRegion: "北海道",
-                postalCode: "085-0000",
-                addressCountry: "JP"
-              },
-              geo: {
-                "@type": "GeoCoordinates",
-                latitude: 42.9849,
-                longitude: 144.3820
+                addressCountry: "JP",
               },
               url: `https://www.night-vision.jp/shop/${shop.slug}`,
               telephone: shop.tel,
