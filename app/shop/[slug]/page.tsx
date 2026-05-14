@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import FavoriteButton from "@/components/FavoriteButton";
+import PhotoViewer from "@/components/PhotoViewer";
 
 export const revalidate = 60;
 
@@ -109,25 +110,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               color: "var(--text-hint)", fontSize: 14,
             }}>写真準備中</div>
           );
-
-          return (
-            <div style={{ marginBottom: 20 }}>
-              {/* 1枚目はメインバナー */}
-              <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: photos.length > 1 ? 8 : 0, height: 220 }}>
-                <img src={photos[0]} alt={shop.name + "の写真"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-              {/* 2枚目以降はスライダー */}
-              {photos.length > 1 && (
-                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory", display: "flex", gap: 8, paddingBottom: 4 }}>
-                  {photos.slice(1, 10).map((photo, i) => (
-                    <div key={i} style={{ flexShrink: 0, width: 200, height: 140, borderRadius: 12, overflow: "hidden", scrollSnapAlign: "start" }}>
-                      <img src={photo} alt={shop.name + "の写真" + (i + 2)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
+          return <PhotoViewer photos={photos} shopName={shop.name} />;
         })()}
 
         {/* 店舗情報カード */}

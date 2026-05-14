@@ -43,6 +43,8 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
   const [selectedArea, setSelectedArea] = useState<string>("");
   const [favOnly, setFavOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
+  const [sortKey, setSortKey] = useState<string>("default");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
   const [isLight] = useState(() => {
@@ -69,8 +71,44 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
     return typeMatch && areaMatch && favMatch && openMatch && searchMatch;
   });
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortKey) {
+      case "created_at":
+        return dir * (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime());
+      case "open_early": {
+        const ah = parseInt((a.open_time ?? "99:00").slice(0, 2));
+        const bh = parseInt((b.open_time ?? "99:00").slice(0, 2));
+        return dir * (ah - bh);
+      }
+      case "close_late": {
+        const ah = parseInt((a.close_time ?? "00:00").slice(0, 2));
+        const bh = parseInt((b.close_time ?? "00:00").slice(0, 2));
+        return dir * (ah - bh);
+      }
+      case "budget": {
+        const parse = (s: string | null) => parseInt((s ?? "0").replace(/[^0-9]/g, "")) || 0;
+        return dir * (parse(a.budget) - parse(b.budget));
+      }
+      case "seats":
+        return dir * ((a.seats ?? 0) - (b.seats ?? 0));
+      case "casts":
+        return dir * ((a.casts ?? []).length - (b.casts ?? []).length);
+      case "age": {
+        const avg = (shop: any) => {
+          const casts = shop.casts ?? [];
+          if (casts.length === 0) return 999;
+          return casts.reduce((s: number, c: any) => s + (c.age ?? 0), 0) / casts.length;
+        };
+        return dir * (avg(a) - avg(b));
+      }
+      default:
+        return (a.display_order ?? 0) - (b.display_order ?? 0);
+    }
+  });
+
+  const totalPages = Math.ceil(sorted.length / PER_PAGE);
+  const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const goToPage = (p: number) => {
     setPage(p);
@@ -214,12 +252,60 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: openOnly ? "var(--online)" : "var(--border-hover)" }} />
           現在営業中のみ
         </button>
+        {/* 並び替え */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
+          SORT · 並び替え
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {[
+            { key: "default",    label: "標準" },
+            { key: "created_at", label: "掲載日" },
+            { key: "open_early", label: "開店時間" },
+            { key: "close_late", label: "閉店時間" },
+            { key: "budget",     label: "予算" },
+            { key: "seats",      label: "席数" },
+            { key: "casts",      label: "キャスト数" },
+            { key: "age",        label: "平均年齢" },
+          ].map((s) => {
+            const active = sortKey === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => {
+                  if (active) {
+                    setSortDir(sortDir === "asc" ? "desc" : "asc");
+                  } else {
+                    setSortKey(s.key);
+                    setSortDir("asc");
+                  }
+                  setPage(1);
+                }}
+                style={{
+                  padding: "6px 12px", borderRadius: 20, cursor: "pointer",
+                  fontWeight: active ? 700 : 500, fontSize: 12,
+                  fontFamily: "var(--font)", transition: "all 0.15s",
+                  background: active ? "var(--bg-input)" : "var(--bg-input)",
+                  border: "1.5px solid " + (active ? "var(--accent)" : "var(--border)"),
+                  color: active ? "var(--accent)" : "var(--text-secondary)",
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                }}
+              >
+                {s.label}
+                {active && (
+                  <span style={{ fontSize: 10 }}>{sortDir === "asc" ? "↑" : "↓"}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       </div>
 
       {/* 件数表示 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          {filtered.length}件中 {Math.min((page - 1) * PER_PAGE + 1, filtered.length)}〜{Math.min(page * PER_PAGE, filtered.length)}件表示
+          {sorted.length}件中 {Math.min((page - 1) * PER_PAGE + 1, sorted.length)}〜{Math.min(page * PER_PAGE, sorted.length)}件表示
           {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
           {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
           {searchQuery && <span style={{ color: "var(--text-secondary)" }}> · 「{searchQuery}」</span>}

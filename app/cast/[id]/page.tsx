@@ -73,7 +73,16 @@ export default async function CastPage({ params }: { params: { id: string } }) {
               display: "inline-block", width: 7, height: 7, borderRadius: "50%",
               background: cast.on_today ? "var(--online)" : "var(--border-hover)",
             }} />
-            {cast.on_today ? "本日出勤中" : "本日はお休み"}
+            {cast.on_today !== null && (
+  <div style={{ fontSize: 12, color: cast.on_today ? "var(--online)" : "#ff4444" }}>
+    <span style={{
+      display: "inline-block", width: 7, height: 7, borderRadius: "50%",
+      background: cast.on_today ? "var(--online)" : "#ff4444",
+      marginRight: 4, verticalAlign: "middle",
+    }} />
+    {cast.on_today ? "本日出勤" : "本日休み"}
+  </div>
+)}
           </div>
 
           <div style={{
