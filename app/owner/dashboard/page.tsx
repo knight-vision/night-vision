@@ -122,21 +122,6 @@ export default function OwnerDashboard() {
     if (data) setShop(data);
   }
 
-  async function fetchTagSuggestions() {
-    const { data } = await supabase.from("shops").select("tags");
-    if (!data) return;
-    const tagCount: Record<string, number> = {};
-    data.forEach((s) => {
-      (s.tags ?? []).forEach((t: string) => {
-        tagCount[t] = (tagCount[t] ?? 0) + 1;
-      });
-    });
-    const sorted = Object.entries(tagCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([tag]) => tag);
-    setTagSuggestions(sorted);
-  }
-
   async function fetchCasts(sid: number) {
     const { data } = await supabase.from("casts").select("*").eq("shop_id", sid).order("id");
     if (data) setCasts(data);
