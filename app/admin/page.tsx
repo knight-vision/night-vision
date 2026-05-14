@@ -64,6 +64,8 @@ export default function AdminPage() {
   const [editCast, setEditCast] = useState<Partial<Cast> | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
   useEffect(() => {
     if (authed) {
