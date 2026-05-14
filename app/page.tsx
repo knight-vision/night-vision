@@ -52,6 +52,25 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* ランキングバナー */}
+        <a href="/ranking" style={{ textDecoration: "none", display: "block", marginBottom: 16 }}>
+          <div style={{
+            background: "linear-gradient(135deg, #ffd70018, #ff990018)",
+            border: "1px solid #ffd70033",
+            borderRadius: 14, padding: "12px 18px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 22 }}>🏆</span>
+              <div>
+                <div style={{ color: "#ffd700", fontWeight: 700, fontSize: 14 }}>人気店ランキング</div>
+                <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>お気に入り・アクセス数で見る人気店</div>
+              </div>
+            </div>
+            <span style={{ color: "#ffd700", fontSize: 18 }}>→</span>
+          </div>
+        </a>
+
         <ShopList shops={shops} />
 
         <section style={{ textAlign: "center", padding: "32px 0 28px", position: "relative" }}>
