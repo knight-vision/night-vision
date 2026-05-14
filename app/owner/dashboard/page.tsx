@@ -546,6 +546,31 @@ export default function OwnerDashboard() {
                   }}
                 >追加</button>
               </div>
+              {/* タグ候補 */}
+              {tagSuggestions.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>よく使われるタグ</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {(showAllTags ? tagSuggestions : tagSuggestions.slice(0, 10))
+                      .filter((tag) => !(shop.tags ?? []).includes(tag))
+                      .map((tag) => (
+                        <button key={tag} onClick={() => setShop({ ...shop, tags: [...(shop.tags ?? []), tag] })}
+                          style={{
+                            fontSize: 11, padding: "3px 10px", borderRadius: 16, cursor: "pointer",
+                            background: "var(--bg-input)", border: "1px solid var(--border)",
+                            color: "var(--text-muted)", fontFamily: "var(--font)",
+                          }}>+ {tag}</button>
+                      ))}
+                    {tagSuggestions.filter((tag) => !(shop.tags ?? []).includes(tag)).length > 10 && (
+                      <button onClick={() => setShowAllTags(!showAllTags)} style={{
+                        fontSize: 11, padding: "3px 10px", borderRadius: 16, cursor: "pointer",
+                        background: "var(--accent)22", border: "1px solid var(--accent)44",
+                        color: "var(--accent)", fontFamily: "var(--font)",
+                      }}>{showAllTags ? "折りたたむ" : "もっと見る"}</button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <button onClick={saveBasic} disabled={saving} style={btnPrimary as React.CSSProperties}>
               {saving ? "保存中..." : "保存する"}

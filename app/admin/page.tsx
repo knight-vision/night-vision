@@ -77,6 +77,14 @@ export default function AdminPage() {
     if (data) setShops(data);
   }
 
+  async function fetchAddressSuggestions(query: string) {
+    if (!query || query.length < 2) { setAddressSuggestions([]); return; }
+    const { data } = await supabase.from("shops").select("area").ilike("area", `%${query}%`).limit(5);
+    const areas = [...new Set((data ?? []).map((s) => s.area).filter(Boolean))];
+    setAddressSuggestions(areas);
+    setShowAddressSuggestions(areas.length > 0);
+  }
+
   async function fetchCasts() {
     const { data } = await supabase.from("casts").select("*").order("shop_id");
     if (data) setCasts(data);
@@ -225,10 +233,9 @@ export default function AdminPage() {
                   {editShop.id ? "店舗編集" : "新規店舗追加（お手伝いありがとう！！）"}
                 </h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {[
+                {[
                     { key: "name", label: "店舗名 *" },
                     { key: "slug", label: "店舗名のローマ字（小文字）*" },
-                    { key: "area", label: "住所" },
                     { key: "budget", label: "予算" },
                     { key: "open_hour", label: "営業時間" },
                     { key: "tel", label: "電話番号" },
@@ -244,6 +251,35 @@ export default function AdminPage() {
                       />
                     </div>
                   ))}
+
+                  {/* 住所（補完付き） */}
+                  <div style={{ position: "relative" }}>
+                    <label style={labelStyle}>住所</label>
+                    <input
+                      value={editShop.area ?? ""}
+                      onChange={(e) => {
+                        setEditShop({ ...editShop, area: e.target.value });
+                        fetchAddressSuggestions(e.target.value);
+                      }}
+                      onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                      style={inputStyle}
+                    />
+                    {showAddressSuggestions && addressSuggestions.length > 0 && (
+                      <div style={{
+                        position: "absolute", top: "100%", left: 0, right: 0,
+                        background: "var(--bg-card)", border: "1px solid var(--border)",
+                        borderRadius: 10, zIndex: 10, overflow: "hidden",
+                      }}>
+                        {addressSuggestions.map((addr) => (
+                          <div key={addr}
+                            onClick={() => { setEditShop({ ...editShop, area: addr }); setShowAddressSuggestions(false); }}
+                            style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, color: "var(--text-secondary)", borderBottom: "1px solid var(--border)" }}>
+                            {addr}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <label style={labelStyle}>業種 *</label>
                     <select value={editShop.type ?? "スナック"} onChange={(e) => setEditShop({ ...editShop, type: e.target.value })} style={inputStyle}>
