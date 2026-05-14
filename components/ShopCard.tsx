@@ -54,7 +54,7 @@ const BG_GRADIENTS: Record<string, string> = {
 export default function ShopCard({ shop }: { shop: Shop }) {
   const router = useRouter();
   const tc = TYPE_COLORS[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
-  const onCount = (shop.casts ?? []).filter((c) => c.on_today).length;
+  const onCount = (shop.casts ?? []).filter((c) => c.on_today === true).length;
   const hasBanner = shop.plan === "premium" || shop.referred;
   const isStandard = shop.plan === "standard";
   const openStatus = isOpenNow(shop.open_hour, shop.closed_days);

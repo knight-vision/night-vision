@@ -13,7 +13,7 @@ export type Cast = {
   name: string;
   age: number;
   comment: string;
-  on_today: boolean;
+  on_today: boolean | null;
   instagram: string | null;
   x_account: string | null;
   tiktok_account: string | null;

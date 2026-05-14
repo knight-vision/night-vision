@@ -303,13 +303,13 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                     </div>
                     <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 2 }}>{cast.comment}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: cast.on_today ? "var(--online)" : "var(--text-hint)", flexShrink: 0 }}>
+                  <div style={{ fontSize: 11, color: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--text-hint)", flexShrink: 0 }}>
                     <span style={{
                       display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-                      background: cast.on_today ? "var(--online)" : "var(--border-hover)",
+                      background: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--border)",
                       marginRight: 4, verticalAlign: "middle",
                     }} />
-                    {cast.on_today ? "本日出勤" : "本日休み"}
+                    {cast.on_today === true ? "本日出勤" : cast.on_today === false ? "本日休み" : ""}
                   </div>
                 </div>
               </Link>

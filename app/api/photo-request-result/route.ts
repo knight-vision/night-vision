@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     // 申請情報を取得
     const { data: request } = await supabase
       .from("photo_requests")
-      .select("*, shops(name), shop_owners(email)")
+      .select("*, shops(name, slug), shop_owners(email)")
       .eq("id", requestId)
       .single();
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 <p>ご申請いただいた${typeLabels[request.type]}が承認されました。</p>
 <p>店舗ページに反映されましたのでご確認ください。</p>
 <br>
-<a href="https://www.night-vision.jp/shop/${request.shop_id}">店舗ページを確認する</a>
+<a href="https://www.night-vision.jp/shop/${request.shops.slug}">店舗ページを確認する</a>
 <br><br>
 <p>釧路ナイトビジョン</p>
         `,
