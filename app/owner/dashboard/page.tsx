@@ -28,6 +28,7 @@ type Shop = {
   system: string | null;
   closed_days: string | null;
   seats: number | null;
+  weekly_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
   plan: string;
 };
 
