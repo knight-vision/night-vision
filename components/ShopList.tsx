@@ -4,11 +4,11 @@ import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
 
 const TYPES = [
-  { label: "🥂 ラウンジ/ニュークラ", value: "ラウンジ", dark: "#ffd700", light: "#aa8800" },
-  { label: "🍹 ガールズバー",   value: "ガールズバー",  dark: "#00d4ff", light: "#007ab8" },
-  { label: "🍶 スナック",       value: "スナック",      dark: "#ff6b9d", light: "#cc2266" },
-  { label: "🍸 カジュアルバー", value: "カジュアルバー", dark: "#a855f7", light: "#7722cc" },
-  { label: "🍺 その他",         value: "その他",        dark: "#aaaaaa", light: "#666666" },
+  { label: "🥂 ラウンジ/ニュークラ", value: "ラウンジ",      dark: "#ffd700", light: "#aa8800" },
+  { label: "🍹 ガールズバー",         value: "ガールズバー",  dark: "#00d4ff", light: "#007ab8" },
+  { label: "🍶 スナック",             value: "スナック",      dark: "#ff6b9d", light: "#cc2266" },
+  { label: "🍸 カジュアルバー",       value: "カジュアルバー", dark: "#a855f7", light: "#7722cc" },
+  { label: "🍺 その他",               value: "その他",        dark: "#aaaaaa", light: "#666666" },
 ];
 
 const AREAS = [
@@ -17,9 +17,12 @@ const AREAS = [
   { label: "📍 その他", value: "その他", dark: "#aaaaaa", light: "#666666" },
 ];
 
+const PER_PAGE = 20;
+
 export default function ShopList({ shops }: { shops: Shop[] }) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedArea, setSelectedArea] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [isLight] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(prefers-color-scheme: light)").matches;
@@ -32,10 +35,19 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
     return typeMatch && areaMatch;
   });
 
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const handleFilter = (type: "type" | "area", value: string, current: string, setter: (v: string) => void) => {
+    setter(current === value ? "" : value);
+    setPage(1);
+  };
+
   const hasFilter = selectedType !== "" || selectedArea !== "";
 
   return (
     <div>
+      {/* ジャンルフィルター */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           GENRE · ジャンル
@@ -47,25 +59,23 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             return (
               <button
                 key={type.value}
-                onClick={() => setSelectedType(active ? "" : type.value)}
+                onClick={() => handleFilter("type", type.value, selectedType, setSelectedType)}
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
                   fontWeight: active ? 700 : 500, fontSize: 12,
-                  fontFamily: "var(--font)",
-                  transition: "all 0.15s",
+                  fontFamily: "var(--font)", transition: "all 0.15s",
                   background: active ? color + "20" : "var(--bg-input)",
                   border: "1.5px solid " + (active ? color : "var(--border)"),
                   color: active ? color : "var(--text-secondary)",
                 }}
-              >
-                {type.label}
-              </button>
+              >{type.label}</button>
             );
           })}
         </div>
       </div>
 
+      {/* エリアフィルター */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           AREA · エリア
@@ -77,55 +87,88 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             return (
               <button
                 key={area.value}
-                onClick={() => setSelectedArea(active ? "" : area.value)}
+                onClick={() => handleFilter("area", area.value, selectedArea, setSelectedArea)}
                 style={{
                   flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
                   textAlign: "center", cursor: "pointer",
                   fontWeight: active ? 700 : 500, fontSize: 12,
-                  fontFamily: "var(--font)",
-                  transition: "all 0.15s",
+                  fontFamily: "var(--font)", transition: "all 0.15s",
                   background: active ? color + "20" : "var(--bg-input)",
                   border: "1.5px solid " + (active ? color : "var(--border)"),
                   color: active ? color : "var(--text-secondary)",
                 }}
-              >
-                {area.label}
-              </button>
+              >{area.label}</button>
             );
           })}
         </div>
       </div>
 
-      {hasFilter && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {filtered.length}件表示中
-            {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
-            {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
-          </div>
-          <button onClick={() => { setSelectedType(""); setSelectedArea(""); }} style={{
+      {/* 件数・リセット */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          {filtered.length}件中 {(page - 1) * PER_PAGE + 1}〜{Math.min(page * PER_PAGE, filtered.length)}件表示
+          {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
+          {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
+        </div>
+        {hasFilter && (
+          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setPage(1); }} style={{
             background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
             fontFamily: "var(--font)",
           }}>リセット</button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {!hasFilter && (
-        <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 14 }}>
-          掲載店舗 {shops.length}件
-        </div>
-      )}
-
+      {/* 店舗一覧 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {filtered.length === 0 ? (
+        {paginated.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>
             条件に合う店舗が見つかりませんでした
           </div>
         ) : (
-          filtered.map((shop) => <ShopCard key={shop.id} shop={shop} />)
+          paginated.map((shop) => <ShopCard key={shop.id} shop={shop} />)
         )}
       </div>
+
+      {/* ページネーション */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 32 }}>
+          <button
+            onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            disabled={page === 1}
+            style={{
+              padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
+              background: "var(--bg-input)", color: page === 1 ? "var(--text-hint)" : "var(--text-secondary)",
+              cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 13, fontFamily: "var(--font)",
+            }}
+          >← 前へ</button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                border: "1.5px solid " + (p === page ? "var(--accent)" : "var(--border)"),
+                background: p === page ? "var(--accent)" : "var(--bg-input)",
+                color: p === page ? "#fff" : "var(--text-secondary)",
+                cursor: "pointer", fontSize: 13, fontWeight: p === page ? 700 : 400,
+                fontFamily: "var(--font)",
+              }}
+            >{p}</button>
+          ))}
+
+          <button
+            onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            disabled={page === totalPages}
+            style={{
+              padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
+              background: "var(--bg-input)", color: page === totalPages ? "var(--text-hint)" : "var(--text-secondary)",
+              cursor: page === totalPages ? "not-allowed" : "pointer", fontSize: 13, fontFamily: "var(--font)",
+            }}
+          >次へ →</button>
+        </div>
+      )}
     </div>
   );
 }
