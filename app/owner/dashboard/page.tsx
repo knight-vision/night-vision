@@ -89,6 +89,10 @@ export default function OwnerDashboard() {
   const [newPassword2, setNewPassword2] = useState("");
   const [pwMsg, setPwMsg] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -102,9 +106,42 @@ export default function OwnerDashboard() {
     fetchPhotoRequests(parseInt(sid));
   }, []);
 
+  useEffect(() => {
+    fetchTagSuggestions();
+  }, []);
+
+  async function deletePhoto(id: number) {
+    if (!confirm("この画像を削除しますか？")) return;
+    await supabase.from("photo_requests").delete().eq("id", id);
+    await fetchPhotoRequests(parseInt(shopId!));
+    showMsg("削除しました");
+  }
+
   async function fetchShop(sid: number) {
     const { data } = await supabase.from("shops").select("*").eq("id", sid).single();
     if (data) setShop(data);
+  }
+
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  useEffect(() => {
+    fetchTagSuggestions();
+  }, []);
+
+  async function fetchTagSuggestions() {
+    const { data } = await supabase.from("shops").select("tags");
+    if (!data) return;
+    const tagCount: Record<string, number> = {};
+    data.forEach((s) => {
+      (s.tags ?? []).forEach((t: string) => {
+        tagCount[t] = (tagCount[t] ?? 0) + 1;
+      });
+    });
+    const sorted = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
+    setTagSuggestions(sorted);
   }
 
   async function fetchCasts(sid: number) {
@@ -120,6 +157,34 @@ export default function OwnerDashboard() {
       .order("sort_order")
       .order("created_at", { ascending: false });
     if (data) setPhotoRequests(data);
+  }
+
+  async function fetchTagSuggestions() {
+    const { data } = await supabase.from("shops").select("tags");
+    if (!data) return;
+    const tagCount: Record<string, number> = {};
+    data.forEach((s) => {
+      (s.tags ?? []).forEach((t: string) => {
+        tagCount[t] = (tagCount[t] ?? 0) + 1;
+      });
+    });
+    const sorted = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
+    setTagSuggestions(sorted);
+  }
+
+  async function fetchAddressSuggestions(query: string) {
+    if (!query || query.length < 2) { setAddressSuggestions([]); return; }
+    const { data } = await supabase
+      .from("shops")
+      .select("area")
+      .ilike("area", `%${query}%`)
+      .neq("id", shop?.id ?? 0)
+      .limit(5);
+    const areas = [...new Set((data ?? []).map((s) => s.area).filter(Boolean))];
+    setAddressSuggestions(areas);
+    setShowAddressSuggestions(areas.length > 0);
   }
 
   async function saveBasic() {
@@ -143,15 +208,18 @@ export default function OwnerDashboard() {
   async function saveHours() {
     if (!shop) return;
     setSaving(true);
-    // open_hour文字列も自動生成
+
+    // 通常営業時間のopen_hour文字列を生成
     const openHour = shop.open_time && shop.close_time
       ? `${shop.open_time.slice(0, 5)}〜${shop.close_time.slice(0, 5)}`
       : shop.open_hour;
+
     await supabase.from("shops").update({
       open_time: shop.open_time,
       close_time: shop.close_time,
       closed_week_days: shop.closed_week_days ?? [],
       is_closed: shop.is_closed,
+      weekly_hours: shop.weekly_hours ?? {},
       open_hour: openHour,
       closed_days: (shop.closed_week_days ?? []).join("・"),
     }).eq("id", shop.id);
@@ -382,21 +450,55 @@ export default function OwnerDashboard() {
         {tab === "basic" && (
           <div style={sectionStyle}>
             {[
-              { label: "店舗名", key: "name", placeholder: "" },
-              { label: "所在地", key: "area", placeholder: "例：北海道釧路市末広町4丁目9 フジビル2F" },
-              { label: "予算目安", key: "budget", placeholder: "例：3,000〜5,000円" },
-              { label: "電話番号", key: "tel", placeholder: "例：0154-XX-XXXX" },
-            ].map((f) => (
-              <div key={f.key} style={fieldStyle}>
-                <label style={labelStyle}>{f.label}</label>
-                <input
-                  value={(shop as any)[f.key] ?? ""}
-                  onChange={(e) => setShop({ ...shop, [f.key]: e.target.value })}
-                  placeholder={f.placeholder}
-                  style={inputStyle}
-                />
+            { label: "店舗名", key: "name", placeholder: "" },
+            { label: "予算目安", key: "budget", placeholder: "例：3,000〜5,000円" },
+            { label: "電話番号", key: "tel", placeholder: "例：0154-XX-XXXX" },
+          ].map((f) => (
+            <div key={f.key} style={fieldStyle}>
+              <label style={labelStyle}>{f.label}</label>
+              <input
+                value={(shop as any)[f.key] ?? ""}
+                onChange={(e) => setShop({ ...shop, [f.key]: e.target.value })}
+                placeholder={f.placeholder}
+                style={inputStyle}
+              />
+            </div>
+          ))}
+
+          {/* 所在地（住所補完付き） */}
+          <div style={{ ...fieldStyle, position: "relative" }}>
+            <label style={labelStyle}>所在地</label>
+            <input
+              value={shop.area ?? ""}
+              onChange={(e) => {
+                setShop({ ...shop, area: e.target.value });
+                fetchAddressSuggestions(e.target.value);
+              }}
+              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+              onFocus={() => shop.area && fetchAddressSuggestions(shop.area)}
+              placeholder="例：北海道釧路市末広町4丁目9 フジビル2F"
+              style={inputStyle}
+            />
+            {showAddressSuggestions && addressSuggestions.length > 0 && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, right: 0,
+                background: "var(--bg-card)", border: "1px solid var(--border)",
+                borderRadius: 10, zIndex: 10, overflow: "hidden",
+              }}>
+                {addressSuggestions.map((addr) => (
+                  <div
+                    key={addr}
+                    onClick={() => { setShop({ ...shop, area: addr }); setShowAddressSuggestions(false); }}
+                    style={{
+                      padding: "10px 14px", cursor: "pointer",
+                      fontSize: 13, color: "var(--text-secondary)",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >{addr}</div>
+                ))}
               </div>
-            ))}
+            )}
+          </div>
             <div style={fieldStyle}>
               <label style={labelStyle}>エリア区分</label>
               <select value={shop.area_category ?? "末広"} onChange={(e) => setShop({ ...shop, area_category: e.target.value })} style={inputStyle}>
@@ -474,76 +576,213 @@ export default function OwnerDashboard() {
 
         {/* 営業時間 */}
         {tab === "hours" && (
-          <div style={sectionStyle}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div>
+            {/* 本日休業 */}
+            <div style={{ ...sectionStyle, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <label style={labelStyle}>開店時刻</label>
-                <select
-                  value={shop.open_time?.slice(0, 2) ?? ""}
-                  onChange={(e) => setShop({ ...shop, open_time: e.target.value ? e.target.value + ":00" : null })}
-                  style={inputStyle}
-                >
-                  <option value="">選択</option>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={String(i).padStart(2, "0")}>
-                      {String(i).padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
+                <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>本日休業</div>
+                <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>緊急時や臨時休業に使用</div>
               </div>
-              <div>
-                <label style={labelStyle}>閉店時刻</label>
-                <select
-                  value={shop.close_time?.slice(0, 2) ?? ""}
-                  onChange={(e) => setShop({ ...shop, close_time: e.target.value ? e.target.value + ":00" : null })}
-                  style={inputStyle}
-                >
-                  <option value="">選択</option>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={String(i).padStart(2, "0")}>
-                      {String(i).padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <button
+                onClick={() => setShop({ ...shop, is_closed: !shop.is_closed })}
+                style={{
+                  width: 52, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
+                  background: shop.is_closed ? "var(--accent)" : "var(--border-hover)",
+                  position: "relative", transition: "background 0.2s", flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: 3,
+                  left: shop.is_closed ? 26 : 3,
+                  width: 22, height: 22, borderRadius: "50%", background: "#fff",
+                  transition: "left 0.2s",
+                }} />
+              </button>
             </div>
 
-            <div style={fieldStyle}>
-              <label style={labelStyle}>定休日</label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {WEEK_DAYS.map((day) => {
-                  const active = (shop.closed_week_days ?? []).includes(day);
+            {/* 通常営業時間 */}
+            <div style={sectionStyle}>
+              <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 16 }}>通常営業時間</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                <div>
+                  <label style={labelStyle}>開店時刻</label>
+                  <select
+                    value={shop.open_time?.slice(0, 5) ?? ""}
+                    onChange={(e) => setShop({ ...shop, open_time: e.target.value ? e.target.value + ":00" : null })}
+                    style={inputStyle}
+                  >
+                    <option value="">選択</option>
+                    {Array.from({ length: 24 * 6 }, (_, i) => {
+                      const h = Math.floor(i / 6);
+                      const m = (i % 6) * 10;
+                      const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                      return <option key={val} value={val}>{val}</option>;
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>閉店時刻</label>
+                  <select
+                    value={shop.close_time?.slice(0, 5) ?? ""}
+                    onChange={(e) => setShop({ ...shop, close_time: e.target.value ? e.target.value + ":00" : null })}
+                    style={inputStyle}
+                  >
+                    <option value="">選択</option>
+                    {Array.from({ length: 24 * 6 }, (_, i) => {
+                      const h = Math.floor(i / 6);
+                      const m = (i % 6) * 10;
+                      const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                      return <option key={val} value={val}>{val}</option>;
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div style={fieldStyle}>
+                <label style={labelStyle}>定休日</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {WEEK_DAYS.map((day) => {
+                    const active = (shop.closed_week_days ?? []).includes(day);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => {
+                          const current = shop.closed_week_days ?? [];
+                          const next = active ? current.filter((d) => d !== day) : [...current, day];
+                          setShop({ ...shop, closed_week_days: next });
+                        }}
+                        style={{
+                          width: 40, height: 40, borderRadius: 10, cursor: "pointer",
+                          background: active ? "var(--accent)22" : "var(--bg-input)",
+                          border: "1.5px solid " + (active ? "var(--accent)" : "var(--border)"),
+                          color: active ? "var(--accent)" : "var(--text-secondary)",
+                          fontSize: 13, fontWeight: active ? 700 : 500,
+                          fontFamily: "var(--font)",
+                        }}
+                      >{day}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {shop.open_time && shop.close_time && (
+                <div style={{
+                  background: "var(--bg-input)", borderRadius: 10, padding: "10px 14px",
+                  fontSize: 13, color: "var(--text-secondary)",
+                }}>
+                  表示：{shop.open_time.slice(0, 5)}〜{shop.close_time.slice(0, 5)}
+                  {(shop.closed_week_days ?? []).length > 0 && `　定休日：${shop.closed_week_days!.join("・")}`}
+                </div>
+              )}
+            </div>
+
+            {/* 曜日別営業時間 */}
+            <div style={sectionStyle}>
+              <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 4 }}>曜日別営業時間（任意）</h3>
+              <p style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 16, lineHeight: 1.6 }}>
+                曜日によって営業時間が異なる場合に設定してください。設定した曜日は通常営業時間より優先されます。
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {["月", "火", "水", "木", "金", "土", "日", "祝"].map((day) => {
+                  const hours = (shop.weekly_hours ?? {})[day];
+                  const isClosed = hours?.closed ?? false;
+                  const isSet = !!hours;
                   return (
-                    <button
-                      key={day}
-                      onClick={() => {
-                        const current = shop.closed_week_days ?? [];
-                        const next = active ? current.filter((d) => d !== day) : [...current, day];
-                        setShop({ ...shop, closed_week_days: next });
-                      }}
-                      style={{
-                        width: 40, height: 40, borderRadius: 10, cursor: "pointer",
-                        background: active ? "var(--accent)22" : "var(--bg-input)",
-                        border: "1.5px solid " + (active ? "var(--accent)" : "var(--border)"),
-                        color: active ? "var(--accent)" : "var(--text-secondary)",
-                        fontSize: 13, fontWeight: active ? 700 : 500,
-                        fontFamily: "var(--font)",
-                      }}
-                    >{day}</button>
+                    <div key={day} style={{
+                      background: "var(--bg-input)", borderRadius: 10, padding: "10px 14px",
+                      display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+                    }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        background: isSet ? "var(--accent)22" : "var(--bg-card)",
+                        border: "1px solid " + (isSet ? "var(--accent)" : "var(--border)"),
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: isSet ? "var(--accent)" : "var(--text-muted)",
+                        fontSize: 13, fontWeight: 700,
+                      }}>{day}</div>
+
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: "var(--text-muted)" }}>
+                        <input
+                          type="checkbox"
+                          checked={isClosed}
+                          onChange={(e) => {
+                            const wh = { ...(shop.weekly_hours ?? {}) };
+                            if (e.target.checked) {
+                              wh[day] = { open: "", close: "", closed: true };
+                            } else {
+                              wh[day] = { open: wh[day]?.open ?? "", close: wh[day]?.close ?? "", closed: false };
+                            }
+                            setShop({ ...shop, weekly_hours: wh });
+                          }}
+                        />
+                        定休日
+                      </label>
+
+                      {!isClosed && (
+                        <>
+                          <select
+                            value={hours?.open ?? ""}
+                            onChange={(e) => {
+                              const wh = { ...(shop.weekly_hours ?? {}) };
+                              wh[day] = { ...wh[day], open: e.target.value, closed: false };
+                              setShop({ ...shop, weekly_hours: wh });
+                            }}
+                            style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 80 }}
+                          >
+                            <option value="">開店</option>
+                            {Array.from({ length: 24 * 6 }, (_, i) => {
+                              const h = Math.floor(i / 6);
+                              const m = (i % 6) * 10;
+                              const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                              return <option key={val} value={val}>{val}</option>;
+                            })}
+                          </select>
+                          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>〜</span>
+                          <select
+                            value={hours?.close ?? ""}
+                            onChange={(e) => {
+                              const wh = { ...(shop.weekly_hours ?? {}) };
+                              wh[day] = { ...wh[day], close: e.target.value, closed: false };
+                              setShop({ ...shop, weekly_hours: wh });
+                            }}
+                            style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 80 }}
+                          >
+                            <option value="">閉店</option>
+                            {Array.from({ length: 24 * 6 }, (_, i) => {
+                              const h = Math.floor(i / 6);
+                              const m = (i % 6) * 10;
+                              const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                              return <option key={val} value={val}>{val}</option>;
+                            })}
+                          </select>
+                          {isSet && !isClosed && (
+                            <button
+                              onClick={() => {
+                                const wh = { ...(shop.weekly_hours ?? {}) };
+                                delete wh[day];
+                                setShop({ ...shop, weekly_hours: wh });
+                              }}
+                              style={{ background: "none", border: "none", color: "var(--text-hint)", cursor: "pointer", fontSize: 16 }}
+                            >×</button>
+                          )}
+                        </>
+                      )}
+
+                      {!isSet && !isClosed && (
+                        <button
+                          onClick={() => {
+                            const wh = { ...(shop.weekly_hours ?? {}) };
+                            wh[day] = { open: "", close: "", closed: false };
+                            setShop({ ...shop, weekly_hours: wh });
+                          }}
+                          style={{ background: "none", border: "1px solid var(--border)", color: "var(--text-muted)", padding: "3px 10px", borderRadius: 8, fontSize: 11, cursor: "pointer" }}
+                        >設定</button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             </div>
-
-            {shop.open_time && shop.close_time && (
-              <div style={{
-                background: "var(--bg-input)", borderRadius: 10, padding: "10px 14px",
-                marginBottom: 16, fontSize: 13, color: "var(--text-secondary)",
-              }}>
-                表示：{shop.open_time.slice(0, 5)}〜{shop.close_time.slice(0, 5)}
-                {(shop.closed_week_days ?? []).length > 0 && `　定休日：${shop.closed_week_days!.join("・")}`}
-              </div>
-            )}
 
             <button onClick={saveHours} disabled={saving} style={btnPrimary as React.CSSProperties}>
               {saving ? "保存中..." : "保存する"}
@@ -633,6 +872,11 @@ export default function OwnerDashboard() {
                           {new Date(p.created_at).toLocaleString("ja-JP")}
                         </div>
                       </div>
+                      <button onClick={() => deletePhoto(p.id)} style={{
+                        background: "#ff444420", border: "1px solid #ff444444",
+                        borderRadius: 6, padding: "4px 10px", cursor: "pointer",
+                        color: "#ff4444", fontSize: 11, flexShrink: 0,
+                      }}>取消</button>
                     </div>
                   ))}
                 </div>
@@ -669,6 +913,11 @@ export default function OwnerDashboard() {
                           borderRadius: 6, padding: "3px 8px", cursor: "pointer",
                           color: "var(--text-muted)", fontSize: 12,
                         }}>↓</button>
+                        <button onClick={() => deletePhoto(p.id)} style={{
+                          background: "#ff444420", border: "1px solid #ff444444",
+                          borderRadius: 6, padding: "3px 8px", cursor: "pointer",
+                          color: "#ff4444", fontSize: 12,
+                        }}>削除</button>
                       </div>
                     </div>
                   ))}
@@ -692,13 +941,16 @@ export default function OwnerDashboard() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 11, color: "#ff4444", fontWeight: 700 }}>却下</div>
                       </div>
+                      <button onClick={() => deletePhoto(p.id)} style={{
+                        background: "#ff444420", border: "1px solid #ff444444",
+                        borderRadius: 6, padding: "4px 10px", cursor: "pointer",
+                        color: "#ff4444", fontSize: 11, flexShrink: 0,
+                      }}>削除</button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </div>
-        )}
 
         {/* キャスト */}
         {tab === "cast" && (

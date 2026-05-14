@@ -52,6 +52,7 @@ export type Shop = {
   close_time: string | null;
   closed_week_days: string[] | null;
   is_closed: boolean;
+  weekly_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
 };
 
 export async function getShops(): Promise<Shop[]> {
