@@ -160,7 +160,10 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
       {totalPages > 1 && (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 32 }}>
           <button
-            onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onClick={() => {
+              setPage(p => Math.max(1, p - 1));
+              document.documentElement.scrollTop = 0;
+            }}
             disabled={page === 1}
             style={{
               padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
@@ -172,7 +175,10 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
-              onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              onClick={() => {
+                setPage(p => Math.max(1, p - 1));
+                document.documentElement.scrollTop = 0;
+              }}
               style={{
                 width: 36, height: 36, borderRadius: 10,
                 border: "1.5px solid " + (p === page ? "var(--accent)" : "var(--border)"),
@@ -185,7 +191,10 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           ))}
 
           <button
-            onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onClick={() => {
+              setPage(p => Math.max(1, p - 1));
+              document.documentElement.scrollTop = 0;
+            }}
             disabled={page === totalPages}
             style={{
               padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border)",
