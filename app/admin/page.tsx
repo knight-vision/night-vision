@@ -97,6 +97,34 @@ export default function AdminPage() {
     setSaving(false);
   }
 
+  async function issueOwnerAccount(shop: Shop) {
+    const email = prompt("担当者のメールアドレスを入力してください：");
+    if (!email) return;
+
+    // ランダムパスワード生成
+    const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
+
+    const { error } = await supabase.from("shop_owners").upsert({
+      shop_id: shop.id,
+      email: email.toLowerCase().trim(),
+      password_hash: password,
+    }, { onConflict: "email" });
+
+    if (error) {
+      alert("エラー: " + error.message);
+      return;
+    }
+
+    // メールで通知
+    await fetch("/api/issue-owner-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, shopName: shop.name }),
+    });
+
+    alert(`アカウントを発行しました。\nメール: ${email}\nパスワード: ${password}\n\n担当者にメールで送信しました。`);
+  }
+
   async function saveCast() {
     if (!editCast) return;
     setSaving(true);
@@ -282,6 +310,7 @@ export default function AdminPage() {
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => setEditShop(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>編集</button>
                     <button onClick={() => deleteShop(shop.id)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#ff444420", color: "#ff4444" }}>削除</button>
+                    <button onClick={() => issueOwnerAccount(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#00994d20", color: "#00994d" }}>アカウント発行</button>
                   </div>
                 </div>
               ))}
