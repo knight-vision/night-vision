@@ -61,7 +61,27 @@ export async function getShops(): Promise<Shop[]> {
     .order("plan", { ascending: false })
     .order("id");
   if (error) return [];
-  return (shops ?? []) as Shop[];
+  if (!shops) return [];
+
+  // 各店舗の承認済み写真を取得
+  const shopIds = shops.map((s) => s.id);
+  const { data: photoRequests } = await supabase
+    .from("photo_requests")
+    .select("shop_id, url, sort_order")
+    .in("shop_id", shopIds)
+    .eq("status", "approved")
+    .order("sort_order");
+
+  return shops.map((shop) => {
+    const photos = (photoRequests ?? [])
+      .filter((p) => p.shop_id === shop.id)
+      .map((p) => p.url);
+    return {
+      ...shop,
+      photos: photos.length > 0 ? photos : (shop.photos ?? []),
+      image: photos.length > 0 ? photos[0] : shop.image,
+    };
+  }) as Shop[];
 }
 
 export async function getShopsByType(type: string): Promise<Shop[]> {
