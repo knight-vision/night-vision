@@ -15,7 +15,7 @@ type ShopRank = {
   image: string | null;
   favorite_count: number;
   page_views: number;
-  count?: number;
+  count: number;
 };
 
 type RankType = "favorite" | "views";
@@ -61,23 +61,37 @@ export default function RankingPage() {
     fetchRanking();
   }, [rankType, period]);
 
+  async function fetchAllShops(): Promise<ShopRank[]> {
+    const { data } = await supabase
+      .from("shops")
+      .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
+      .order("plan", { ascending: false })
+      .order("id")
+      .limit(10);
+    return (data ?? []).map((s) => ({ ...s, count: 0 }));
+  }
+
   async function fetchRanking() {
     setLoading(true);
     try {
       if (period === "all") {
-        // 総合は shops テーブルから直接取得
         const col = rankType === "favorite" ? "favorite_count" : "page_views";
         const { data } = await supabase
           .from("shops")
           .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
           .order(col, { ascending: false })
-          .limit(20);
-        setShops((data ?? []).map((s) => ({ ...s, count: s[col] ?? 0 })));
+          .order("id")
+          .limit(10);
+        const result = (data ?? []).map((s) => ({ ...s, count: s[col] ?? 0 }));
+        if (result.every((s) => s.count === 0)) {
+          setShops(result);
+        } else {
+          setShops(result);
+        }
       } else {
-        // 期間別はイベントテーブルから集計
         const table = rankType === "favorite" ? "favorite_events" : "view_events";
-        const interval = PERIOD_INTERVALS[period]!;
-        const since = new Date(Date.now() - parseDays(interval) * 86400000).toISOString();
+        const days = parseDays(PERIOD_INTERVALS[period]!);
+        const since = new Date(Date.now() - days * 86400000).toISOString();
 
         let query = supabase
           .from(table)
@@ -85,18 +99,18 @@ export default function RankingPage() {
           .gte("created_at", since);
 
         if (rankType === "favorite") {
-          query = query.eq("action", "add");
+          query = (query as any).eq("action", "add");
         }
 
         const { data: events } = await query;
 
         if (!events || events.length === 0) {
-          setShops([]);
+          const fallback = await fetchAllShops();
+          setShops(fallback);
           setLoading(false);
           return;
         }
 
-        // shop_id ごとに集計
         const countMap: Record<number, number> = {};
         events.forEach((e: any) => {
           countMap[e.shop_id] = (countMap[e.shop_id] ?? 0) + 1;
@@ -104,14 +118,8 @@ export default function RankingPage() {
 
         const topIds = Object.entries(countMap)
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 20)
+          .slice(0, 10)
           .map(([id]) => parseInt(id));
-
-        if (topIds.length === 0) {
-          setShops([]);
-          setLoading(false);
-          return;
-        }
 
         const { data: shopData } = await supabase
           .from("shops")
@@ -120,12 +128,28 @@ export default function RankingPage() {
 
         const result = (shopData ?? [])
           .map((s) => ({ ...s, count: countMap[s.id] ?? 0 }))
-          .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+          .sort((a, b) => b.count - a.count);
 
-        setShops(result);
+        if (result.length < 10) {
+          // 足りない分をデフォルト順で補完
+          const existingIds = new Set(result.map((s) => s.id));
+          const { data: extra } = await supabase
+            .from("shops")
+            .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
+            .not("id", "in", `(${[...existingIds].join(",")})`)
+            .order("plan", { ascending: false })
+            .order("id")
+            .limit(10 - result.length);
+          const extraMapped = (extra ?? []).map((s) => ({ ...s, count: 0 }));
+          setShops([...result, ...extraMapped]);
+        } else {
+          setShops(result);
+        }
       }
     } catch (err) {
       console.error(err);
+      const fallback = await fetchAllShops();
+      setShops(fallback);
     }
     setLoading(false);
   }
@@ -144,13 +168,16 @@ export default function RankingPage() {
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
             ランキング
           </h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 8 }}>
+            人気のお店をチェック。
+          </p>
         </div>
 
         {/* ランキング種別タブ */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           {[
             { key: "favorite", label: "⭐ お気に入り" },
-            { key: "views", label: "👁 アクセス数" },
+            { key: "views",    label: "👁 アクセス数" },
           ].map((t) => (
             <button
               key={t.key}
@@ -187,15 +214,11 @@ export default function RankingPage() {
 
         {loading ? (
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 60 }}>読み込み中...</div>
-        ) : shops.length === 0 ? (
-          <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 60, fontSize: 14 }}>
-            この期間のデータがありません
-          </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {shops.map((shop, index) => {
               const tc = TYPE_COLORS[shop.type] ?? { border: "#ffffff33", text: "#ffffff88", bg: "#ffffff11" };
-              const isTop3 = index < 3;
+              const isTop3 = index < 3 && shop.count > 0;
               const rankColor = RANK_COLORS[index] ?? "var(--text-muted)";
 
               return (
@@ -240,7 +263,9 @@ export default function RankingPage() {
                           fontSize: 10, fontWeight: 700, padding: "1px 8px", borderRadius: 10,
                           background: tc.bg, border: "1px solid " + tc.border, color: tc.text,
                         }}>{shop.type}</span>
-                        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{shop.area_category ?? shop.area}</span>
+                        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                          {shop.area_category ?? shop.area}
+                        </span>
                       </div>
                       <div style={{ color: "var(--text-primary)", fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
                         {shop.name}
@@ -250,15 +275,13 @@ export default function RankingPage() {
                       )}
                     </div>
 
-                    {/* カウント */}
-                    <div style={{
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      flexShrink: 0, gap: 2,
-                    }}>
-                      <span style={{ fontSize: 16 }}>{rankType === "favorite" ? "⭐" : "👁"}</span>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: isTop3 ? rankColor : "var(--text-secondary)" }}>
-                        {shop.count ?? 0}
-                      </span>
+                    {/* ランクアイコンのみ（数字非表示） */}
+                    <div style={{ flexShrink: 0 }}>
+                      {shop.count > 0 && (
+                        <span style={{ fontSize: 16 }}>
+                          {rankType === "favorite" ? "⭐" : "👁"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </Link>
