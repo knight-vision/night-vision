@@ -494,7 +494,7 @@ export default function OwnerDashboard() {
                         setShop({ ...shop, closed_week_days: next });
                       }}
                       style={{
-                        width: 40, height: 40, borderRadius: 10, border: "none", cursor: "pointer",
+                        width: 40, height: 40, borderRadius: 10, cursor: "pointer",
                         background: active ? "var(--accent)22" : "var(--bg-input)",
                         border: "1.5px solid " + (active ? "var(--accent)" : "var(--border)"),
                         color: active ? "var(--accent)" : "var(--text-secondary)",
