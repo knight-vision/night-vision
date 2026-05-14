@@ -47,6 +47,7 @@ export type Shop = {
   page_views: number;
   casts: Cast[];
   address: string | null;
+  system: string | null;
 };
 
 export async function getShops(): Promise<Shop[]> {

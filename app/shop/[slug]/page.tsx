@@ -116,7 +116,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>👥 年齢層</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {(shop.age_groups ?? []).map((age) => (
+                {(shop.age_groups ?? []).map((age) => (
                   <span key={age} style={{
                     fontSize: 12, color: "var(--text-secondary)",
                     background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -128,7 +128,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           )}
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-          {(shop.tags ?? []).map((t) => (
+            {(shop.tags ?? []).map((t) => (
               <span key={t} style={{
                 fontSize: 12, color: "var(--text-muted)",
                 background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -168,6 +168,37 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         </div>
 
+        {/* システム */}
+        {shop.system && (
+          <div style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 16, padding: 20, marginBottom: 20,
+          }}>
+            <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
+              💰 システム
+            </h2>
+            <div style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 2, whiteSpace: "pre-wrap" }}>
+              {shop.system}
+            </div>
+          </div>
+        )}
+
+        {/* Google Map */}
+        {shop.area && (
+          <div style={{ marginBottom: 20, borderRadius: 16, overflow: "hidden", border: "1px solid var(--border)" }}>
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(shop.area + " 釧路市")}&output=embed&z=17&hl=ja`}
+              width="100%"
+              height="280"
+              style={{ border: "none", display: "block" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        )}
+
+        {/* 店内写真 */}
         {(shop.photos ?? []).length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
@@ -177,12 +208,13 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         )}
 
+        {/* キャスト */}
         <div>
           <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
-            キャスト ({shop.casts.length}名)
+            キャスト ({(shop.casts ?? []).length}名)
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {(shop.casts ?? []).map((cast) => (
+            {(shop.casts ?? []).map((cast) => (
               <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
                 <div style={{
                   background: "var(--bg-card)", border: "1px solid var(--border)",
@@ -216,6 +248,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             ))}
           </div>
         </div>
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
