@@ -951,6 +951,8 @@ export default function OwnerDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
 
         {/* キャスト */}
         {tab === "cast" && (
