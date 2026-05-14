@@ -20,8 +20,30 @@ export async function generateMetadata({
   const shop = await getShopBySlug(params.slug);
   if (!shop) return {};
   return {
-    title: shop.name + "｜釧路 " + shop.type,
-    description: shop.name + "は釧路" + shop.area + "にある" + shop.type + "です。" + shop.description,
+    title: shop.name + "｜釧路" + (shop.area_category ?? "") + "の" + shop.type,
+    description:
+      shop.name + "は釧路" + (shop.area_category ?? "") + "エリアにある" + shop.type + "です。" +
+      (shop.description ?? "") +
+      "営業時間：" + (shop.open_hour ?? "") + "。" +
+      "所在地：" + (shop.area ?? "") + "。",
+    keywords: [
+      shop.name,
+      "釧路 " + shop.name,
+      (shop.area_category ?? "") + " " + shop.name,
+      "釧路 " + shop.type,
+      "釧路 " + (shop.area_category ?? "") + " " + shop.type,
+      shop.name + " 釧路",
+      shop.name + " " + shop.type,
+      shop.name + " 営業時間",
+      shop.name + " 場所",
+    ],
+    openGraph: {
+      title: shop.name + "｜釧路" + (shop.area_category ?? "") + "の" + shop.type,
+      description: shop.name + "は釧路" + (shop.area_category ?? "") + "にある" + shop.type + "です。" + (shop.description ?? ""),
+      url: "https://www.night-vision.jp/shop/" + shop.slug,
+      siteName: "釧路ナイトビジョン",
+      type: "website",
+    },
   };
 }
 
