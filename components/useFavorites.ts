@@ -1,21 +1,18 @@
+"use client";
 import { useState, useEffect, useCallback } from "react";
 
 const KEY = "knv_favorites";
 
-function getStored(): number[] {
-  try {
-    const stored = localStorage.getItem(KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<number[]>(getStored);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setFavorites(getStored());
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored) setFavorites(JSON.parse(stored));
+    } catch {}
+    setLoaded(true);
   }, []);
 
   const toggle = useCallback((id: number) => {
@@ -26,7 +23,10 @@ export function useFavorites() {
     });
   }, []);
 
-  const isFavorite = useCallback((id: number) => favorites.includes(id), [favorites]);
+  const isFavorite = useCallback((id: number) => {
+    if (!loaded) return false;
+    return favorites.includes(id);
+  }, [favorites, loaded]);
 
-  return { favorites, toggle, isFavorite };
+  return { favorites, toggle, isFavorite, loaded };
 }
