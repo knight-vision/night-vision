@@ -48,6 +48,10 @@ export type Shop = {
   casts: Cast[];
   address: string | null;
   system: string | null;
+  open_time: string | null;
+  close_time: string | null;
+  closed_week_days: string[] | null;
+  is_closed: boolean;
 };
 
 export async function getShops(): Promise<Shop[]> {

@@ -140,7 +140,6 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             {[
               { label: "予算目安", value: shop.budget, icon: "💴" },
               { label: "営業時間", value: shop.open_hour, icon: "🕐" },
-              { label: "電話番号", value: shop.tel, icon: "📞" },
               { label: "席数", value: shop.seats ? shop.seats + "席" : "未設定", icon: "💺" },
               { label: "定休日", value: shop.closed_days ?? "未設定", icon: "📅" },
               { label: "所在地", value: shop.area, icon: "📍" },
@@ -154,6 +153,18 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               </div>
             ))}
           </div>
+
+          {shop.tel && (
+            <a href={"tel:" + shop.tel} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "var(--bg-input)", border: "1px solid var(--border)",
+              borderRadius: 12, padding: "10px 18px", marginBottom: 16,
+              color: "var(--online)", fontWeight: 700, fontSize: 14,
+              textDecoration: "none",
+            }}>
+              📞 {shop.tel}（タップで電話）
+            </a>
+          )}
 
           {shop.age_groups && shop.age_groups.length > 0 && (
             <div style={{ marginBottom: 16 }}>

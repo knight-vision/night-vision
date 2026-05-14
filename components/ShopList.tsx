@@ -4,6 +4,24 @@ import ShopCard from "@/components/ShopCard";
 import { Shop } from "@/lib/shops";
 import { useFavorites } from "./useFavorites";
 
+function isOpenNow(openHour: string | null, closedDays: string | null): boolean | null {
+  if (!openHour) return null;
+  const now = new Date();
+  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const todayName = dayNames[now.getDay()];
+  if (closedDays && closedDays.includes(todayName)) return false;
+  const match = openHour.match(/(\d{1,2}):(\d{2}).*?(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const openH = parseInt(match[1]), openM = parseInt(match[2]);
+  const closeH = parseInt(match[3]), closeM = parseInt(match[4]);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const openMin = openH * 60 + openM;
+  let closeMin = closeH * 60 + closeM;
+  if (closeMin < openMin) closeMin += 24 * 60;
+  const nowAdj = nowMin < openMin ? nowMin + 24 * 60 : nowMin;
+  return nowAdj >= openMin && nowAdj <= closeMin;
+}
+
 const TYPES = [
   { label: "🥂 ラウンジ/ニュークラ", value: "ラウンジ",      dark: "#ffd700", light: "#aa8800" },
   { label: "🍹 ガールズバー",         value: "ガールズバー",  dark: "#00d4ff", light: "#007ab8" },
@@ -24,6 +42,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedArea, setSelectedArea] = useState<string>("");
   const [favOnly, setFavOnly] = useState(false);
+  const [openOnly, setOpenOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
   const [isLight] = useState(() => {
@@ -42,11 +61,12 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
       (selectedType === "その他" && !["ラウンジ", "ガールズバー", "スナック", "カジュアルバー"].includes(shop.type));
     const areaMatch = !selectedArea || (shop.area_category ?? "その他") === selectedArea;
     const favMatch = !favOnly || isFavorite(shop.id);
+    const openMatch = !openOnly || isOpenNow(shop.open_hour, shop.closed_days) === true;
     const searchMatch = !searchQuery ||
       shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (shop.description ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (shop.area ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-    return typeMatch && areaMatch && favMatch && searchMatch;
+    return typeMatch && areaMatch && favMatch && openMatch && searchMatch;
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -68,7 +88,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
     setPage(1);
   };
 
-  const hasFilter = selectedType !== "" || selectedArea !== "" || searchQuery !== "";
+  const hasFilter = selectedType !== "" || selectedArea !== "" || searchQuery !== "" || openOnly || favOnly;
 
   return (
     <div>
@@ -89,7 +109,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             background: "var(--bg-input)", border: "1.5px solid var(--border)",
             borderRadius: 12, color: "var(--text-primary)", fontSize: 14,
             outline: "none", fontFamily: "var(--font)",
-            boxSizing: "border-box",
+            boxSizing: "border-box" as const,
           }}
         />
         {searchQuery && (
@@ -160,8 +180,8 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         </div>
       </div>
 
-      {/* お気に入りフィルター */}
-      <div style={{ marginBottom: 20 }}>
+      {/* お気に入り・営業中フィルター */}
+      <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button
           onClick={() => { setFavOnly(!favOnly); setPage(1); }}
           style={{
@@ -177,7 +197,22 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill={favOnly ? "#ffd700" : "none"} stroke={favOnly ? "#ffd700" : "currentColor"} strokeWidth="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
-          お気に入りのみ表示
+          お気に入りのみ
+        </button>
+        <button
+          onClick={() => { setOpenOnly(!openOnly); setPage(1); }}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "8px 18px", borderRadius: 20, cursor: "pointer",
+            fontWeight: openOnly ? 700 : 500, fontSize: 13,
+            fontFamily: "var(--font)", transition: "all 0.15s",
+            background: openOnly ? "var(--online-bg)" : "var(--bg-input)",
+            border: "1.5px solid " + (openOnly ? "var(--online)" : "var(--border)"),
+            color: openOnly ? "var(--online)" : "var(--text-secondary)",
+          }}
+        >
+          <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: openOnly ? "var(--online)" : "var(--border-hover)" }} />
+          現在営業中のみ
         </button>
       </div>
 
@@ -189,9 +224,10 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
           {searchQuery && <span style={{ color: "var(--text-secondary)" }}> · 「{searchQuery}」</span>}
           {favOnly && <span style={{ color: "#ffd700" }}> · お気に入り</span>}
+          {openOnly && <span style={{ color: "var(--online)" }}> · 営業中</span>}
         </div>
-        {(hasFilter || favOnly) && (
-          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setFavOnly(false); setSearchQuery(""); setPage(1); }} style={{
+        {hasFilter && (
+          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setFavOnly(false); setOpenOnly(false); setSearchQuery(""); setPage(1); }} style={{
             background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
             fontFamily: "var(--font)",
