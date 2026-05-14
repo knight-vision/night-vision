@@ -247,14 +247,14 @@ export default function OwnerDashboard() {
     await supabase.from("shops").update({ age_groups: decades }).eq("id", sid);
   }
 
-  async function toggleOnToday(cast: Cast) {
-    const newVal = cast.on_today ? null : true;
+  async function handleCastAttendance(cast: Cast, action: "on" | "off") {
+    let newVal: boolean | null;
+    if (action === "on") {
+      newVal = cast.on_today === true ? null : true;
+    } else {
+      newVal = cast.on_today === false ? null : false;
+    }
     await supabase.from("casts").update({ on_today: newVal }).eq("id", cast.id);
-    await fetchCasts(parseInt(shopId!));
-  }
-
-  async function setOffToday(cast: Cast) {
-    await supabase.from("casts").update({ on_today: false }).eq("id", cast.id);
     await fetchCasts(parseInt(shopId!));
   }
 
@@ -418,13 +418,53 @@ export default function OwnerDashboard() {
               <textarea value={shop.system ?? ""} onChange={(e) => setShop({ ...shop, system: e.target.value })} rows={4} placeholder="入店料、ドリンク料金、指名料など" style={{ ...inputStyle, resize: "vertical" } as React.CSSProperties} />
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>タグ（カンマ区切り）</label>
-              <input
-                value={(shop.tags ?? []).join(", ")}
-                onChange={(e) => setShop({ ...shop, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })}
-                placeholder="例：カラオケあり, 初見歓迎"
-                style={inputStyle}
-              />
+              <label style={labelStyle}>タグ</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                {(shop.tags ?? []).map((tag) => (
+                  <span key={tag} style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: "var(--accent)22", border: "1px solid var(--accent)44",
+                    color: "var(--accent)", padding: "4px 10px", borderRadius: 20, fontSize: 12,
+                  }}>
+                    {tag}
+                    <button
+                      onClick={() => setShop({ ...shop, tags: (shop.tags ?? []).filter((t) => t !== tag) })}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent)", fontSize: 14, padding: 0, lineHeight: 1 }}
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  id="tag-input"
+                  placeholder="タグを入力してEnter"
+                  style={{ ...inputStyle, flex: 1 }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const val = (e.target as HTMLInputElement).value.trim();
+                      if (val && !(shop.tags ?? []).includes(val)) {
+                        setShop({ ...shop, tags: [...(shop.tags ?? []), val] });
+                      }
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const input = document.getElementById("tag-input") as HTMLInputElement;
+                    const val = input?.value.trim();
+                    if (val && !(shop.tags ?? []).includes(val)) {
+                      setShop({ ...shop, tags: [...(shop.tags ?? []), val] });
+                      input.value = "";
+                    }
+                  }}
+                  style={{
+                    padding: "10px 16px", borderRadius: 10, border: "none",
+                    background: "var(--accent)", color: "#fff",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  }}
+                >追加</button>
+              </div>
             </div>
             <button onClick={saveBasic} disabled={saving} style={btnPrimary as React.CSSProperties}>
               {saving ? "保存中..." : "保存する"}
@@ -435,48 +475,36 @@ export default function OwnerDashboard() {
         {/* 営業時間 */}
         {tab === "hours" && (
           <div style={sectionStyle}>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>本日休業</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => setShop({ ...shop, is_closed: !shop.is_closed })}
-                  style={{
-                    width: 48, height: 26, borderRadius: 13, border: "none", cursor: "pointer",
-                    background: shop.is_closed ? "var(--accent)" : "var(--border-hover)",
-                    position: "relative", transition: "background 0.2s",
-                  }}
-                >
-                  <span style={{
-                    position: "absolute", top: 3,
-                    left: shop.is_closed ? 24 : 3,
-                    width: 20, height: 20, borderRadius: "50%", background: "#fff",
-                    transition: "left 0.2s",
-                  }} />
-                </button>
-                <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-                  {shop.is_closed ? "本日休業中" : "営業中"}
-                </span>
-              </div>
-            </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>開店時刻</label>
-                <input
-                  type="time"
-                  value={shop.open_time ?? ""}
-                  onChange={(e) => setShop({ ...shop, open_time: e.target.value })}
+                <select
+                  value={shop.open_time?.slice(0, 2) ?? ""}
+                  onChange={(e) => setShop({ ...shop, open_time: e.target.value ? e.target.value + ":00" : null })}
                   style={inputStyle}
-                />
+                >
+                  <option value="">選択</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, "0")}>
+                      {String(i).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={labelStyle}>閉店時刻</label>
-                <input
-                  type="time"
-                  value={shop.close_time ?? ""}
-                  onChange={(e) => setShop({ ...shop, close_time: e.target.value })}
+                <select
+                  value={shop.close_time?.slice(0, 2) ?? ""}
+                  onChange={(e) => setShop({ ...shop, close_time: e.target.value ? e.target.value + ":00" : null })}
                   style={inputStyle}
-                />
+                >
+                  <option value="">選択</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, "0")}>
+                      {String(i).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -729,26 +757,24 @@ export default function OwnerDashboard() {
               {casts.map((cast) => (
                 <div key={cast.id} style={{ ...sectionStyle, marginBottom: 0, display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
-                    <button
-                      onClick={() => toggleOnToday(cast)}
-                      title="出勤"
+                  <button
+                      onClick={() => handleCastAttendance(cast, "on")}
                       style={{
                         padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
                         background: cast.on_today === true ? "var(--online)" : "var(--bg-input)",
                         color: cast.on_today === true ? "#fff" : "var(--text-muted)",
                         fontSize: 11, fontWeight: 700, fontFamily: "var(--font)",
                       }}
-                    >出勤</button>
+                    >{cast.on_today === true ? "✓ 出勤" : "出勤"}</button>
                     <button
-                      onClick={() => setOffToday(cast)}
-                      title="本日休み"
+                      onClick={() => handleCastAttendance(cast, "off")}
                       style={{
                         padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
                         background: cast.on_today === false ? "#ff444420" : "var(--bg-input)",
                         color: cast.on_today === false ? "#ff4444" : "var(--text-muted)",
                         fontSize: 11, fontWeight: 700, fontFamily: "var(--font)",
                       }}
-                    >休み</button>
+                    >{cast.on_today === false ? "✓ 休み" : "休み"}</button>
                   </div>
                   <div style={{ flex: 1 }}>
                     <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{cast.name}</span>

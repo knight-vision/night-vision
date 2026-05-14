@@ -3,7 +3,6 @@ import { getAllSlugs, getShopBySlug, supabase } from "@/lib/shops";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import PhotoSlider from "@/components/PhotoSlider";
 import FavoriteButton from "@/components/FavoriteButton";
 
 export const revalidate = 60;
@@ -95,20 +94,41 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           ← 一覧に戻る
         </Link>
 
-        {hasBanner && (
-          <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 20, height: 200 }}>
-            {shop.image ? (
-              <img src={shop.image} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            ) : (
-              <div style={{
-                width: "100%", height: "100%",
-                background: "linear-gradient(135deg, " + tc.border + "22, var(--bg-card))",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "var(--text-hint)", fontSize: 14,
-              }}>写真準備中</div>
-            )}
-          </div>
-        )}
+{/* バナー・写真スライダー統合 */}
+{(() => {
+          const allPhotos = (shop.photos ?? []);
+          const photos = shop.image
+            ? [shop.image, ...allPhotos.filter((p) => p !== shop.image)]
+            : allPhotos;
+          if (photos.length === 0 && !hasBanner) return null;
+          if (photos.length === 0) return (
+            <div style={{
+              borderRadius: 16, overflow: "hidden", marginBottom: 20, height: 220,
+              background: "linear-gradient(135deg, " + tc.border + "22, var(--bg-card))",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "var(--text-hint)", fontSize: 14,
+            }}>写真準備中</div>
+          );
+
+          return (
+            <div style={{ marginBottom: 20 }}>
+              {/* 1枚目はメインバナー */}
+              <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: photos.length > 1 ? 8 : 0, height: 220 }}>
+                <img src={photos[0]} alt={shop.name + "の写真"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+              {/* 2枚目以降はスライダー */}
+              {photos.length > 1 && (
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollSnapType: "x mandatory", display: "flex", gap: 8, paddingBottom: 4 }}>
+                  {photos.slice(1, 10).map((photo, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: 200, height: 140, borderRadius: 12, overflow: "hidden", scrollSnapAlign: "start" }}>
+                      <img src={photo} alt={shop.name + "の写真" + (i + 2)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 店舗情報カード */}
         <div style={{
@@ -263,16 +283,6 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
-          </div>
-        )}
-
-        {/* 店内写真 */}
-        {(shop.photos ?? []).length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 12 }}>
-              店内写真
-            </h2>
-            <PhotoSlider photos={shop.photos ?? []} shopName={shop.name} />
           </div>
         )}
 

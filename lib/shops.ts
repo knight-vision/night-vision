@@ -81,7 +81,18 @@ export async function getShopBySlug(slug: string): Promise<Shop | null> {
     .eq("slug", slug)
     .single();
   if (error) return null;
-  return shop as Shop;
+
+  // 承認済み写真を取得
+  const { data: photos } = await supabase
+    .from("photo_requests")
+    .select("url, sort_order")
+    .eq("shop_id", shop.id)
+    .eq("status", "approved")
+    .order("sort_order");
+
+  const photoUrls = (photos ?? []).map((p) => p.url);
+
+  return { ...shop, photos: photoUrls.length > 0 ? photoUrls : (shop.photos ?? []) } as Shop;
 }
 
 export async function getAllSlugs(): Promise<string[]> {
