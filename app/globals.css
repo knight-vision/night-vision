@@ -27,6 +27,29 @@
 
 @media (prefers-color-scheme: light) {
   :root {
+    /* ダークモードと統一（元のライト設定は下にコメントアウト） */
+    --bg: #08080f;
+    --bg-card: #0f0f1a;
+    --bg-card2: #1a1028;
+    --bg-input: #ffffff08;
+    --border: #ffffff0f;
+    --border-hover: #ffffff22;
+    --text-primary: #ffffff;
+    --text-secondary: #ffffff88;
+    --text-muted: #ffffff44;
+    --text-hint: #ffffff22;
+    --accent: #ff6b9d;
+    --accent2: #a855f7;
+    --online: #00ff88;
+    --online-bg: #00ff8812;
+    --online-border: #00ff8830;
+    --card-shadow: none;
+    --card-shadow-hover: 0 8px 32px rgba(255,107,157,0.15);
+    --card-glow: none;
+  }
+
+  /* ライトモード（元のデザインに戻す場合はここのコメントを外して上をコメントアウト）
+  :root {
     --bg: #ffffff;
     --bg-card: #ffffff;
     --bg-card2: #fafafa;
@@ -46,6 +69,7 @@
     --card-shadow-hover: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
     --card-glow: none;
   }
+  */
 }
 
 @keyframes fadeIn {
