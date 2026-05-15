@@ -44,7 +44,6 @@ export type Shop = {
   seats: number | null;
   age_groups: string[] | null;
   closed_days: string | null;
-  page_views: number;
   casts: Cast[];
   address: string | null;
   system: string | null;
