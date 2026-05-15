@@ -135,37 +135,6 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
 
   return (
     <div>
-      {/* 検索ボックス */}
-      <div style={{ marginBottom: 16, position: "relative" }}>
-        <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-        </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="店名・エリアで検索..."
-          style={{
-            width: "100%", padding: "11px 40px 11px 40px",
-            background: "var(--bg-input)", border: "1.5px solid var(--border)",
-            borderRadius: 12, color: "var(--text-primary)", fontSize: 14,
-            outline: "none", fontFamily: "var(--font)",
-            boxSizing: "border-box" as const,
-          }}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => handleSearch("")}
-            style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-muted)", fontSize: 16, padding: 4,
-            }}
-          >✕</button>
-        )}
-      </div>
 
       {/* ジャンルフィルター */}
       <div style={{ marginBottom: 16 }}>
@@ -354,6 +323,38 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
             fontFamily: "var(--font)",
           }}>リセット</button>
+        )}
+      </div>
+
+      {/* 検索ボックス */}
+      <div style={{ marginBottom: 16, position: "relative" }}>
+        <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="店名・エリアで検索..."
+          style={{
+            width: "100%", padding: "11px 40px 11px 40px",
+            background: "var(--bg-input)", border: "1.5px solid var(--border)",
+            borderRadius: 12, color: "var(--text-primary)", fontSize: 14,
+            outline: "none", fontFamily: "var(--font)",
+            boxSizing: "border-box" as const,
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => handleSearch("")}
+            style={{
+              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+              background: "none", border: "none", cursor: "pointer",
+              color: "var(--text-muted)", fontSize: 16, padding: 4,
+            }}
+          >✕</button>
         )}
       </div>
 
