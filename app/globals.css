@@ -27,24 +27,24 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f0f0f5;
+    --bg: #ffffff;
     --bg-card: #ffffff;
-    --bg-card2: #f5f5fa;
-    --bg-input: #e8e8f0;
-    --text-primary: #0a0a1a;
-    --text-secondary: #2a2a3a;
-    --text-muted: #555570;
-    --text-hint: #8888aa;
-    --border: #c8c8dc;
-    --border-hover: #a0a0c0;
-    --accent: #c0006a;
-    --accent2: #7000cc;
-    --online: #00884a;
-    --online-bg: #00884a18;
-    --online-border: #00884a44;
-    --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    --card-shadow-hover: 0 6px 24px rgba(0,0,0,0.14);
-    --font: var(--font-noto);
+    --bg-card2: #fafafa;
+    --bg-input: #f5f5f5;
+    --border: #e8e8e8;
+    --border-hover: #cccccc;
+    --text-primary: #111111;
+    --text-secondary: #444444;
+    --text-muted: #888888;
+    --text-hint: #bbbbbb;
+    --accent: #cc2266;
+    --accent2: #aa6600;
+    --online: #00994d;
+    --online-bg: #00994d12;
+    --online-border: #00994d40;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    --card-shadow-hover: 0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+    --card-glow: none;
   }
 }
 
