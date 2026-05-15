@@ -55,6 +55,8 @@ export type Shop = {
   weekly_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
   display_order: number | null;
   created_at: string | null;
+  favorite_count: number | null;
+  page_views: number | null;
 };
 
 export async function getShops(): Promise<Shop[]> {
