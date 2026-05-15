@@ -50,10 +50,10 @@ export default function PhotoViewer({ photos, shopName }: Props) {
           }}
         >
           <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%" }}>
-            <img
+          <img
               src={lightbox}
               alt=""
-              style={{ maxWidth: "100vw", maxHeight: "90vh", objectFit: "contain", borderRadius: 12 }}
+              style={{ maxWidth: "calc(100vw - 32px)", maxHeight: "90vh", objectFit: "contain", borderRadius: 12 }}
             />
             <button
               onClick={() => setLightbox(null)}

@@ -45,6 +45,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
   const [openOnly, setOpenOnly] = useState(false);
   const [sortKey, setSortKey] = useState<string>("default");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortOpen, setSortOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
   const [isLight] = useState(() => {
@@ -102,6 +103,10 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         };
         return dir * (avg(a) - avg(b));
       }
+      case "favorite":
+        return dir * ((a.favorite_count ?? 0) - (b.favorite_count ?? 0));
+      case "views":
+        return dir * ((a.page_views ?? 0) - (b.page_views ?? 0));
       default:
         return (a.display_order ?? 0) - (b.display_order ?? 0);
     }
@@ -218,8 +223,8 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
         </div>
       </div>
 
-      {/* お気に入り・営業中フィルター */}
-      <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
+{/* お気に入り・営業中フィルター・並び替え */}
+<div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <button
           onClick={() => { setFavOnly(!favOnly); setPage(1); }}
           style={{
@@ -252,54 +257,85 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: openOnly ? "var(--online)" : "var(--border-hover)" }} />
           現在営業中のみ
         </button>
+
         {/* 並び替え */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
-          SORT · 並び替え
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setSortOpen(!sortOpen)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "8px 18px", borderRadius: 20, cursor: "pointer",
+              fontSize: 13, fontFamily: "var(--font)", transition: "all 0.15s",
+              background: sortKey !== "default" ? "var(--accent)22" : "var(--bg-input)",
+              border: "1.5px solid " + (sortKey !== "default" ? "var(--accent)" : "var(--border)"),
+              color: sortKey !== "default" ? "var(--accent)" : "var(--text-secondary)",
+              fontWeight: sortKey !== "default" ? 700 : 500,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18M7 12h10M11 18h2"/>
+            </svg>
+            並び替え
+            {sortKey !== "default" && (
+              <span style={{ fontSize: 11 }}>: {{
+                created_at: "掲載日",
+                casts: "キャスト数",
+                age: "平均年齢",
+                favorite: "お気に入り",
+                views: "アクセス数",
+              }[sortKey]}{sortDir === "asc" ? " ↑" : " ↓"}</span>
+            )}
+            <span style={{ fontSize: 11 }}>{sortOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {sortOpen && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 6px)", left: 0,
+              background: "var(--bg-card)", border: "1px solid var(--border)",
+              borderRadius: 14, padding: 8, zIndex: 20,
+              minWidth: 160, boxShadow: "0 4px 20px #00000044",
+            }}>
+              {[
+                { key: "default",    label: "標準" },
+                { key: "created_at", label: "掲載日順" },
+                { key: "casts",      label: "キャスト数順" },
+                { key: "age",        label: "平均年齢順" },
+                { key: "favorite",   label: "お気に入り順" },
+                { key: "views",      label: "アクセス数順" },
+              ].map((s) => {
+                const active = sortKey === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => {
+                      if (active) {
+                        setSortDir(sortDir === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortKey(s.key);
+                        setSortDir("desc");
+                      }
+                      setPage(1);
+                      if (s.key === "default") setSortOpen(false);
+                    }}
+                    style={{
+                      padding: "9px 14px", borderRadius: 8, cursor: "pointer",
+                      fontWeight: active ? 700 : 500, fontSize: 13,
+                      fontFamily: "var(--font)", transition: "all 0.15s",
+                      background: active ? "var(--accent)22" : "transparent",
+                      border: "none",
+                      color: active ? "var(--accent)" : "var(--text-secondary)",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      width: "100%", textAlign: "left", gap: 12,
+                    }}
+                  >
+                    {s.label}
+                    {active && <span style={{ fontSize: 11 }}>{sortDir === "asc" ? "↑" : "↓"}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[
-            { key: "default",    label: "標準" },
-            { key: "created_at", label: "掲載日" },
-            { key: "open_early", label: "開店時間" },
-            { key: "close_late", label: "閉店時間" },
-            { key: "budget",     label: "予算" },
-            { key: "seats",      label: "席数" },
-            { key: "casts",      label: "キャスト数" },
-            { key: "age",        label: "平均年齢" },
-          ].map((s) => {
-            const active = sortKey === s.key;
-            return (
-              <button
-                key={s.key}
-                onClick={() => {
-                  if (active) {
-                    setSortDir(sortDir === "asc" ? "desc" : "asc");
-                  } else {
-                    setSortKey(s.key);
-                    setSortDir("asc");
-                  }
-                  setPage(1);
-                }}
-                style={{
-                  padding: "6px 12px", borderRadius: 20, cursor: "pointer",
-                  fontWeight: active ? 700 : 500, fontSize: 12,
-                  fontFamily: "var(--font)", transition: "all 0.15s",
-                  background: active ? "var(--bg-input)" : "var(--bg-input)",
-                  border: "1.5px solid " + (active ? "var(--accent)" : "var(--border)"),
-                  color: active ? "var(--accent)" : "var(--text-secondary)",
-                  display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-              >
-                {s.label}
-                {active && (
-                  <span style={{ fontSize: 10 }}>{sortDir === "asc" ? "↑" : "↓"}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
       </div>
 
       {/* 件数表示 */}

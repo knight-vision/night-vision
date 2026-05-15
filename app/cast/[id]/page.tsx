@@ -61,29 +61,22 @@ export default async function CastPage({ params }: { params: { id: string } }) {
             )}
           </div>
 
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "5px 16px", borderRadius: 20,
-            background: cast.on_today ? "var(--online-bg)" : "var(--bg-input)",
-            border: "1px solid " + (cast.on_today ? "var(--online-border)" : "var(--border)"),
-            fontSize: 13, color: cast.on_today ? "var(--online)" : "var(--text-muted)",
-            marginBottom: 20,
-          }}>
-            <span style={{
-              display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-              background: cast.on_today ? "var(--online)" : "var(--border-hover)",
-            }} />
-            {cast.on_today !== null && (
-  <div style={{ fontSize: 12, color: cast.on_today ? "var(--online)" : "#ff4444" }}>
-    <span style={{
-      display: "inline-block", width: 7, height: 7, borderRadius: "50%",
-      background: cast.on_today ? "var(--online)" : "#ff4444",
-      marginRight: 4, verticalAlign: "middle",
-    }} />
-    {cast.on_today ? "本日出勤" : "本日休み"}
-  </div>
-)}
-          </div>
+          {cast.on_today !== null && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "5px 16px", borderRadius: 20,
+              background: cast.on_today ? "var(--online-bg)" : "var(--bg-input)",
+              border: "1px solid " + (cast.on_today ? "var(--online-border)" : "var(--border)"),
+              fontSize: 13, color: cast.on_today ? "var(--online)" : "#ff4444",
+              marginBottom: 20,
+            }}>
+              <span style={{
+                display: "inline-block", width: 7, height: 7, borderRadius: "50%",
+                background: cast.on_today ? "var(--online)" : "#ff4444",
+              }} />
+              {cast.on_today ? "本日出勤" : "本日休み"}
+            </div>
+          )}
 
           <div style={{
             background: "var(--bg-input)", border: "1px solid var(--border)",
