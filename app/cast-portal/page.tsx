@@ -232,7 +232,7 @@ export default function CastPortalPage() {
         </div>
       )}
 
-      {/* 提出済みシフト */}}
+      {/* 提出済みシフト */}
       {existing.length > 0 && Object.keys(draft).length === 0 && (
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>📋 提出済みのシフト希望</div>
