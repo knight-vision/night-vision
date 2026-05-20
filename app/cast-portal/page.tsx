@@ -22,7 +22,7 @@ type ExistingRequest = {
 function getWeekDates(baseDate: Date): Date[] {
   const dates: Date[] = [];
   // 今日から14日分
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 31; i++) {
     const d = new Date(baseDate);
     d.setDate(baseDate.getDate() + i);
     dates.push(d);

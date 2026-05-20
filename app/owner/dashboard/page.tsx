@@ -1109,6 +1109,7 @@ export default function OwnerDashboard() {
             issuingAccount={issuingAccount}
             setIssuingAccount={setIssuingAccount}
             shopName={shop.name}
+            shopClosedWeekDays={shop.closed_week_days ?? []}
             sectionStyle={sectionStyle}
             inputStyle={inputStyle}
             labelStyle={labelStyle}
