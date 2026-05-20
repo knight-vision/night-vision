@@ -119,6 +119,44 @@ export default function CastPortalPage() {
     setSaving(false);
   };
 
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [accountMsg, setAccountMsg] = useState("");
+  const [accountLoading, setAccountLoading] = useState(false);
+
+  const handleChangeEmail = async () => {
+    if (!castId || !newEmail) return;
+    setAccountLoading(true); setAccountMsg("");
+    const res = await fetch("/api/cast-account-update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cast_id: castId, email: newEmail }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setAccountMsg("メールアドレスを変更しました。次回から新しいアドレスでログインしてください。");
+      setNewEmail("");
+    } else setAccountMsg(data.error || "変更に失敗しました");
+    setAccountLoading(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!castId || !currentPw || !newPw) return;
+    if (newPw.length < 6) { setAccountMsg("新しいパスワードは6文字以上にしてください"); return; }
+    setAccountLoading(true); setAccountMsg("");
+    const res = await fetch("/api/cast-account-update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cast_id: castId, current_password: currentPw, new_password: newPw }),
+    });
+    const data = await res.json();
+    if (res.ok) { setAccountMsg("パスワードを変更しました。"); setCurrentPw(""); setNewPw(""); }
+    else setAccountMsg(data.error || "変更に失敗しました");
+    setAccountLoading(false);
+  };
+
   const handleLogout = () => {
     ["cast_id","cast_account_id","cast_name","cast_shop_id"].forEach(k => localStorage.removeItem(k));
     router.push("/cast-login");
@@ -147,10 +185,54 @@ export default function CastPortalPage() {
           <h1 style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)" }}>シフト希望提出</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 2 }}>{castName}{shopInfo?.name ? ` ／ ${shopInfo.name}` : ""}</p>
         </div>
-        <button onClick={handleLogout} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 12, padding: "6px 14px", cursor: "pointer" }}>ログアウト</button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={() => setShowAccountSettings(!showAccountSettings)} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 12, padding: "6px 12px", cursor: "pointer" }}>⚙️</button>
+          <button onClick={handleLogout} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 12, padding: "6px 14px", cursor: "pointer" }}>ログアウト</button>
+        </div>
       </div>
 
-      {/* 提出済みシフト */}
+      {/* アカウント設定 */}
+      {showAccountSettings && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>⚙️ アカウント設定</div>
+
+          {/* メール変更 */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>メールアドレスを変更</div>
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="新しいメールアドレス"
+              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+            <button onClick={handleChangeEmail} disabled={accountLoading || !newEmail} style={{
+              padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+              border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !newEmail ? 0.5 : 1,
+            }}>メールを変更する</button>
+          </div>
+
+          {/* パスワード変更 */}
+          <div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>パスワードを変更</div>
+            <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="現在のパスワード"
+              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+            <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="新しいパスワード（6文字以上）"
+              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+            <button onClick={handleChangePassword} disabled={accountLoading || !currentPw || !newPw} style={{
+              padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+              border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!currentPw || !newPw) ? 0.5 : 1,
+            }}>パスワードを変更する</button>
+          </div>
+
+          {accountMsg && (
+            <div style={{
+              marginTop: 12, padding: "10px 14px", borderRadius: 10,
+              background: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444418" : "var(--online-bg)",
+              border: `1px solid ${accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444444" : "var(--online-border)"}`,
+              color: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff4444" : "var(--online)",
+              fontSize: 13,
+            }}>{accountMsg}</div>
+          )}
+        </div>
+      )}
+
+      {/* 提出済みシフト */}}
       {existing.length > 0 && Object.keys(draft).length === 0 && (
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>📋 提出済みのシフト希望</div>

@@ -1026,7 +1026,8 @@ export default function OwnerDashboard() {
                 <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
                   {editCast.id ? "キャスト編集" : "新規キャスト追加"}
                 </h3>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {/* 基本情報 */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                   <div>
                     <label style={labelStyle}>名前 *</label>
                     <input value={editCast.name ?? ""} onChange={(e) => setEditCast({ ...editCast, name: e.target.value })} style={inputStyle} />
@@ -1039,15 +1040,51 @@ export default function OwnerDashboard() {
                     <label style={labelStyle}>Instagram</label>
                     <input value={editCast.instagram ?? ""} onChange={(e) => setEditCast({ ...editCast, instagram: e.target.value })} style={inputStyle} />
                   </div>
-                  <div>
-                    <label style={labelStyle}>時給（円）</label>
-                    <input type="number" value={editCast.hourly_wage ?? ""} onChange={(e) => setEditCast({ ...editCast, hourly_wage: e.target.value ? parseInt(e.target.value) : null })} placeholder="例：1200" style={inputStyle} />
-                  </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>一言コメント</label>
                     <input value={editCast.comment ?? ""} onChange={(e) => setEditCast({ ...editCast, comment: e.target.value })} style={inputStyle} />
                   </div>
                 </div>
+
+                {/* 時給（非公開） */}
+                <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700, marginBottom: 8, letterSpacing: "0.1em" }}>💰 給与設定（非公開）</div>
+                  <div>
+                    <label style={labelStyle}>時給（円）</label>
+                    <input type="number" value={editCast.hourly_wage ?? ""} onChange={(e) => setEditCast({ ...editCast, hourly_wage: e.target.value ? parseInt(e.target.value) : null })} placeholder="例：1200" style={{ ...inputStyle, maxWidth: 160 }} />
+                  </div>
+                </div>
+
+                {/* キャストアカウントのメール変更 */}
+                {editCast.id && (
+                  <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8, letterSpacing: "0.1em" }}>🔑 ポータルアカウント</div>
+                    <label style={labelStyle}>メールアドレスを変更</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="email"
+                        placeholder="新しいメールアドレス"
+                        id={`cast-email-${editCast.id}`}
+                        style={{ ...inputStyle, flex: 1 }}
+                      />
+                      <button
+                        onClick={async () => {
+                          const input = document.getElementById(`cast-email-${editCast.id}`) as HTMLInputElement;
+                          const newEmail = input?.value?.trim();
+                          if (!newEmail) return;
+                          const res = await fetch("/api/cast-account-update", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ cast_id: editCast.id, shop_id: shopId, new_email: newEmail }),
+                          });
+                          if (res.ok) { showMsg("メールアドレスを変更しました"); input.value = ""; }
+                          else showMsg("変更に失敗しました");
+                        }}
+                        style={{ padding: "8px 14px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer" }}
+                      >変更</button>
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                   <button onClick={saveCast} disabled={saving} style={{ flex: 1, padding: "10px", background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     {saving ? "保存中..." : "保存"}
