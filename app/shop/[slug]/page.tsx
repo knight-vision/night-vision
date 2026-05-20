@@ -51,6 +51,7 @@ export async function generateMetadata({
       siteName: "釧路ナイトビジョン",
       type: "website",
     },
+    alternates: { canonical: "https://www.night-vision.jp/shop/" + shop.slug },
   };
 }
 

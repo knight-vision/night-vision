@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   return {
     title: cast.name + "｜" + cast.shops.name,
     description: cast.name + "は釧路の" + cast.shops.name + "に在籍しています。" + cast.comment,
+    alternates: { canonical: "https://www.night-vision.jp/cast/" + params.id },
   };
 }
 

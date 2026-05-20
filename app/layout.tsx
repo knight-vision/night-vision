@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     "愛国 ラウンジ", "愛国 バー",
     "釧路市 夜", "釧路市 飲み屋", "北海道釧路 ナイトライフ",
   ],
+  alternates: { canonical: "https://www.night-vision.jp" },
   openGraph: { type: "website", locale: "ja_JP", siteName: "釧路ナイトビジョン" },
   robots: { index: true, follow: true },
   verification: { google: "PpTaH4pdV66wwM5Syk8TQpIOvKZ3n2pZ2pNVfiEV2LE" },
