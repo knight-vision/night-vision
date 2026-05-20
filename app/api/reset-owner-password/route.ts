@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { emailHtml } from "@/lib/emailTemplate";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -9,26 +10,25 @@ export async function POST(req: NextRequest) {
     await resend.emails.send({
       from: "釧路ナイトビジョン <info@night-vision.jp>",
       to: email,
-      subject: "【釧路ナイトビジョン】パスワードを再発行しました",
-      html: `
-<p>${shopName ?? ""} ご担当者様</p>
-<p>パスワードの再発行を受け付けました。</p>
-<br>
-<table border="1" cellpadding="8" style="border-collapse:collapse;">
-  <tr><td>ログインURL</td><td><a href="https://www.night-vision.jp/owner/login">https://www.night-vision.jp/owner/login</a></td></tr>
-  <tr><td>メールアドレス</td><td>${email}</td></tr>
-  <tr><td>新しいパスワード</td><td><strong>${password}</strong></td></tr>
-</table>
-<br>
-<p>ログイン後、パスワードを変更することをお勧めします。</p>
-<p>身に覚えのない場合はお問い合わせください。</p>
-<br>
-<p>釧路ナイトビジョン<br>info@night-vision.jp</p>
-      `,
+      subject: "【釧路ナイトビジョン】パスワード再発行のお知らせ",
+      html: emailHtml({
+        preheader: "新しいパスワードをお送りします",
+        title: "🔑 パスワード再発行",
+        body: `
+          <p style="margin:0 0 16px;">${shopName} ご担当者様</p>
+          <p style="margin:0 0 20px;">パスワードを再発行しました。以下の新しいパスワードでログインしてください。</p>
+          <div style="background:rgba(0,0,0,0.3);border-radius:12px;padding:20px;margin:0 0 16px;text-align:center;">
+            <div style="color:#9ca3af;font-size:12px;margin-bottom:8px;">新しいパスワード</div>
+            <div style="color:#c084fc;font-size:22px;font-weight:900;letter-spacing:0.15em;">${password}</div>
+          </div>
+        `,
+        ctaText: "管理画面にログインする",
+        ctaUrl: "https://www.night-vision.jp/owner/login",
+        footerNote: "このメールに心当たりがない場合はすぐにお問い合わせください。",
+      }),
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: "メール送信失敗" }, { status: 500 });
   }
 }

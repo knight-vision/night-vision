@@ -243,7 +243,7 @@ export default function ShiftManagementTab({
             {dates.map(date => {
               const closed = isClosed(date);
               const closedByException = isClosedDate(date);
-              const closedReason = closedDates.find(c => c.date === date)?.reason;
+              const closedDateReason = closedDates.find(c => c.date === date)?.reason;
               const confirmed = confirmedOnDate(date);
               const pending = requestsOnDate(date);
               const isSelected = selectedDate === date;
@@ -273,7 +273,7 @@ export default function ShiftManagementTab({
                     {/* 定休日・店休日バッジ */}
                     {closed && (
                       <span style={{ fontSize: 11, background: "#ff444420", color: "#ff6666", border: "1px solid #ff444444", padding: "2px 8px", borderRadius: 8, flexShrink: 0 }}>
-                        {closedByException ? `🚫 店休日${closedReason ? `（${closedReason}）` : ""}` : "🚫 定休日"}
+                        {closedByException ? `🚫 店休日${closedDateReason ? `（${closedDateReason}）` : ""}` : "🚫 定休日"}
                       </span>
                     )}
 
