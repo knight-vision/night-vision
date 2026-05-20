@@ -80,6 +80,23 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   if (!shop) return null;
   recordPageView(shop.id);
 
+  // 確定シフトから今日の出勤を反映
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const { data: todayShifts } = await supabase
+    .from("confirmed_shifts")
+    .select("cast_id")
+    .eq("shop_id", shop.id)
+    .eq("date", todayStr);
+  const onTodayCastIds = new Set((todayShifts || []).map((s: any) => s.cast_id));
+  // 確定シフトがある場合は上書き
+  if (onTodayCastIds.size > 0) {
+    shop.casts = shop.casts.map((c) => ({
+      ...c,
+      on_today: onTodayCastIds.has(c.id) ? true : (c.on_today === true ? true : null),
+    }));
+  }
+
   const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
   const hasBanner = shop.plan === "premium" || shop.referred;
   const mapAddress = shop.area ? stripFloor(shop.area) : null;

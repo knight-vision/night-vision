@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
+import ShiftManagementTab from "@/components/ShiftManagementTab";
 
 type Shop = {
   id: number;
@@ -52,7 +53,27 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "plan" | "password";
+type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "plan" | "password";
+
+type ShiftRequest = {
+  id: string;
+  cast_id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  note: string;
+  status: string;
+  casts: { id: number; name: string };
+};
+
+type ConfirmedShift = {
+  id: string;
+  cast_id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  casts: { id: number; name: string };
+};
 
 const WEEK_DAYS = ["月", "火", "水", "木", "金", "土", "日", "祝"];
 
@@ -94,6 +115,12 @@ export default function OwnerDashboard() {
   const [showAllTags, setShowAllTags] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [shiftRequests, setShiftRequests] = useState<ShiftRequest[]>([]);
+  const [confirmedShifts, setConfirmedShifts] = useState<ConfirmedShift[]>([]);
+  const [shiftLoading, setShiftLoading] = useState(false);
+  const [shiftMsg, setShiftMsg] = useState("");
+  const [castAccountEmail, setCastAccountEmail] = useState<Record<number, string>>({});
+  const [issuingAccount, setIssuingAccount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -392,6 +419,7 @@ export default function OwnerDashboard() {
     { key: "sns", label: "SNS" },
     { key: "images", label: "店舗画像" },
     { key: "cast", label: "キャスト" },
+    { key: "shift", label: "シフト管理" },
     { key: "plan", label: "プラン" },
     { key: "password", label: "パスワード" },
   ];
@@ -1066,7 +1094,33 @@ export default function OwnerDashboard() {
           </div>
         )}
 
-        {/* プラン */}
+
+        {/* シフト管理 */}
+        {tab === "shift" && (
+          <ShiftManagementTab
+            shopId={shopId!}
+            casts={casts}
+            shiftRequests={shiftRequests}
+            setShiftRequests={setShiftRequests}
+            confirmedShifts={confirmedShifts}
+            setConfirmedShifts={setConfirmedShifts}
+            shiftLoading={shiftLoading}
+            setShiftLoading={setShiftLoading}
+            shiftMsg={shiftMsg}
+            setShiftMsg={setShiftMsg}
+            castAccountEmail={castAccountEmail}
+            setCastAccountEmail={setCastAccountEmail}
+            issuingAccount={issuingAccount}
+            setIssuingAccount={setIssuingAccount}
+            shopName={shop.name}
+            sectionStyle={sectionStyle}
+            inputStyle={inputStyle}
+            labelStyle={labelStyle}
+            btnPrimary={btnPrimary}
+          />
+        )}
+
+        {/* プラン */}}
         {tab === "plan" && (
           <div style={sectionStyle}>
             <div style={{ marginBottom: 20 }}>
