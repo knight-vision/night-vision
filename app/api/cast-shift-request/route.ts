@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
           </div>
         `,
         ctaText: "管理画面でシフトを確認する",
-        ctaUrl: "https://www.night-vision.jp/owner/dashboard",
+        ctaUrl: "https://www.night-vision.jp/owner/dashboard?tab=shift",
       }),
     });
   }

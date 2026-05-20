@@ -360,7 +360,12 @@ export default function ShiftManagementTab({
                             background: `${color}11`, border: `1px solid ${color}44`,
                           }}>
                             <span style={{ color, fontWeight: 700, fontSize: 13, minWidth: 60 }}>{cast?.name}</span>
-                            {req && <span style={{ fontSize: 11, color: "var(--accent)" }}>希望: {req.start_time?.slice(0,5)}〜{req.end_time?.slice(0,5)}</span>}
+                            {req && (
+                              <div style={{ fontSize: 11, color: "var(--accent)", display: "flex", flexDirection: "column", gap: 2 }}>
+                                <span>希望: {req.start_time?.slice(0,5)}〜{req.end_time?.slice(0,5)}</span>
+                                {req.note && <span style={{ color: "var(--text-muted)" }}>メモ: {req.note}</span>}
+                              </div>
+                            )}
                             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                               <select value={entry.start_time.split(":")[0]} onChange={e => updateDraftTime(date, entry.cast_id, "start_time", `${e.target.value}:${entry.start_time.split(":")[1]}`)} style={smInput}>
                                 {HOURS.map(h => <option key={h} value={String(h%24).padStart(2,"0")}>{tLabel(h)}</option>)}
@@ -396,21 +401,11 @@ export default function ShiftManagementTab({
 
                       {/* 店休日設定 */}
                       <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 6 }}>🚫 この日を店休日に設定</div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                          <input
-                            type="text"
-                            value={closedReason}
-                            onChange={e => setClosedReason(e.target.value)}
-                            placeholder="理由（任意）例：貸切・設備工事"
-                            style={{ ...inputStyle as any, flex: 1, minWidth: 160, fontSize: 12 }}
-                          />
-                          <button onClick={() => handleAddClosedDate(date)} style={{
-                            padding: "8px 14px", borderRadius: 8, background: "#ff444420",
-                            border: "1px solid #ff444444", color: "#ff4444",
-                            fontSize: 12, cursor: "pointer", fontFamily: "var(--font)",
-                          }}>店休日に設定</button>
-                        </div>
+                        <button onClick={() => handleAddClosedDate(date)} style={{
+                          padding: "8px 16px", borderRadius: 8, background: "#ff444420",
+                          border: "1px solid #ff444444", color: "#ff4444",
+                          fontSize: 12, cursor: "pointer", fontFamily: "var(--font)", fontWeight: 700,
+                        }}>🚫 この日を店休日に設定</button>
                       </div>
                     </div>
                   )}
@@ -445,7 +440,7 @@ export default function ShiftManagementTab({
                       </div>
                       <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                         {req.start_time?.slice(0,5)} 〜 {req.end_time?.slice(0,5)}
-                        {req.note && <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>※{req.note}</span>}
+                        {req.note && <span style={{ color: "var(--text-muted)", marginLeft: 8, fontSize: 12 }}>📝 {req.note}</span>}
                       </div>
                     </div>
                     <button onClick={() => { addCastToDraft(req.date, req.cast_id); setView("calendar"); setSelectedDate(req.date); }} style={{

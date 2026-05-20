@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
@@ -98,6 +98,7 @@ const btnPrimary = {
 
 export default function OwnerDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -132,6 +133,9 @@ export default function OwnerDashboard() {
     fetchShop(parseInt(sid));
     fetchCasts(parseInt(sid));
     fetchPhotoRequests(parseInt(sid));
+    // URLパラメータでタブを自動選択
+    const tabParam = new URLSearchParams(window.location.search).get("tab");
+    if (tabParam) setTab(tabParam as any);
   }, []);
 
   useEffect(() => {
