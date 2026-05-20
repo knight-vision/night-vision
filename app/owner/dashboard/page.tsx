@@ -1030,10 +1030,6 @@ export default function OwnerDashboard() {
                     <input type="number" value={editCast.age ?? ""} onChange={(e) => setEditCast({ ...editCast, age: parseInt(e.target.value) })} style={inputStyle} />
                   </div>
                   <div>
-                    <label style={labelStyle}>出身地</label>
-                    <input value={editCast.birthplace ?? ""} onChange={(e) => setEditCast({ ...editCast, birthplace: e.target.value })} style={inputStyle} />
-                  </div>
-                  <div>
                     <label style={labelStyle}>Instagram</label>
                     <input value={editCast.instagram ?? ""} onChange={(e) => setEditCast({ ...editCast, instagram: e.target.value })} style={inputStyle} />
                   </div>

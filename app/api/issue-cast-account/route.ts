@@ -4,7 +4,8 @@ import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
 );
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -24,28 +25,50 @@ export async function POST(req: NextRequest) {
     .eq("id", cast_id)
     .single();
 
-  // アカウント作成（既存なら更新）
-  const { error } = await supabase
+  // 既存アカウントを確認
+  const { data: existing } = await supabase
     .from("cast_accounts")
-    .upsert({
-      cast_id: Number(cast_id),
-      email: email.toLowerCase().trim(),
-      password_hash: password,
-    }, { onConflict: "cast_id" });
+    .select("id")
+    .eq("cast_id", Number(cast_id))
+    .single();
 
-  if (error) {
-    console.error(error);
-    return NextResponse.json({ error: "アカウント作成に失敗しました" }, { status: 500 });
+  let dbError;
+  if (existing) {
+    // 既存なら更新
+    const { error } = await supabase
+      .from("cast_accounts")
+      .update({
+        email: email.toLowerCase().trim(),
+        password_hash: password,
+      })
+      .eq("cast_id", Number(cast_id));
+    dbError = error;
+  } else {
+    // 新規作成
+    const { error } = await supabase
+      .from("cast_accounts")
+      .insert({
+        cast_id: Number(cast_id),
+        email: email.toLowerCase().trim(),
+        password_hash: password,
+      });
+    dbError = error;
+  }
+
+  if (dbError) {
+    console.error("DB error:", JSON.stringify(dbError));
+    return NextResponse.json({ error: `DB: ${dbError.message}` }, { status: 500 });
   }
 
   // キャストにメール送信
-  await resend.emails.send({
-    from: "釧路ナイトビジョン <info@night-vision.jp>",
-    to: email,
-    subject: "【釧路ナイトビジョン】キャストポータルのご案内",
-    html: `
+  try {
+    await resend.emails.send({
+      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      to: email,
+      subject: "【釧路ナイトビジョン】キャストポータルのご案内",
+      html: `
 <p>${castData?.name || "キャスト"}さん</p>
-<p>${shop_name}からキャストポータルのアカウントが発行されました。</p>
+<p>${shop_name || "お店"}からキャストポータルのアカウントが発行されました。</p>
 <p>以下の情報でログインし、シフト希望を提出できます。</p>
 <br>
 <table border="1" cellpadding="8" style="border-collapse:collapse;">
@@ -55,8 +78,12 @@ export async function POST(req: NextRequest) {
 </table>
 <br>
 <p>釧路ナイトビジョン<br>info@night-vision.jp</p>
-    `,
-  });
+      `,
+    });
+  } catch (mailError) {
+    console.error("Mail error:", mailError);
+    // メール失敗でもアカウント作成は成功扱いにする
+  }
 
   return NextResponse.json({ success: true });
 }
