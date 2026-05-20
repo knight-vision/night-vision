@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-type Cast = { id: number; name: string; shop_id: number; on_today: boolean };
+type Cast = { id: number; name: string; shop_id: number; on_today: boolean; hourly_wage: number | null };
 type ShiftRequest = { id: string; cast_id: number; date: string; start_time: string; end_time: string; note: string; status: string; casts: { id: number; name: string } };
 type ConfirmedShift = { id: string; cast_id: number; date: string; start_time: string; end_time: string; casts: { id: number; name: string } };
 type ClosedDate = { id: string; date: string; reason: string | null };
@@ -18,22 +18,31 @@ function getDates(): string[] {
   }
   return dates;
 }
-function fmtJP(ds: string) {
-  const d = new Date(ds + "T00:00:00");
-  return `${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`;
-}
 function fmtFull(ds: string) {
   const d = new Date(ds + "T00:00:00");
   return `${d.getMonth()+1}月${d.getDate()}日(${["日","月","火","水","木","金","土"][d.getDay()]})`;
 }
-function isWeekClosed(ds: string, closedWeekDays: string[]): boolean {
+function fmtShort(ds: string) {
   const d = new Date(ds + "T00:00:00");
-  const name = ["日","月","火","水","木","金","土"][d.getDay()];
-  return closedWeekDays.includes(name);
+  return `${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`;
+}
+function isWeekClosed(ds: string, closedDays: string[]): boolean {
+  const d = new Date(ds + "T00:00:00");
+  return closedDays.includes(["日","月","火","水","木","金","土"][d.getDay()]);
+}
+
+// 勤務時間を計算（分）
+function calcMinutes(start: string, end: string): number {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  let startMin = sh * 60 + sm;
+  let endMin = eh * 60 + em;
+  if (endMin <= startMin) endMin += 24 * 60;
+  return endMin - startMin;
 }
 
 const CAST_COLORS = ["#ff6b9d","#00d4ff","#ffd700","#a855f7","#00e5a0","#ff9500","#00c7be","#ff3b30","#34aadc","#4cd964"];
-const HOURS = Array.from({length:13},(_,i)=>i+18);
+const HOURS = Array.from({length:31},(_,i)=>i); // 0〜30時
 const MINUTES = ["00","10","20","30","40","50"];
 const tLabel = (h: number) => h >= 24 ? `翌${h-24}時` : `${h}時`;
 
@@ -61,13 +70,13 @@ export default function ShiftManagementTab({
   shopName, shopClosedWeekDays,
   sectionStyle, inputStyle, labelStyle, btnPrimary,
 }: Props) {
-  const [view, setView] = useState<"calendar" | "requests" | "accounts">("calendar");
+  const [view, setView] = useState<"calendar" | "table" | "accounts">("calendar");
   const [closedDates, setClosedDates] = useState<ClosedDate[]>([]);
-  // draft: date -> DraftEntry[]
   const [draft, setDraft] = useState<Record<string, DraftEntry[]>>({});
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [closedReason, setClosedReason] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string|null>(null);
   const [loaded, setLoaded] = useState(false);
+  // 出勤表の表示期間（週）
+  const [tableWeekOffset, setTableWeekOffset] = useState(0);
 
   const dates = getDates();
 
@@ -86,29 +95,20 @@ export default function ShiftManagementTab({
   };
 
   const getColor = (castId: number) => CAST_COLORS[casts.findIndex(c => c.id === castId) % CAST_COLORS.length] || "#aaa";
-
   const isClosedDate = (date: string) => closedDates.some(c => c.date === date);
-  const isWeekClosedDate = (date: string) => isWeekClosed(date, shopClosedWeekDays);
-  const isClosed = (date: string) => isClosedDate(date) || isWeekClosedDate(date);
-
+  const isClosed = (date: string) => isClosedDate(date) || isWeekClosed(date, shopClosedWeekDays);
   const confirmedOnDate = (date: string) => confirmedShifts.filter(s => s.date === date);
   const requestsOnDate = (date: string) => shiftRequests.filter(s => s.date === date && s.status === "pending");
 
-  // ドラフトにキャストを追加
   const addCastToDraft = (date: string, castId: number) => {
-    // 希望シフトがあれば時間をプリセット
     const req = shiftRequests.find(r => r.cast_id === castId && r.date === date);
     const entry: DraftEntry = {
       cast_id: castId,
       start_time: req?.start_time?.slice(0,5) || "20:00",
       end_time: req?.end_time?.slice(0,5) || "24:00",
     };
-    setDraft(prev => ({
-      ...prev,
-      [date]: [...(prev[date] || []).filter(e => e.cast_id !== castId), entry],
-    }));
+    setDraft(prev => ({ ...prev, [date]: [...(prev[date] || []).filter(e => e.cast_id !== castId), entry] }));
   };
-
   const removeCastFromDraft = (date: string, castId: number) => {
     setDraft(prev => {
       const next = { ...prev };
@@ -117,16 +117,10 @@ export default function ShiftManagementTab({
       return next;
     });
   };
-
   const updateDraftTime = (date: string, castId: number, field: "start_time"|"end_time", val: string) => {
-    setDraft(prev => ({
-      ...prev,
-      [date]: (prev[date] || []).map(e => e.cast_id === castId ? {...e, [field]: val} : e),
-    }));
+    setDraft(prev => ({ ...prev, [date]: (prev[date] || []).map(e => e.cast_id === castId ? {...e, [field]: val} : e) }));
   };
-
   const hasDraft = (date: string, castId: number) => (draft[date] || []).some(e => e.cast_id === castId);
-
   const totalDraftShifts = Object.values(draft).flat().length;
 
   const handleConfirm = async () => {
@@ -136,17 +130,13 @@ export default function ShiftManagementTab({
     if (shifts.length === 0) { setShiftMsg("確定するシフトがありません"); return; }
     setShiftLoading(true); setShiftMsg("");
     const res = await fetch("/api/confirm-shift", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ shop_id: shopId, shifts }),
     });
     if (res.ok) {
-      setShiftMsg(`${shifts.length}件の確定シフトを保存しました。キャストにメールで通知しました。`);
-      setDraft({});
-      await loadAll();
-    } else {
-      setShiftMsg("保存に失敗しました。");
-    }
+      setShiftMsg(`${shifts.length}件の確定シフトを保存しました。キャストにメール通知しました。`);
+      setDraft({}); await loadAll();
+    } else setShiftMsg("保存に失敗しました。");
     setShiftLoading(false);
   };
 
@@ -156,12 +146,8 @@ export default function ShiftManagementTab({
   };
 
   const handleAddClosedDate = async (date: string) => {
-    const res = await fetch("/api/confirm-shift", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shop_id: shopId, date, reason: closedReason || null }),
-    });
-    if (res.ok) { setClosedReason(""); await loadAll(); }
+    await fetch("/api/confirm-shift", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, date }) });
+    await loadAll();
   };
 
   const handleDeleteClosedDate = async (date: string) => {
@@ -182,17 +168,27 @@ export default function ShiftManagementTab({
     setIssuingAccount(null);
   };
 
-  const pendingCount = shiftRequests.filter(r => r.status === "pending").length;
-
   const smInput: React.CSSProperties = { ...inputStyle as any, padding: "4px 8px", fontSize: 12, width: "auto" };
+
+  // 出勤表：週単位
+  const tableStartDate = new Date();
+  tableStartDate.setDate(tableStartDate.getDate() + tableWeekOffset * 7);
+  const tableDates = Array.from({length:7}, (_,i) => {
+    const d = new Date(tableStartDate); d.setDate(tableStartDate.getDate() + i);
+    return getDateStr(d);
+  });
+
+  // キャスト別集計（月単位）
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const monthShifts = confirmedShifts.filter(s => s.date.startsWith(thisMonth));
 
   return (
     <div>
       {/* サブナビ */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         {[
-          { key: "calendar", label: "📅 確定シフト" },
-          { key: "requests", label: `📩 希望シフト${pendingCount > 0 ? ` (${pendingCount})` : ""}` },
+          { key: "calendar", label: "📅 確定シフト入力" },
+          { key: "table", label: "📊 出勤表" },
           { key: "accounts", label: "🔑 アカウント管理" },
         ].map(v => (
           <button key={v.key} onClick={() => setView(v.key as any)} style={{
@@ -215,30 +211,26 @@ export default function ShiftManagementTab({
           fontSize: 13, marginBottom: 16,
         }}>{shiftMsg}</div>
       )}
-
       {shiftLoading && <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>読み込み中...</div>}
 
-      {/* ===== 確定シフトカレンダー ===== */}
+      {/* ===== 確定シフト入力カレンダー ===== */}
       {view === "calendar" && !shiftLoading && (
         <div>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.7 }}>
-            日付を選んでキャストの出勤を設定し、「確定シフトを保存」してください。<br />
-            <span style={{ color: "var(--accent)", fontWeight: 700 }}>紫の枠</span>：希望シフトあり　
-            <span style={{ color: "#ff4444", fontWeight: 700 }}>赤背景</span>：定休日・店休日
+            日付をタップして出勤キャストと時間を設定し、「確定シフトを保存」してください。<br />
+            <span style={{ opacity: 0.7, fontSize: 12 }}>📩 = 希望シフトあり　🚫 = 定休日・店休日</span>
           </p>
 
-          {/* ドラフト保存ボタン（上部固定） */}
           {totalDraftShifts > 0 && (
             <button onClick={handleConfirm} disabled={shiftLoading} style={{
-              ...btnPrimary as any,
-              marginBottom: 16, position: "sticky", top: 8, zIndex: 10,
+              ...btnPrimary as any, marginBottom: 16,
+              position: "sticky", top: 8, zIndex: 10,
               boxShadow: "0 4px 20px var(--accent)44",
             }}>
               💾 {totalDraftShifts}件の確定シフトを保存してメール通知
             </button>
           )}
 
-          {/* 日付リスト */}
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {dates.map(date => {
               const closed = isClosed(date);
@@ -248,57 +240,45 @@ export default function ShiftManagementTab({
               const pending = requestsOnDate(date);
               const isSelected = selectedDate === date;
               const draftEntries = draft[date] || [];
-              const today = getDateStr(new Date());
-              const isToday = date === today;
+              const isToday = date === getDateStr(new Date());
 
               return (
                 <div key={date} style={{ borderBottom: "1px solid var(--border)" }}>
-                  {/* 日付ヘッダー行 */}
                   <div
-                    onClick={() => { if (!closed) setSelectedDate(isSelected ? null : date); }}
+                    onClick={() => !closed && setSelectedDate(isSelected ? null : date)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "12px 16px", cursor: closed ? "default" : "pointer",
-                      background: closed ? "#ff444410" : isSelected ? "var(--accent)10" : isToday ? "var(--accent)08" : "transparent",
-                      transition: "background 0.15s",
+                      display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+                      padding: "11px 16px", cursor: closed ? "default" : "pointer",
+                      background: closed ? "#ff444408" : isSelected ? "var(--accent)10" : isToday ? "var(--accent)06" : "transparent",
                     }}
                   >
-                    {/* 日付 */}
-                    <div style={{ minWidth: 100, fontWeight: isToday ? 900 : 600, fontSize: 14,
-                      color: closed ? "#ff6666" : isToday ? "var(--accent)" : "var(--text-primary)" }}>
+                    <div style={{ minWidth: 96, fontWeight: isToday ? 900 : 600, fontSize: 14,
+                      color: closed ? "#ff6666" : isToday ? "var(--accent)" : "var(--text-primary)", flexShrink: 0 }}>
                       {fmtFull(date)}
-                      {isToday && <span style={{ fontSize: 10, marginLeft: 6, color: "var(--accent)", background: "var(--accent)22", padding: "1px 6px", borderRadius: 6 }}>今日</span>}
+                      {isToday && <span style={{ fontSize: 9, marginLeft: 6, color: "var(--accent)", background: "var(--accent)22", padding: "1px 5px", borderRadius: 4 }}>今日</span>}
                     </div>
 
-                    {/* 定休日・店休日バッジ */}
                     {closed && (
                       <span style={{ fontSize: 11, background: "#ff444420", color: "#ff6666", border: "1px solid #ff444444", padding: "2px 8px", borderRadius: 8, flexShrink: 0 }}>
                         {closedByException ? `🚫 店休日${closedDateReason ? `（${closedDateReason}）` : ""}` : "🚫 定休日"}
                       </span>
                     )}
-
-                    {/* 希望シフトバッジ */}
                     {!closed && pending.length > 0 && (
                       <span style={{ fontSize: 11, background: "var(--accent)22", color: "var(--accent)", border: "1px solid var(--accent)55", padding: "2px 8px", borderRadius: 8, flexShrink: 0 }}>
                         📩 希望{pending.length}件
                       </span>
                     )}
-
-                    {/* 確定シフトのキャスト名（コンパクト） */}
                     {!closed && confirmed.length > 0 && (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", flex: 1 }}>
                         {confirmed.map(s => (
                           <span key={s.id} style={{
                             fontSize: 11, padding: "2px 8px", borderRadius: 8, fontWeight: 600,
-                            background: getColor(s.cast_id) + "22",
-                            color: getColor(s.cast_id),
+                            background: getColor(s.cast_id) + "22", color: getColor(s.cast_id),
                             border: `1px solid ${getColor(s.cast_id)}55`,
                           }}>{s.casts?.name} {s.start_time?.slice(0,5)}〜{s.end_time?.slice(0,5)}</span>
                         ))}
                       </div>
                     )}
-
-                    {/* ドラフト表示 */}
                     {!closed && draftEntries.length > 0 && (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                         {draftEntries.map(e => {
@@ -306,28 +286,24 @@ export default function ShiftManagementTab({
                           return (
                             <span key={e.cast_id} style={{
                               fontSize: 11, padding: "2px 8px", borderRadius: 8, fontWeight: 600,
-                              background: getColor(e.cast_id) + "33",
-                              color: getColor(e.cast_id),
+                              background: getColor(e.cast_id) + "33", color: getColor(e.cast_id),
                               border: `2px dashed ${getColor(e.cast_id)}`,
                             }}>{c?.name} {e.start_time}〜{e.end_time}</span>
                           );
                         })}
                       </div>
                     )}
-
-                    {!closed && <span style={{ marginLeft: "auto", fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }}>{isSelected ? "▲" : "▼"}</span>}
+                    {!closed && <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)", flexShrink: 0 }}>{isSelected ? "▲" : "▼"}</span>}
                     {closed && closedByException && (
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClosedDate(date); }} style={{ marginLeft: "auto", background: "none", border: "1px solid #ff444444", borderRadius: 8, color: "#ff4444", padding: "2px 10px", fontSize: 11, cursor: "pointer" }}>解除</button>
+                      <button onClick={e => { e.stopPropagation(); handleDeleteClosedDate(date); }} style={{ marginLeft: "auto", background: "none", border: "1px solid #ff444444", borderRadius: 8, color: "#ff4444", padding: "2px 10px", fontSize: 11, cursor: "pointer" }}>解除</button>
                     )}
                   </div>
 
-                  {/* 展開パネル */}
                   {isSelected && !closed && (
-                    <div style={{ padding: "12px 16px 20px", background: "var(--bg-card)", borderTop: "1px solid var(--border)" }}>
-
+                    <div style={{ padding: "14px 16px 18px", background: "var(--bg-card)", borderTop: "1px solid var(--border)" }}>
                       {/* キャスト選択 */}
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>出勤キャストを選択</div>
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>出勤キャストを選択（タップで追加/解除）</div>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           {casts.map(cast => {
                             const selected = hasDraft(date, cast.id);
@@ -335,7 +311,7 @@ export default function ShiftManagementTab({
                             const color = getColor(cast.id);
                             return (
                               <button key={cast.id} onClick={() => selected ? removeCastFromDraft(date, cast.id) : addCastToDraft(date, cast.id)} style={{
-                                padding: "6px 14px", borderRadius: 20, cursor: "pointer",
+                                padding: "7px 16px", borderRadius: 20, cursor: "pointer",
                                 fontFamily: "var(--font)", fontSize: 13, fontWeight: selected ? 700 : 500,
                                 background: selected ? `${color}22` : "var(--bg-input)",
                                 border: `1.5px solid ${selected ? color : hasReq ? color + "88" : "var(--border)"}`,
@@ -348,25 +324,25 @@ export default function ShiftManagementTab({
                         </div>
                       </div>
 
-                      {/* 選択キャストの時間設定 */}
+                      {/* 時間設定 */}
                       {draftEntries.map(entry => {
                         const cast = casts.find(c => c.id === entry.cast_id);
                         const color = getColor(entry.cast_id);
                         const req = shiftRequests.find(r => r.cast_id === entry.cast_id && r.date === date);
                         return (
                           <div key={entry.cast_id} style={{
-                            display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap",
+                            display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap",
                             marginBottom: 8, padding: "10px 12px", borderRadius: 10,
                             background: `${color}11`, border: `1px solid ${color}44`,
                           }}>
-                            <span style={{ color, fontWeight: 700, fontSize: 13, minWidth: 60 }}>{cast?.name}</span>
+                            <span style={{ color, fontWeight: 700, fontSize: 13, minWidth: 56 }}>{cast?.name}</span>
                             {req && (
-                              <div style={{ fontSize: 11, color: "var(--accent)", display: "flex", flexDirection: "column", gap: 2 }}>
+                              <div style={{ fontSize: 11, color: "var(--accent)", display: "flex", flexDirection: "column", gap: 1 }}>
                                 <span>希望: {req.start_time?.slice(0,5)}〜{req.end_time?.slice(0,5)}</span>
-                                {req.note && <span style={{ color: "var(--text-muted)" }}>メモ: {req.note}</span>}
+                                {req.note && <span style={{ color: "var(--text-muted)" }}>📝 {req.note}</span>}
                               </div>
                             )}
-                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
                               <select value={entry.start_time.split(":")[0]} onChange={e => updateDraftTime(date, entry.cast_id, "start_time", `${e.target.value}:${entry.start_time.split(":")[1]}`)} style={smInput}>
                                 {HOURS.map(h => <option key={h} value={String(h%24).padStart(2,"0")}>{tLabel(h)}</option>)}
                               </select>
@@ -385,9 +361,9 @@ export default function ShiftManagementTab({
                         );
                       })}
 
-                      {/* 確定済み表示 */}
+                      {/* 確定済み */}
                       {confirmed.length > 0 && (
-                        <div style={{ marginTop: 12 }}>
+                        <div style={{ marginTop: 10 }}>
                           <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 6 }}>📌 確定済み</div>
                           {confirmed.map(s => (
                             <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -400,9 +376,9 @@ export default function ShiftManagementTab({
                       )}
 
                       {/* 店休日設定 */}
-                      <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
                         <button onClick={() => handleAddClosedDate(date)} style={{
-                          padding: "8px 16px", borderRadius: 8, background: "#ff444420",
+                          padding: "7px 16px", borderRadius: 8, background: "#ff444420",
                           border: "1px solid #ff444444", color: "#ff4444",
                           fontSize: 12, cursor: "pointer", fontFamily: "var(--font)", fontWeight: 700,
                         }}>🚫 この日を店休日に設定</button>
@@ -422,50 +398,129 @@ export default function ShiftManagementTab({
         </div>
       )}
 
-      {/* ===== 希望シフト一覧 ===== */}
-      {view === "requests" && !shiftLoading && (
+      {/* ===== 出勤表 ===== */}
+      {view === "table" && !shiftLoading && (
         <div>
-          {shiftRequests.filter(r => r.status === "pending").length === 0 ? (
-            <div style={{ ...sectionStyle, textAlign: "center", color: "var(--text-muted)", padding: 40 }}>未確認の希望シフトはありません</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {shiftRequests.filter(r => r.status === "pending").map(req => {
-                const color = getColor(req.cast_id);
-                return (
-                  <div key={req.id} style={{ ...sectionStyle, marginBottom: 0, borderLeft: `3px solid ${color}`, display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                        <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{req.casts?.name}</span>
-                        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{fmtJP(req.date)}</span>
-                      </div>
-                      <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                        {req.start_time?.slice(0,5)} 〜 {req.end_time?.slice(0,5)}
-                        {req.note && <span style={{ color: "var(--text-muted)", marginLeft: 8, fontSize: 12 }}>📝 {req.note}</span>}
-                      </div>
-                    </div>
-                    <button onClick={() => { addCastToDraft(req.date, req.cast_id); setView("calendar"); setSelectedDate(req.date); }} style={{
-                      padding: "6px 14px", borderRadius: 8, cursor: "pointer",
-                      background: "var(--accent)22", border: "1px solid var(--accent)55",
-                      color: "var(--accent)", fontSize: 12, fontWeight: 700, fontFamily: "var(--font)",
-                    }}>カレンダーへ</button>
+          {/* 週ナビゲーション */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <button onClick={() => setTableWeekOffset(w => w - 1)} style={{ padding: "6px 14px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer" }}>← 前週</button>
+            <span style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 700 }}>
+              {fmtShort(tableDates[0])} 〜 {fmtShort(tableDates[6])}
+            </span>
+            <button onClick={() => setTableWeekOffset(w => w + 1)} style={{ padding: "6px 14px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer" }}>次週 →</button>
+            <button onClick={() => setTableWeekOffset(0)} style={{ padding: "6px 14px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12 }}>今週</button>
+          </div>
+
+          {/* 週間出勤表 */}
+          <div style={{ ...sectionStyle, overflowX: "auto", padding: 0 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "var(--text-muted)", minWidth: 70, fontWeight: 700, background: "var(--bg-input)" }}>キャスト</th>
+                  {tableDates.map(d => {
+                    const closed = isClosed(d);
+                    const isToday = d === getDateStr(new Date());
+                    const dow = new Date(d + "T00:00:00").getDay();
+                    return (
+                      <th key={d} style={{
+                        padding: "8px 6px", textAlign: "center", minWidth: 70,
+                        background: isToday ? "var(--accent)15" : closed ? "#ff444410" : "var(--bg-input)",
+                        color: closed ? "#ff6666" : isToday ? "var(--accent)" : dow === 0 ? "#ff8888" : dow === 6 ? "#88aaff" : "var(--text-muted)",
+                        borderLeft: "1px solid var(--border)", fontWeight: isToday ? 900 : 600,
+                      }}>
+                        {fmtShort(d)}
+                        {closed && <div style={{ fontSize: 9, opacity: 0.8 }}>休</div>}
+                      </th>
+                    );
+                  })}
+                  <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", borderLeft: "1px solid var(--border)", background: "var(--bg-input)", minWidth: 80 }}>週計</th>
+                </tr>
+              </thead>
+              <tbody>
+                {casts.map((cast, ci) => {
+                  const color = getColor(cast.id);
+                  const weekShifts = tableDates.map(d => confirmedShifts.find(s => s.cast_id === cast.id && s.date === d));
+                  const weekMin = weekShifts.reduce((sum, s) => sum + (s ? calcMinutes(s.start_time, s.end_time) : 0), 0);
+                  const weekHours = Math.floor(weekMin / 60);
+                  const weekMins = weekMin % 60;
+                  const weekPay = cast.hourly_wage ? Math.round(cast.hourly_wage * weekMin / 60) : null;
+                  return (
+                    <tr key={cast.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "10px 12px", fontWeight: 700, color, whiteSpace: "nowrap" }}>
+                        {cast.name}
+                        {cast.hourly_wage && <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 400 }}>¥{cast.hourly_wage.toLocaleString()}/h</div>}
+                      </td>
+                      {tableDates.map(date => {
+                        const s = confirmedShifts.find(s => s.cast_id === cast.id && s.date === date);
+                        const closed = isClosed(date);
+                        return (
+                          <td key={date} style={{ padding: "6px 4px", textAlign: "center", borderLeft: "1px solid var(--border)", background: closed ? "#ff444406" : "transparent" }}>
+                            {s ? (
+                              <div style={{ background: `${color}20`, border: `1px solid ${color}55`, borderRadius: 6, padding: "3px 4px", display: "inline-block", minWidth: 56 }}>
+                                <div style={{ color, fontSize: 11, fontWeight: 600 }}>{s.start_time?.slice(0,5)}</div>
+                                <div style={{ color: "var(--text-muted)", fontSize: 10 }}>〜{s.end_time?.slice(0,5)}</div>
+                                <div style={{ color, fontSize: 10, opacity: 0.8 }}>
+                                  {Math.floor(calcMinutes(s.start_time, s.end_time)/60)}h{calcMinutes(s.start_time, s.end_time)%60 > 0 ? `${calcMinutes(s.start_time, s.end_time)%60}m` : ""}
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{ color: "var(--border)" }}>—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding: "8px 10px", textAlign: "center", borderLeft: "1px solid var(--border)", background: "var(--bg-input)" }}>
+                        <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 13 }}>{weekHours}h{weekMins > 0 ? `${weekMins}m` : ""}</div>
+                        {weekPay !== null && weekMin > 0 && (
+                          <div style={{ color, fontSize: 11, fontWeight: 600 }}>¥{weekPay.toLocaleString()}</div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 月次集計 */}
+          <div style={{ ...sectionStyle, marginTop: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>
+              📊 {new Date().getMonth()+1}月の集計
+            </div>
+            {casts.map(cast => {
+              const color = getColor(cast.id);
+              const myShifts = monthShifts.filter(s => s.cast_id === cast.id);
+              const totalMin = myShifts.reduce((sum, s) => sum + calcMinutes(s.start_time, s.end_time), 0);
+              const totalHours = Math.floor(totalMin / 60);
+              const totalMins = totalMin % 60;
+              const totalPay = cast.hourly_wage ? Math.round(cast.hourly_wage * totalMin / 60) : null;
+              if (myShifts.length === 0) return null;
+              return (
+                <div key={cast.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+                  <div>
+                    <span style={{ fontWeight: 700, color, fontSize: 14 }}>{cast.name}</span>
+                    {cast.hourly_wage && <span style={{ color: "var(--text-muted)", fontSize: 11, marginLeft: 8 }}>¥{cast.hourly_wage.toLocaleString()}/h</span>}
                   </div>
-                );
-              })}
-            </div>
-          )}
-          {shiftRequests.filter(r => r.status === "approved").length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>確定済み</div>
-              {shiftRequests.filter(r => r.status === "approved").map(req => (
-                <div key={req.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border)", opacity: 0.7 }}>
-                  <span style={{ fontWeight: 700, color: getColor(req.cast_id), fontSize: 13 }}>{req.casts?.name}</span>
-                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{fmtJP(req.date)}</span>
-                  <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{req.start_time?.slice(0,5)}〜{req.end_time?.slice(0,5)}</span>
-                  <span style={{ fontSize: 11, color: "var(--online)", background: "var(--online-bg)", border: "1px solid var(--online-border)", padding: "1px 8px", borderRadius: 8 }}>確定</span>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>{myShifts.length}日出勤　{totalHours}h{totalMins > 0 ? `${totalMins}m` : ""}</div>
+                    {totalPay !== null && <div style={{ color, fontWeight: 800, fontSize: 15 }}>¥{totalPay.toLocaleString()}</div>}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+            {/* 合計 */}
+            {casts.some(c => c.hourly_wage) && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 0", marginTop: 4 }}>
+                <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>合計人件費</span>
+                <span style={{ fontWeight: 900, color: "var(--accent)", fontSize: 18 }}>
+                  ¥{casts.reduce((sum, cast) => {
+                    const myMin = monthShifts.filter(s => s.cast_id === cast.id).reduce((s, sh) => s + calcMinutes(sh.start_time, sh.end_time), 0);
+                    return sum + (cast.hourly_wage ? Math.round(cast.hourly_wage * myMin / 60) : 0);
+                  }, 0).toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -480,23 +535,15 @@ export default function ShiftManagementTab({
             {casts.map(cast => (
               <div key={cast.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontWeight: 700, color: getColor(cast.id), fontSize: 14, minWidth: 80 }}>{cast.name}</div>
-                <input
-                  type="email"
-                  value={castAccountEmail[cast.id] || ""}
-                  onChange={e => setCastAccountEmail({ ...castAccountEmail, [cast.id]: e.target.value })}
+                <input type="email" value={castAccountEmail[cast.id] || ""} onChange={e => setCastAccountEmail({ ...castAccountEmail, [cast.id]: e.target.value })}
                   placeholder="キャストのメールアドレス"
-                  style={{ ...inputStyle as any, flex: 1, minWidth: 180, fontSize: 13 }}
-                />
-                <button
-                  onClick={() => handleIssueAccount(cast)}
-                  disabled={issuingAccount === cast.id || !castAccountEmail[cast.id]}
-                  style={{
-                    padding: "8px 16px", borderRadius: 10, cursor: "pointer",
-                    background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                    border: "none", color: "#fff", fontSize: 13, fontWeight: 700,
-                    fontFamily: "var(--font)", opacity: issuingAccount === cast.id || !castAccountEmail[cast.id] ? 0.5 : 1,
-                  }}
-                >{issuingAccount === cast.id ? "発行中..." : "発行"}</button>
+                  style={{ ...inputStyle as any, flex: 1, minWidth: 180, fontSize: 13 }} />
+                <button onClick={() => handleIssueAccount(cast)} disabled={issuingAccount === cast.id || !castAccountEmail[cast.id]} style={{
+                  padding: "8px 16px", borderRadius: 10, cursor: "pointer",
+                  background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                  border: "none", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "var(--font)",
+                  opacity: issuingAccount === cast.id || !castAccountEmail[cast.id] ? 0.5 : 1,
+                }}>{issuingAccount === cast.id ? "発行中..." : "発行"}</button>
               </div>
             ))}
           </div>

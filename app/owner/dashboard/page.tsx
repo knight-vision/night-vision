@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
@@ -42,6 +42,7 @@ type Cast = {
   on_today: boolean;
   instagram: string | null;
   birthplace: string | null;
+  hourly_wage: number | null;
 };
 
 type PhotoRequest = {
@@ -98,7 +99,6 @@ const btnPrimary = {
 
 export default function OwnerDashboard() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -312,6 +312,7 @@ export default function OwnerDashboard() {
         comment: editCast.comment,
         instagram: editCast.instagram,
         birthplace: editCast.birthplace,
+        hourly_wage: editCast.hourly_wage ?? null,
       }).eq("id", editCast.id);
     } else {
       await supabase.from("casts").insert({
@@ -321,6 +322,7 @@ export default function OwnerDashboard() {
         comment: editCast.comment,
         instagram: editCast.instagram,
         birthplace: editCast.birthplace,
+        hourly_wage: editCast.hourly_wage ?? null,
         on_today: false,
       });
     }
@@ -423,7 +425,7 @@ export default function OwnerDashboard() {
     { key: "sns", label: "SNS" },
     { key: "images", label: "店舗画像" },
     { key: "cast", label: "キャスト" },
-    { key: "shift", label: "シフト管理" },
+    { key: "shift", label: "出勤管理" },
     { key: "plan", label: "プラン" },
     { key: "password", label: "パスワード" },
   ];
@@ -1037,6 +1039,10 @@ export default function OwnerDashboard() {
                     <label style={labelStyle}>Instagram</label>
                     <input value={editCast.instagram ?? ""} onChange={(e) => setEditCast({ ...editCast, instagram: e.target.value })} style={inputStyle} />
                   </div>
+                  <div>
+                    <label style={labelStyle}>時給（円）</label>
+                    <input type="number" value={editCast.hourly_wage ?? ""} onChange={(e) => setEditCast({ ...editCast, hourly_wage: e.target.value ? parseInt(e.target.value) : null })} placeholder="例：1200" style={inputStyle} />
+                  </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>一言コメント</label>
                     <input value={editCast.comment ?? ""} onChange={(e) => setEditCast({ ...editCast, comment: e.target.value })} style={inputStyle} />
@@ -1080,6 +1086,7 @@ export default function OwnerDashboard() {
                     <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{cast.name}</span>
                     <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 8 }}>{cast.age}歳</span>
                     <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>{cast.comment}</div>
+                  {cast.hourly_wage && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>時給 ¥{cast.hourly_wage.toLocaleString()}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => setEditCast(cast)} style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "4px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>編集</button>
@@ -1095,7 +1102,7 @@ export default function OwnerDashboard() {
         )}
 
 
-        {/* シフト管理 */}
+        {/* 出勤管理 */}
         {tab === "shift" && (
           <ShiftManagementTab
             shopId={shopId!}
