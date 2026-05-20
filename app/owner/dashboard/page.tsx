@@ -1120,7 +1120,7 @@ export default function OwnerDashboard() {
           />
         )}
 
-        {/* プラン */}}
+        {/* プラン */}
         {tab === "plan" && (
           <div style={sectionStyle}>
             <div style={{ marginBottom: 20 }}>
