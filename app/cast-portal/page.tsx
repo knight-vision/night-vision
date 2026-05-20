@@ -247,7 +247,7 @@ export default function CastPortalPage() {
                   background: r.status === "approved" ? "var(--online-bg)" : "var(--bg-input)",
                   color: r.status === "approved" ? "var(--online)" : "var(--text-muted)",
                   border: `1px solid ${r.status === "approved" ? "var(--online-border)" : "var(--border)"}`,
-                }}>{r.status === "approved" ? "確定" : "審査中"}</span>
+                }}>{r.status === "approved" ? "確定" : "確認中"}</span>
               </div>
             );
           })}
