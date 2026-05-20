@@ -249,7 +249,6 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
               <span style={{ fontSize: 11 }}>: {{
                 created_at: "掲載日",
                 casts: "キャスト数",
-                age: "平均年齢",
                 favorite: "お気に入り",
                 views: "アクセス数",
               }[sortKey]}{sortDir === "asc" ? " ↑" : " ↓"}</span>
@@ -265,10 +264,9 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
               minWidth: 160, boxShadow: "0 4px 20px #00000044",
             }}>
               {[
-                { key: "default",    label: "標準" },
+                { key: "default",    label: "おすすめ順" },
                 { key: "created_at", label: "掲載日順" },
                 { key: "casts",      label: "キャスト数順" },
-                { key: "age",        label: "平均年齢順" },
                 { key: "favorite",   label: "お気に入り順" },
                 { key: "views",      label: "アクセス数順" },
               ].map((s) => {
