@@ -82,7 +82,8 @@ export default function ShiftManagementTab({
   const [newA, setNewA] = useState({ cast_id:"", date: getDateStr(new Date()), label:"", sign:"+", amount:"" });
   const [showPresets, setShowPresets] = useState(false);
   const [paySelectedDate, setPaySelectedDate] = useState<string|null>(null);
-
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
   const dates = getMonthDates(calYear, calMonth);
 
   useEffect(() => { if (!loaded) { loadAll(); setLoaded(true); } }, []);
