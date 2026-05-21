@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   await resend.emails.send({
     from: "釧路ナイトビジョン <info@night-vision.jp>",
-    to: "info@night-vision.jp",
+    to: process.env.ADMIN_EMAIL || "info@night-vision.jp",
     subject: `【ご意見・ご要望】${sender_type === "cast" ? "キャスト" : "オーナー"}から`,
     html: emailHtml({
       title: "💬 ご意見・ご要望が届きました",

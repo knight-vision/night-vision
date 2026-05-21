@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   try {
     await resend.emails.send({
       from: "釧路ナイトビジョン <info@night-vision.jp>",
-      to: "kushiro.night.vision@gmail.com",
+      to: process.env.ADMIN_EMAIL || "kushiro.night.vision@gmail.com",
       subject: `【店舗報告】${typeLabel}：${shopName}`,
       html: emailHtml({
         title: `📋 店舗情報の報告が届きました`,
