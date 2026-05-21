@@ -124,7 +124,6 @@ export default function ShiftManagementTab({
       confirmed = [...confirmed, ...(d2.confirmed||[]).filter((s:any)=>!ids.has(s.id))];
     }
     setShiftRequests(requests); setConfirmedShifts(confirmed); setClosedDates(closedDates);
-    }
     setShiftLoading(false); return;
   };
 
