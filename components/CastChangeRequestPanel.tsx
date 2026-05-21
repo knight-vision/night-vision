@@ -86,7 +86,7 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
         ) : confirmedShifts.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 0", fontSize: 13 }}>
             変更できる確定シフトがありません
-            <div style={{ fontSize: 10, color: "var(--text-hint)", marginTop: 8 }}>{debugInfo}</div>
+
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -94,25 +94,31 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
             <div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8, fontWeight: 700 }}>変更したいシフトを選択</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {confirmedShifts.map(shift => (
-                  <button key={shift.id} onClick={() => {
-                    setSelectedShiftId(shift.id);
-                    setStartTime(shift.start_time?.slice(0,5) || "20:00");
-                    setEndTime(shift.end_time?.slice(0,5) || "24:00");
-                  }} style={{
-                    padding: "10px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left",
-                    background: selectedShiftId === shift.id ? "var(--accent)22" : "var(--bg-input)",
-                    border: `1.5px solid ${selectedShiftId === shift.id ? "var(--accent)" : "var(--border)"}`,
-                    color: "var(--text-primary)", fontFamily: "var(--font)",
-                  }}>
-                    <span style={{ fontWeight: 700, color: selectedShiftId === shift.id ? "var(--accent)" : "var(--text-primary)" }}>
-                      {fmtDate(shift.date)}
-                    </span>
-                    <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 10 }}>
-                      {shift.start_time?.slice(0,5)} 〜 {shift.end_time?.slice(0,5)}
-                    </span>
-                  </button>
-                ))}
+                {confirmedShifts.map(shift => {
+                  const today = new Date().toISOString().slice(0,10);
+                  const isPast = shift.date < today;
+                  return (
+                    <button key={shift.id} onClick={() => {
+                      setSelectedShiftId(shift.id);
+                      setStartTime(shift.start_time?.slice(0,5) || "20:00");
+                      setEndTime(shift.end_time?.slice(0,5) || "24:00");
+                    }} style={{
+                      padding: "10px 14px", borderRadius: 10, cursor: "pointer", textAlign: "left",
+                      background: selectedShiftId === shift.id ? "var(--accent)22" : "var(--bg-input)",
+                      border: `1.5px solid ${selectedShiftId === shift.id ? "var(--accent)" : isPast ? "var(--border)" : "var(--border)"}`,
+                      color: "var(--text-primary)", fontFamily: "var(--font)",
+                      opacity: isPast ? 0.6 : 1,
+                    }}>
+                      <span style={{ fontWeight: 700, color: selectedShiftId === shift.id ? "var(--accent)" : isPast ? "var(--text-muted)" : "var(--text-primary)" }}>
+                        {fmtDate(shift.date)}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 10 }}>
+                        {shift.start_time?.slice(0,5)} 〜 {shift.end_time?.slice(0,5)}
+                      </span>
+                      {isPast && <span style={{ fontSize: 10, color: "var(--text-hint)", marginLeft: 8 }}>（終了済み）</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
