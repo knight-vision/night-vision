@@ -116,10 +116,29 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
 
       <div style={{ padding: 16, position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{
-            padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-            background: tc.bg, border: `1.5px solid ${tc.border}`, color: tc.text,
-          }}>{shop.type}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{
+              padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+              background: tc.bg, border: `1.5px solid ${tc.border}`, color: tc.text,
+              flexShrink: 0,
+            }}>{shop.type}</span>
+            {tweet && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, maxWidth: 160 }}>
+                <div style={{
+                  background: "#1a0a2e", color: "#f0eeff", fontSize: 10, fontWeight: 700,
+                  padding: "3px 8px", borderRadius: 10,
+                  border: `1px solid ${tc.border}88`,
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  whiteSpace: "nowrap", overflow: "hidden",
+                }}>
+                  <span style={{ color: tc.border, fontSize: 9, flexShrink: 0 }}>
+                    {(() => { const d=(Date.now()-new Date(tweet.created_at).getTime())/60000; return d<1?"今":""+Math.floor(d)+"分前"; })()}
+                  </span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>💬 {tweet.message}</span>
+                </div>
+              </div>
+            )}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{
               fontSize: 11, color: "var(--text-muted)",
@@ -131,7 +150,7 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ position: "relative", flexShrink: 0 }}>
+          <div style={{ flexShrink: 0 }}>
             <div style={{
               width: 52, height: 52, borderRadius: 12, overflow: "hidden",
               background: `linear-gradient(135deg, ${tc.border}33, #1a1028)`,
@@ -142,26 +161,6 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
                 ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : emoji}
             </div>
-            {tweet && (
-              <div style={{
-                position: "absolute", bottom: "100%", left: 0,
-                marginBottom: 5, zIndex: 10, whiteSpace: "nowrap",
-              }}>
-                <div style={{
-                  background: "#1a0a2e", color: "#f0eeff", fontSize: 10, fontWeight: 700,
-                  padding: "4px 8px", borderRadius: 6,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
-                  border: `1px solid ${tc.border}99`,
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                }}>
-                  <span style={{ color: tc.border, fontSize: 9 }}>
-                    {(() => { const d=(Date.now()-new Date(tweet.created_at).getTime())/60000; return d<1?"今":""+Math.floor(d)+"分前"; })()}
-                  </span>
-                  <span>{tweet.message}</span>
-                </div>
-                <div style={{ width: 6, height: 4, background: "#1a0a2e", clipPath: "polygon(0 0,100% 0,50% 100%)", marginLeft: 10 }} />
-              </div>
-            )}
           </div>
           <div>
             <div style={{ color: "var(--text-primary)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.2, fontFamily: "var(--font)" }}>
