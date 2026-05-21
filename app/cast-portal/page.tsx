@@ -199,7 +199,7 @@ export default function CastPortalPage() {
       <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
         {[
           { key: "shift", label: "📅 シフト希望" },
-          { key: "change_request", label: "🔄 変更希望" },
+          { key: "change_request", label: "🔄 シフト変更希望" },
           { key: "photos", label: "📷 写真" },
           { key: "feedback", label: "💬 ご意見" },
         ].map(v => (

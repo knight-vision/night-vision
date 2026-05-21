@@ -33,7 +33,7 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
     const res = await fetch(`/api/confirm-shift?shop_id=${shopId}`);
     if (res.ok) {
       const d = await res.json();
-      const mine = (d.confirmed || []).filter((s: any) => s.cast_id === Number(castId) && s.date >= today);
+      const mine = (d.confirmed || []).filter((s: any) => String(s.cast_id) === String(castId) && s.date >= today);
       setConfirmedShifts(mine);
     }
     const rRes = await fetch(`/api/shift-change-request?cast_id=${castId}`);

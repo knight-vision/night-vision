@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/shops";
+import JobApplyForm from "@/components/JobApplyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ export default async function JobDetailPage({ params }: { params: { slug: string
 
   const { data: job } = await supabase.from("job_postings").select("*").eq("id", params.jobId).eq("shop_id", shop.id).single();
   if (!job) notFound();
+
+  const shopName = shop.name;
 
   const cardStyle: React.CSSProperties = {
     background: "var(--bg-card)", border: "1px solid var(--border)",
@@ -78,25 +81,13 @@ export default async function JobDetailPage({ params }: { params: { slug: string
             </div>
           )}
 
-          <div style={{ marginTop: 20, padding: "14px 16px", background: "var(--accent)11", border: "1px solid var(--accent)33", borderRadius: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>応募・お問い合わせ</div>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 10px", lineHeight: 1.7 }}>
-              ご応募はお店に直接お問い合わせください。
-            </p>
-            <Link href={`/shop/${shop.slug}`} style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-              color: "#fff", padding: "10px 22px", borderRadius: 25,
-              fontSize: 13, fontWeight: 700, textDecoration: "none",
-            }}>
-              {shop.name}のページへ
-            </Link>
-          </div>
-
           <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-hint)" }}>
             掲載日: {new Date(job.created_at).toLocaleDateString("ja-JP")}
           </div>
         </div>
+
+        {/* 応募フォーム */}
+        <JobApplyForm jobId={job.id} jobTitle={job.title} shopName={shopName} shopSlug={shop.slug} />
       </main>
     </>
   );

@@ -172,28 +172,37 @@ export default function AdminPage() {
 
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth()+1).padStart(2,"0")}-${String(weekAgo.getDate()).padStart(2,"0")}`;
-    const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 30);
-    const monthStr = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth()+1).padStart(2,"0")}-${String(monthAgo.getDate()).padStart(2,"0")}`;
+    // JST (UTC+9) で今日の日付を計算
+    const jstOffset = 9 * 60 * 60 * 1000;
+    const nowJST = new Date(Date.now() + jstOffset);
+    const toJSTDateStr = (d: Date) => d.toISOString().slice(0, 10);
+
+    const todayJST = toJSTDateStr(nowJST);
+    const todayUTC = new Date(todayJST + "T00:00:00+09:00").toISOString(); // JSTの0時をUTCに変換
+
+    const weekAgoJST = new Date(nowJST); weekAgoJST.setDate(nowJST.getDate() - 7);
+    const weekUTC = new Date(toJSTDateStr(weekAgoJST) + "T00:00:00+09:00").toISOString();
+
+    const monthAgoJST = new Date(nowJST); monthAgoJST.setDate(nowJST.getDate() - 30);
+    const monthUTC = new Date(toJSTDateStr(monthAgoJST) + "T00:00:00+09:00").toISOString();
 
     const [todayRes, weekRes, monthRes, dailyRes] = await Promise.all([
-      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", todayStr + "T00:00:00"),
-      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", weekStr + "T00:00:00"),
-      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", monthStr + "T00:00:00"),
-      supabase.from("view_events").select("created_at").gte("created_at", weekStr + "T00:00:00").order("created_at"),
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", todayUTC),
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", weekUTC),
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", monthUTC),
+      supabase.from("view_events").select("created_at").gte("created_at", weekUTC).order("created_at"),
     ]);
 
-    // 日別集計
+    // 日別集計（JST基準）
     const dailyMap: Record<string, number> = {};
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      dailyMap[`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`] = 0;
+      const d = new Date(nowJST); d.setDate(nowJST.getDate() - i);
+      dailyMap[toJSTDateStr(d)] = 0;
     }
     (dailyRes.data || []).forEach((e: any) => {
-      const day = e.created_at.slice(0, 10);
+      // UTC→JSTに変換してから日付を取得
+      const jstDate = new Date(new Date(e.created_at).getTime() + jstOffset);
+      const day = toJSTDateStr(jstDate);
       if (dailyMap[day] !== undefined) dailyMap[day]++;
     });
 
@@ -327,10 +336,9 @@ export default function AdminPage() {
                     { key: "name", label: "店舗名 *" },
                     { key: "slug", label: "店舗名のローマ字（小文字）*" },
                     { key: "budget", label: "予算" },
-                    { key: "open_hour", label: "営業時間" },
+                    { key: "open_hour", label: "営業時間テキスト" },
                     { key: "tel", label: "電話番号" },
                     { key: "instagram", label: "Instagram" },
-                    { key: "closed_days", label: "定休日" },
                   ].map((f) => (
                     <div key={f.key}>
                       <label style={labelStyle}>{f.label}</label>
@@ -341,6 +349,54 @@ export default function AdminPage() {
                       />
                     </div>
                   ))}
+
+                  {/* 定休日（選択式） */}
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>定休日</label>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {["日", "月", "火", "水", "木", "金", "土"].map(day => {
+                        const days: string[] = (editShop as any).closed_week_days ?? [];
+                        const active = days.includes(day);
+                        return (
+                          <button key={day} type="button" onClick={() => {
+                            const next = active ? days.filter((d: string) => d !== day) : [...days, day];
+                            setEditShop({ ...editShop, closed_week_days: next, closed_days: next.join("・") } as any);
+                          }} style={{
+                            padding: "6px 14px", borderRadius: 20, cursor: "pointer",
+                            fontFamily: "var(--font)", fontSize: 13, fontWeight: active ? 700 : 500,
+                            background: active ? "var(--accent)22" : "var(--bg-input)",
+                            border: `1.5px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                            color: active ? "var(--accent)" : "var(--text-secondary)",
+                          }}>{day}曜日</button>
+                        );
+                      })}
+                    </div>
+                    {((editShop as any).closed_week_days ?? []).length > 0 && (
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                        定休日: {((editShop as any).closed_week_days ?? []).map((d: string) => d + "曜日").join("・")}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 開店・閉店時刻 */}
+                  <div>
+                    <label style={labelStyle}>開店時刻</label>
+                    <select value={(editShop as any).open_time ?? ""} onChange={e => setEditShop({ ...editShop, open_time: e.target.value } as any)} style={inputStyle}>
+                      <option value="">未設定</option>
+                      {Array.from({length: 24}, (_, i) => i).map(h => (
+                        ["00","30"].map(m => <option key={`${h}:${m}`} value={`${String(h).padStart(2,"0")}:${m}`}>{h >= 24 ? `翌${h-24}` : h}時{m !== "00" ? m + "分" : ""}</option>)
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>閉店時刻</label>
+                    <select value={(editShop as any).close_time ?? ""} onChange={e => setEditShop({ ...editShop, close_time: e.target.value } as any)} style={inputStyle}>
+                      <option value="">未設定</option>
+                      {Array.from({length: 31}, (_, i) => i).map(h => (
+                        ["00","30"].map(m => <option key={`${h}:${m}`} value={`${String(h%24).padStart(2,"0")}:${m}`}>{h >= 24 ? `翌${h-24}` : h}時{m !== "00" ? m + "分" : ""}</option>)
+                      ))}
+                    </select>
+                  </div>
 
                   {/* 住所（補完付き） */}
                   <div style={{ position: "relative" }}>
