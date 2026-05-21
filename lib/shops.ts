@@ -106,17 +106,45 @@ export async function getShopBySlug(slug: string): Promise<Shop | null> {
     .single();
   if (error) return null;
 
-  // 承認済み写真を取得
+  // 承認済み店舗写真を取得（cast_photoは除外）
   const { data: photos } = await supabase
     .from("photo_requests")
     .select("url, sort_order")
     .eq("shop_id", shop.id)
     .eq("status", "approved")
+    .neq("type", "cast_photo")
     .order("sort_order");
 
   const photoUrls = (photos ?? []).map((p) => p.url);
+
+  // 各キャストの承認済みアイコン写真（1枚目）を取得
+  const castIds = (shop.casts ?? []).map((c: any) => c.id);
+  let castIconMap: Record<number, string> = {};
+  if (castIds.length > 0) {
+    const { data: castPhotos } = await supabase
+      .from("photo_requests")
+      .select("cast_id, url, sort_order")
+      .in("cast_id", castIds)
+      .eq("status", "approved")
+      .eq("type", "cast_photo")
+      .order("sort_order");
+
+    // 各キャストの最初の写真をアイコンとして使用
+    for (const p of (castPhotos ?? [])) {
+      if (p.cast_id && !castIconMap[p.cast_id]) {
+        castIconMap[p.cast_id] = p.url;
+      }
+    }
+  }
+
+  const castsWithIcons = (shop.casts ?? []).map((c: any) => ({
+    ...c,
+    icon_photo: castIconMap[c.id] || null,
+  }));
+
   return {
     ...shop,
+    casts: castsWithIcons,
     photos: photoUrls.length > 0 ? photoUrls : (shop.photos ?? []),
     image: photoUrls.length > 0 ? photoUrls[0] : shop.image,
   } as Shop;

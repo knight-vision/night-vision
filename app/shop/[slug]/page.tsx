@@ -402,8 +402,12 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                     width: 44, height: 44, borderRadius: "50%",
                     background: "linear-gradient(135deg, var(--accent), var(--accent2))",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 20, flexShrink: 0,
-                  }}>👩</div>
+                    fontSize: 20, flexShrink: 0, overflow: "hidden",
+                  }}>
+                    {(cast as any).icon_photo
+                      ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : "👩"}
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{cast.name}</span>
