@@ -208,7 +208,7 @@ export default function PhotoRequestsPage() {
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                     }}>
                       <div>
-                        <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{req.shops.name}</div>
+                        <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{req.shops?.name || req.casts?.name || "不明"}</div>
                         <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{TYPE_LABELS[req.type]}</div>
                         {req.reject_reason && (
                           <div style={{ color: "var(--text-hint)", fontSize: 11, marginTop: 2 }}>理由: {req.reject_reason}</div>
