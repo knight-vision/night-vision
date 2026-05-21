@@ -85,7 +85,6 @@ export default async function ShopPage({ params }: { params: { slug: string } })
     .from("job_postings")
     .select("id, title, hourly_wage_min, hourly_wage_max, work_days, description")
     .eq("shop_id", shop.id)
-    .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(3);
 
@@ -109,6 +108,17 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
   const hasBanner = shop.plan === "premium" || shop.referred;
   const mapAddress = shop.area ? stripFloor(shop.area) : null;
+
+  // つぶやきを取得
+  const now = new Date().toISOString();
+  const { data: tweet } = await supabase
+    .from("shop_tweets")
+    .select("message, created_at, expires_at")
+    .eq("shop_id", shop.id)
+    .gt("expires_at", now)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
 
   return (
     <div>
@@ -145,6 +155,32 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           background: "var(--bg-card)", border: "1px solid var(--border)",
           borderRadius: 20, padding: 24, marginBottom: 20, marginTop: 20,
         }}>
+          {/* つぶやき */}
+          {tweet && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: tc.border + "15", border: `1px solid ${tc.border}55`,
+              borderRadius: 12, padding: "8px 14px", marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 16 }}>💬</span>
+              <div>
+                <span style={{ color: tc.text, fontSize: 14, fontWeight: 700 }}>{tweet.message}</span>
+                <span style={{ color: "var(--text-muted)", fontSize: 11, marginLeft: 8 }}>
+                  {(() => {
+                    const d = (Date.now() - new Date(tweet.created_at).getTime()) / 60000;
+                    return d < 1 ? "たった今" : d < 60 ? `${Math.floor(d)}分前` : `${Math.floor(d/60)}時間前`;
+                  })()}
+                </span>
+              </div>
+              <span style={{ fontSize: 10, color: "var(--text-hint)", marginLeft: "auto" }}>
+                {(() => {
+                  const m = (new Date(tweet.expires_at).getTime() - Date.now()) / 60000;
+                  return m > 0 ? `あと${m < 60 ? Math.floor(m)+"分" : Math.floor(m/60)+"時間"}` : "";
+                })()}
+              </span>
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             <span style={{
               padding: "2px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,

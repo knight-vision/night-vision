@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/shops";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const { data: shop } = await supabase.from("shops").select("name, type").eq("slug", params.slug).single();
   if (!shop) return {};
@@ -14,7 +16,7 @@ export default async function ShopJobsPage({ params }: { params: { slug: string 
   const { data: shop } = await supabase.from("shops").select("id, name, type, slug, plan").eq("slug", params.slug).single();
   if (!shop) notFound();
 
-  const { data: jobs } = await supabase.from("job_postings").select("*").eq("shop_id", shop.id).eq("is_active", true).order("created_at", { ascending: false });
+  const { data: jobs } = await supabase.from("job_postings").select("*").eq("shop_id", shop.id).order("created_at", { ascending: false });
 
   const cardStyle: React.CSSProperties = {
     background: "var(--bg-card)", border: "1px solid var(--border)",

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+import { emailHtml } from "@/lib/emailTemplate";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +9,7 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 const MAX_PHOTOS = 5;
 
 // GET: キャストの写真申請一覧
@@ -68,6 +71,32 @@ export async function POST(req: NextRequest) {
       url: urlData.publicUrl,
       status: "pending",
       sort_order: nextOrder,
+    });
+
+    // キャスト名・店名を取得してメール通知
+    const { data: castData } = await supabase.from("casts").select("name, shop_id, shops(name)").eq("id", Number(castId)).single();
+    const castName = castData?.name || "キャスト";
+    const shopName = (castData?.shops as any)?.name || "お店";
+
+    await resend.emails.send({
+      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      to: "info@night-vision.jp",
+      subject: `【写真審査依頼】${castName}（${shopName}）から写真申請が届きました`,
+      html: emailHtml({
+        title: "📷 キャスト写真の審査依頼",
+        body: `
+          <p style="margin:0 0 12px;color:#c0bdd8;">
+            <strong style="color:#f0eeff;">${shopName}</strong> の
+            <strong style="color:#f0eeff;">${castName}</strong>
+            さんからプロフィール写真の申請が届きました。
+          </p>
+          <div style="margin:12px 0;">
+            <img src="${urlData.publicUrl}" alt="申請写真" style="max-width:240px;border-radius:12px;border:1px solid #2d1b4e;" />
+          </div>
+        `,
+        ctaText: "管理画面で審査する",
+        ctaUrl: "https://www.night-vision.jp/admin/photo-requests",
+      }),
     });
 
     return NextResponse.json({ success: true });
