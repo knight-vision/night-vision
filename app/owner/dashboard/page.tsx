@@ -1204,37 +1204,88 @@ export default function OwnerDashboard() {
         {/* プラン */}
         {tab === "plan" && (
           <div style={sectionStyle}>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>現在のプラン</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)" }}>
-                {{ free: "フリープラン", standard: "ゴールドプラン", premium: "プレミアムプラン" }[shop.plan] ?? shop.plan}
+            {/* 成功・キャンセルメッセージ */}
+            {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("success") === "1" && (
+              <div style={{ background: "var(--online-bg)", border: "1px solid var(--online-border)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, color: "var(--online)", fontWeight: 700 }}>
+                ✅ ゴールドプランへのアップグレードが完了しました！
+              </div>
+            )}
+            {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("canceled") === "1" && (
+              <div style={{ background: "#ff444418", border: "1px solid #ff444444", borderRadius: 12, padding: "14px 16px", marginBottom: 20, color: "#ff4444" }}>
+                決済がキャンセルされました。
+              </div>
+            )}
+
+            {/* 現在のプラン */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>現在のプラン</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  fontSize: 20, fontWeight: 900, color: "var(--text-primary)",
+                }}>
+                  {shop.plan === "gold" || shop.plan === "standard" || shop.plan === "premium" ? "💎 ゴールドプラン" : "🆓 フリープラン"}
+                </div>
+                {(shop.plan === "gold" || shop.plan === "standard") && (
+                  <span style={{ fontSize: 12, background: "var(--accent)22", color: "var(--accent)", border: "1px solid var(--accent)44", padding: "2px 10px", borderRadius: 10 }}>
+                    月額 ¥3,000
+                  </span>
+                )}
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-              {[
-                { key: "free", label: "フリープラン", price: "無料", desc: "店舗名・業種・エリア・営業時間" },
-                { key: "standard", label: "ゴールドプラン", price: "月額3,000円", desc: "バナー写真・キャスト3名・Instagram連携" },
-                { key: "premium", label: "プレミアムプラン", price: "月額7,000円", desc: "上位表示・キャスト無制限・複数写真" },
-              ].filter((p) => p.key !== shop.plan).map((p) => (
-                <div key={p.key} style={{
-                  background: "var(--bg-input)", border: "1px solid var(--border)",
-                  borderRadius: 12, padding: 16,
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{p.label}</span>
-                    <span style={{ color: "var(--accent)", fontSize: 13 }}>{p.price}</span>
-                  </div>
-                  <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 10 }}>{p.desc}</div>
-                  <button onClick={() => requestPlanChange(p.key)} style={{
-                    width: "100%", padding: "8px",
-                    background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                    border: "none", borderRadius: 8, color: "#fff",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer",
-                  }}>このプランに変更申請</button>
-                </div>
-              ))}
-            </div>
+            {/* フリープランの場合：アップグレードボタン */}
+            {(shop.plan === "free") && (
+              <div style={{ background: "linear-gradient(135deg, var(--accent)15, var(--accent2)08)", border: "1px solid var(--accent)44", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 8 }}>💎 ゴールドプランにアップグレード</div>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4, lineHeight: 1.8 }}>月額 <strong style={{ color: "var(--accent)", fontSize: 16 }}>¥3,000</strong>（税込）</div>
+                <ul style={{ margin: "8px 0 16px", paddingLeft: 18, color: "var(--text-muted)", fontSize: 13, lineHeight: 2 }}>
+                  <li>バナー写真の掲載</li>
+                  <li>おすすめ優先表示</li>
+                  <li>求人情報の掲載</li>
+                </ul>
+                <button
+                  onClick={async () => {
+                    const res = await fetch("/api/stripe/checkout", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                    else showMsg(data.error || "決済画面の起動に失敗しました");
+                  }}
+                  style={{ ...btnPrimary, width: "100%" } as React.CSSProperties}
+                >
+                  💳 クレジットカードで申し込む
+                </button>
+                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 8, textAlign: "center" }}>
+                  Stripeの安全な決済画面に移動します。いつでもキャンセル可能です。
+                </p>
+              </div>
+            )}
+
+            {/* ゴールドプランの場合：管理・解約 */}
+            {(shop.plan === "gold" || shop.plan === "standard") && (
+              <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>プランの管理</div>
+                <button
+                  onClick={async () => {
+                    const res = await fetch("/api/stripe/portal", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ shop_id: shopId }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                    else showMsg(data.error || "管理ポータルの起動に失敗しました");
+                  }}
+                  style={{ padding: "10px 20px", borderRadius: 10, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)" }}
+                >
+                  🔧 お支払い情報・解約の管理
+                </button>
+                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 8 }}>
+                  カード情報の変更・プランの解約はこちらから行えます。
+                </p>
+              </div>
+            )}
 
             <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
               <button onClick={requestClose} style={{
