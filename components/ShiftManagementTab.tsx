@@ -572,42 +572,6 @@ ${casts.map(cast=>{
           </div>
         </div>
       )}
-
-      {/* ===== アカウント管理 ===== */}
-      {view==="accounts"&&(
-        <div style={sectionStyle}>
-          <div style={{fontSize:13,color:"var(--text-secondary)",marginBottom:16,lineHeight:1.7}}>
-            キャストのポータルアカウントを管理します。メールアドレスを入力して「発行」するとログイン情報がメール送信されます。
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {casts.map(cast=>(
-              <div key={cast.id} style={{padding:"14px 0",borderBottom:"1px solid var(--border)"}}>
-                <div style={{fontWeight:700,color:getColor(cast.id),fontSize:14,marginBottom:10}}>{cast.name}</div>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
-                  <input type="email" value={castAccountEmail[cast.id]||""} onChange={e=>setCastAccountEmail({...castAccountEmail,[cast.id]:e.target.value})}
-                    placeholder="新規発行：メールアドレス" style={{...inputStyle as any,flex:1,minWidth:180,fontSize:13}}/>
-                  <button onClick={()=>handleIssueAccount(cast)} disabled={issuingAccount===cast.id||!castAccountEmail[cast.id]} style={{padding:"8px 16px",borderRadius:10,cursor:"pointer",background:"linear-gradient(135deg,var(--accent),var(--accent2))",border:"none",color:"#fff",fontSize:13,fontWeight:700,fontFamily:"var(--font)",opacity:issuingAccount===cast.id||!castAccountEmail[cast.id]?0.5:1}}>
-                    {issuingAccount===cast.id?"発行中...":"発行"}
-                  </button>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <input type="email" id={`edit-email-${cast.id}`} placeholder="既存メールアドレスを変更" style={{...inputStyle as any,flex:1,minWidth:180,fontSize:13}}/>
-                  <button onClick={async()=>{
-                    const input=document.getElementById(`edit-email-${cast.id}`) as HTMLInputElement;
-                    const email=input?.value?.trim(); if(!email) return;
-                    const res=await fetch("/api/cast-account-update",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({cast_id:cast.id,shop_id:shopId,new_email:email})});
-                    if(res.ok){setShiftMsg(`${cast.name}のメールアドレスを変更しました`);input.value="";}
-                    else setShiftMsg("変更に失敗しました");
-                  }} style={{padding:"8px 14px",borderRadius:10,cursor:"pointer",background:"var(--bg-card)",border:"1px solid var(--border)",color:"var(--text-secondary)",fontSize:13,fontFamily:"var(--font)"}}>メール変更</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p style={{fontSize:11,color:"var(--text-hint)",marginTop:16,lineHeight:1.8}}>
-            ポータルURL: <a href="https://www.night-vision.jp/cast-login" style={{color:"var(--accent)"}}>https://www.night-vision.jp/cast-login</a>
-          </p>
-        </div>
-      )}
     </div>
   );
 }
