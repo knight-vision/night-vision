@@ -69,8 +69,9 @@ export default function CastPortalPage() {
     const id = localStorage.getItem("cast_id");
     const name = localStorage.getItem("cast_name");
     const sid = localStorage.getItem("cast_shop_id");
+    const aid = localStorage.getItem("cast_account_id");
     if (!id) { router.push("/cast-login"); return; }
-    setCastId(id); setCastName(name || ""); setShopId(sid);
+    setCastId(id); setCastName(name || ""); setShopId(sid); setCastAccountId(aid);
     fetchData(id, sid);
   }, []);
 

@@ -38,15 +38,22 @@ export default function CastPayrollPanel({ castId, castName }: { castId: string;
     const [shiftsRes, allowancesRes, castRes] = await Promise.all([
       fetch(`/api/cast-confirmed-shifts?cast_id=${castId}`),
       fetch(`/api/cast-allowances?cast_id=${castId}&month=${month}`),
-      fetch(`/api/cast-allowances?cast_id=${castId}&get_cast=1`),
+      fetch(`/api/cast-confirmed-shifts?cast_id=${castId}&get_wage=1`),
     ]);
     if (shiftsRes.ok) {
       const data = await shiftsRes.json();
-      // 対象月のみ
-      const monthStr = month;
-      setShifts(data.filter((s: Shift) => s.date.startsWith(monthStr)));
+      setShifts(data.filter((s: Shift) => s.date.startsWith(month)));
     }
     if (allowancesRes.ok) setAllowances(await allowancesRes.json());
+
+    // 時給をキャストテーブルから取得
+    try {
+      const wageRes = await fetch(`/api/cast-wage?cast_id=${castId}`);
+      if (wageRes.ok) {
+        const w = await wageRes.json();
+        setHourlyWage(w.hourly_wage || null);
+      }
+    } catch {}
     setLoading(false);
   };
 
