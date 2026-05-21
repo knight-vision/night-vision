@@ -11,8 +11,9 @@ type PhotoRequest = {
   status: string;
   reject_reason: string | null;
   created_at: string;
-  shops: { name: string; slug: string };
-  shop_owners: { email: string };
+  shops: { name: string; slug: string } | null;
+  shop_owners: { email: string } | null;
+  casts: { name: string } | null;
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -124,9 +125,11 @@ export default function PhotoRequestsPage() {
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
                         <div>
-                          <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>{req.shops.name}</div>
+                          <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>{req.shops?.name || req.casts?.name || "不明"}</div>
                           <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>
-                            {TYPE_LABELS[req.type]} · {req.shop_owners.email}
+                            {TYPE_LABELS[req.type] || req.type}
+                            {req.casts?.name && ` · キャスト: ${req.casts.name}`}
+                            {req.shop_owners?.email && ` · ${req.shop_owners.email}`}
                           </div>
                           <div style={{ color: "var(--text-hint)", fontSize: 11, marginTop: 2 }}>
                             {new Date(req.created_at).toLocaleString("ja-JP")}
