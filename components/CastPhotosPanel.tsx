@@ -113,12 +113,10 @@ export default function CastPhotosPanel({ castId, shopId }: { castId: string; sh
                     <div style={{ fontSize: 11, color: "#ff4444", marginTop: 2 }}>非承認理由: {photo.reject_reason}</div>
                   )}
                 </div>
-                {photo.status !== "approved" && (
-                  <button onClick={() => handleDelete(photo.id)} style={{
-                    background: "#ff444418", border: "1px solid #ff444444",
-                    color: "#ff4444", padding: "4px 10px", borderRadius: 6, fontSize: 11, cursor: "pointer", flexShrink: 0,
-                  }}>取り消し</button>
-                )}
+                <button onClick={() => handleDelete(photo.id)} style={{
+                  background: "#ff444418", border: "1px solid #ff444444",
+                  color: "#ff4444", padding: "4px 10px", borderRadius: 6, fontSize: 11, cursor: "pointer", flexShrink: 0,
+                }}>{photo.status === "approved" ? "削除" : "取り消し"}</button>
               </div>
             ))}
           </div>
