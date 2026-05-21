@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import FavoriteButton from "@/components/FavoriteButton";
 import PhotoViewer from "@/components/PhotoViewer";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const slugs = await getAllSlugs();

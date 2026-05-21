@@ -75,7 +75,16 @@ export async function POST(req: NextRequest) {
     });
     if (insertError) {
       console.error("Insert error:", JSON.stringify(insertError));
-      return NextResponse.json({ error: `DB登録エラー: ${insertError.message}` }, { status: 500 });
+      // エラーを日本語で返す
+      let errMsg = "写真の申請に失敗しました。しばらく経ってからお試しください。";
+      if (insertError.message?.includes("violates check constraint")) {
+        errMsg = "写真の種別が正しくありません。管理者にお問い合わせください。";
+      } else if (insertError.message?.includes("violates not-null")) {
+        errMsg = "必須項目が不足しています。";
+      } else if (insertError.message?.includes("duplicate")) {
+        errMsg = "同じ写真がすでに申請されています。";
+      }
+      return NextResponse.json({ error: errMsg }, { status: 500 });
     }
 
     // キャスト名・店名を取得してメール通知

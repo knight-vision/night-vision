@@ -26,6 +26,7 @@ export default function Header() {
     { label: "🚨 店舗情報の報告", href: "/report" },
     { label: "📩 お問い合わせ", href: "/contact" },
     { label: "🏪 店舗管理ログイン", href: "/owner/login" },
+    { label: "💃 キャストポータル", href: "/cast-login" },
   ];
 
   return (

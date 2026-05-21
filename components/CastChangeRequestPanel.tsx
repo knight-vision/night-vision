@@ -28,15 +28,26 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
   useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
-    // 確定シフト取得（今日以降）
     const today = new Date().toISOString().slice(0,10);
-    const res = await fetch(`/api/confirm-shift?shop_id=${shopId}`);
-    if (res.ok) {
-      const d = await res.json();
-      const mine = (d.confirmed || []).filter((s: any) => String(s.cast_id) === String(castId) && s.date >= today);
-      setConfirmedShifts(mine);
-    }
-    const rRes = await fetch(`/api/shift-change-request?cast_id=${castId}`);
+    const now = new Date();
+    const nextM = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    // 今月・来月の両方から確定シフトを取得
+    const [res1, res2, rRes] = await Promise.all([
+      fetch(`/api/confirm-shift?shop_id=${shopId}&year=${now.getFullYear()}&month=${now.getMonth()+1}`),
+      fetch(`/api/confirm-shift?shop_id=${shopId}&year=${nextM.getFullYear()}&month=${nextM.getMonth()+1}`),
+      fetch(`/api/shift-change-request?cast_id=${castId}`),
+    ]);
+
+    let allConfirmed: any[] = [];
+    if (res1.ok) { const d = await res1.json(); allConfirmed = [...allConfirmed, ...(d.confirmed || [])]; }
+    if (res2.ok) { const d = await res2.json(); allConfirmed = [...allConfirmed, ...(d.confirmed || [])]; }
+
+    const mine = allConfirmed
+      .filter((s: any) => String(s.cast_id) === String(castId) && s.date >= today)
+      .sort((a: any, b: any) => a.date.localeCompare(b.date));
+    setConfirmedShifts(mine);
+
     if (rRes.ok) setRequests(await rRes.json());
   };
 
