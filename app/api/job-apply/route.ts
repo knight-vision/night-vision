@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { emailHtml, emailInfoTable } from "@/lib/emailTemplate";
+import { sendLineMessage } from "@/lib/line";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -86,6 +87,14 @@ export async function POST(req: NextRequest) {
       footerNote: "このメールは自動送信です。",
     }),
   });
+
+  // オーナーにLINE通知
+  if (owner?.email) {
+    const { data: ownerLine } = await supabase.from("shop_owners").select("line_user_id").eq("shop_id", job.shop_id).single();
+    if (ownerLine?.line_user_id) {
+      await sendLineMessage(ownerLine.line_user_id, `📨 求人応募が届きました\n\n求人: ${job.title}\n氏名: ${name}\nメール: ${email}${phone ? `\n電話: ${phone}` : ""}\n\n管理画面で確認してください。`);
+    }
+  }
 
   return NextResponse.json({ success: true });
 }

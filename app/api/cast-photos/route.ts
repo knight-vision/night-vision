@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { emailHtml } from "@/lib/emailTemplate";
+import { sendLineMessage } from "@/lib/line";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -119,8 +120,15 @@ export async function POST(req: NextRequest) {
       });
       console.log("Mail sent:", JSON.stringify(mailResult));
     } catch (mailErr: any) {
-      // メール失敗はログのみ、アップロード自体は成功扱い
       console.error("Mail send error:", mailErr?.message || mailErr);
+    }
+
+    // オーナーにもLINE通知
+    if (castData?.shop_id) {
+      const { data: ownerLine } = await supabase.from("shop_owners").select("line_user_id").eq("shop_id", castData.shop_id).single();
+      if (ownerLine?.line_user_id) {
+        await sendLineMessage(ownerLine.line_user_id, `📷 写真申請が届きました\n\nキャスト: ${castName}（${shopName}）\n\n管理画面で審査してください。\nhttps://www.night-vision.jp/admin/photo-requests`);
+      }
     }
 
     return NextResponse.json({ success: true });

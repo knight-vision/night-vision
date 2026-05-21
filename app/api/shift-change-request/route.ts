@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { emailHtml } from "@/lib/emailTemplate";
+import { sendLineMessage } from "@/lib/line";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,6 +70,14 @@ export async function POST(req: NextRequest) {
         ctaUrl: "https://www.night-vision.jp/owner/dashboard?tab=shift",
       }),
     });
+
+    // LINE通知
+    const { data: ownerLine } = await supabase.from("shop_owners").select("line_user_id").eq("shop_id", shop_id).single();
+    if (ownerLine?.line_user_id) {
+      const typeLabel = type === "day_off" ? "休み希望" : "時間変更希望";
+      const detail = type === "day_off" ? `${date} 休み希望` : `${date} ${requested_start_time}〜${requested_end_time} への変更希望`;
+      await sendLineMessage(ownerLine.line_user_id, `📝 シフト${typeLabel}が届きました\n\nキャスト: ${castData?.name || "キャスト"}\n${detail}${note ? `\nメモ: ${note}` : ""}\n\n管理画面で確認してください。`);
+    }
   }
 
   return NextResponse.json({ success: true });
