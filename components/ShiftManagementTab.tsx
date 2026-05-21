@@ -114,13 +114,16 @@ export default function ShiftManagementTab({
       fetch(`/api/confirm-shift?shop_id=${shopId}&year=${wy}&month=${wm}`),
       wy !== wy2 || wm !== wm2 ? fetch(`/api/confirm-shift?shop_id=${shopId}&year=${wy2}&month=${wm2}`) : Promise.resolve(null),
     ]);
-    if (r1.ok) { const d = await r1.json(); setShiftRequests(d.requests||[]); setConfirmedShifts(d.confirmed||[]); setClosedDates(d.closedDates||[]); }
+    let confirmed: ConfirmedShift[] = [];
+    let requests: ShiftRequest[] = [];
+    let closedDates: ClosedDate[] = [];
+    if (r1.ok) { const d = await r1.json(); confirmed = d.confirmed||[]; requests = d.requests||[]; closedDates = d.closedDates||[]; }
     if (r2 && r2.ok) {
       const d2 = await r2.json();
-      setConfirmedShifts((prev: ConfirmedShift[]) => {
-        const ids = new Set(prev.map((s:any)=>s.id));
-        return [...prev, ...(d2.confirmed||[]).filter((s:any)=>!ids.has(s.id))];
-      });
+      const ids = new Set(confirmed.map((s:any)=>s.id));
+      confirmed = [...confirmed, ...(d2.confirmed||[]).filter((s:any)=>!ids.has(s.id))];
+    }
+    setShiftRequests(requests); setConfirmedShifts(confirmed); setClosedDates(closedDates);
     }
     setShiftLoading(false); return;
   };
