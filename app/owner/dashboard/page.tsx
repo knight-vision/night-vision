@@ -44,6 +44,8 @@ type Cast = {
   comment: string;
   on_today: boolean;
   instagram: string | null;
+  x_account: string | null;
+  tiktok_account: string | null;
   birthplace: string | null;
   hourly_wage: number | null;
 };
@@ -314,8 +316,8 @@ export default function OwnerDashboard() {
         age: editCast.age,
         comment: editCast.comment,
         instagram: editCast.instagram,
-        x_account: (editCast as any).x_account || null,
-        tiktok_account: (editCast as any).tiktok_account || null,
+        x_account: editCast.x_account || null,
+        tiktok_account: editCast.tiktok_account || null,
         birthplace: editCast.birthplace,
         hourly_wage: editCast.hourly_wage ?? null,
       }).eq("id", editCast.id);
@@ -326,8 +328,8 @@ export default function OwnerDashboard() {
         age: editCast.age,
         comment: editCast.comment,
         instagram: editCast.instagram,
-        x_account: (editCast as any).x_account || null,
-        tiktok_account: (editCast as any).tiktok_account || null,
+        x_account: editCast.x_account || null,
+        tiktok_account: editCast.tiktok_account || null,
         birthplace: editCast.birthplace,
         hourly_wage: editCast.hourly_wage ?? null,
         on_today: false,
@@ -1052,11 +1054,11 @@ export default function OwnerDashboard() {
                   </div>
                   <div>
                     <label style={labelStyle}>X（Twitter）</label>
-                    <input value={(editCast as any).x_account ?? ""} onChange={(e) => setEditCast({ ...editCast, x_account: e.target.value } as any)} style={inputStyle} placeholder="@なしで入力" />
+                    <input value={editCast.x_account ?? ""} onChange={(e) => setEditCast({ ...editCast, x_account: e.target.value })} style={inputStyle} placeholder="@なしで入力" />
                   </div>
                   <div>
                     <label style={labelStyle}>TikTok</label>
-                    <input value={(editCast as any).tiktok_account ?? ""} onChange={(e) => setEditCast({ ...editCast, tiktok_account: e.target.value } as any)} style={inputStyle} placeholder="@なしで入力" />
+                    <input value={editCast.tiktok_account ?? ""} onChange={(e) => setEditCast({ ...editCast, tiktok_account: e.target.value })} style={inputStyle} placeholder="@なしで入力" />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>一言コメント</label>
