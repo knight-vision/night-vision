@@ -184,6 +184,7 @@ export default function OwnerDashboard() {
       .from("photo_requests")
       .select("*")
       .eq("shop_id", sid)
+      .neq("type", "cast_photo")
       .order("sort_order")
       .order("created_at", { ascending: false });
     if (data) setPhotoRequests(data);

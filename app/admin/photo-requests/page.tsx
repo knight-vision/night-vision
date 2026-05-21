@@ -91,6 +91,8 @@ export default function PhotoRequestsPage() {
   }
 
   const pending = requests.filter((r) => r.status === "pending");
+  const pendingCast = pending.filter((r) => r.type === "cast_photo");
+  const pendingShop = pending.filter((r) => r.type !== "cast_photo");
   const done = requests.filter((r) => r.status !== "pending");
 
   return (
@@ -109,16 +111,53 @@ export default function PhotoRequestsPage() {
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40 }}>読み込み中...</div>
         ) : (
           <>
-            {/* 審査待ち */}
+            {/* キャスト写真審査待ち */}
+            {pendingCast.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <h2 style={{ color: "#f59e0b", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
+                  💃 キャスト写真 審査待ち ({pendingCast.length}件)
+                </h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {pendingCast.map((req) => (
+                    <div key={req.id} style={{ background: "var(--bg-card)", border: "1px solid #f59e0b33", borderRadius: 14, padding: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div>
+                          <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>
+                            💃 {req.casts?.name || "キャスト"}
+                          </div>
+                          <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>キャストプロフィール写真</div>
+                          <div style={{ color: "var(--text-hint)", fontSize: 11, marginTop: 2 }}>
+                            {new Date(req.created_at).toLocaleString("ja-JP")}
+                          </div>
+                        </div>
+                        <span style={{ background: "#f59e0b22", border: "1px solid #f59e0b44", color: "#f59e0b", fontSize: 11, padding: "2px 10px", borderRadius: 10, height: "fit-content" }}>審査待ち</span>
+                      </div>
+                      <img src={req.url} alt="" style={{ width: "100%", maxHeight: 300, objectFit: "contain", borderRadius: 8, background: "#0a0a14", marginBottom: 12 }} />
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <button onClick={() => handleAction(req.id, "approve")} disabled={processing === req.id} style={{ flex: 1, padding: "10px", background: "var(--online-bg)", border: "1px solid var(--online-border)", borderRadius: 10, color: "var(--online)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                          {processing === req.id ? "処理中..." : "✅ 承認（キャストページに掲載）"}
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <input value={rejectReason[req.id] ?? ""} onChange={e => setRejectReason({ ...rejectReason, [req.id]: e.target.value })} placeholder="却下理由" style={{ flex: 1, padding: "8px 12px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12, outline: "none" }} />
+                        <button onClick={() => handleAction(req.id, "reject")} disabled={processing === req.id} style={{ padding: "8px 14px", background: "#ff444420", border: "1px solid #ff444444", borderRadius: 8, color: "#ff4444", fontSize: 12, cursor: "pointer" }}>却下</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 店舗写真審査待ち */}
             <div style={{ marginBottom: 32 }}>
               <h2 style={{ color: "var(--accent)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-                審査待ち ({pending.length}件)
+                🏪 店舗写真 審査待ち ({pendingShop.length}件)
               </h2>
-              {pending.length === 0 ? (
+              {pendingShop.length === 0 ? (
                 <div style={{ color: "var(--text-muted)", fontSize: 13, padding: 20, textAlign: "center" }}>審査待ちの申請はありません</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {pending.map((req) => (
+                  {pendingShop.map((req) => (
                     <div key={req.id} style={{
                       background: "var(--bg-card)", border: "1px solid var(--accent)33",
                       borderRadius: 14, padding: 20,
