@@ -96,26 +96,32 @@ export async function POST(req: NextRequest) {
       shopName = shopData?.name || "お店";
     }
 
-    await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
-      to: "info@night-vision.jp",
-      subject: `【写真審査依頼】${castName}（${shopName}）から写真申請が届きました`,
-      html: emailHtml({
-        title: "📷 キャスト写真の審査依頼",
-        body: `
-          <p style="margin:0 0 12px;color:#c0bdd8;">
-            <strong style="color:#f0eeff;">${shopName}</strong> の
-            <strong style="color:#f0eeff;">${castName}</strong>
-            さんからプロフィール写真の申請が届きました。
-          </p>
-          <div style="margin:12px 0;">
-            <img src="${urlData.publicUrl}" alt="申請写真" style="max-width:240px;border-radius:12px;border:1px solid #2d1b4e;" />
-          </div>
-        `,
-        ctaText: "管理画面で審査する",
-        ctaUrl: "https://www.night-vision.jp/admin/photo-requests",
-      }),
-    });
+    try {
+      const mailResult = await resend.emails.send({
+        from: "釧路ナイトビジョン <info@night-vision.jp>",
+        to: "info@night-vision.jp",
+        subject: `【写真審査依頼】${castName}（${shopName}）から写真申請が届きました`,
+        html: emailHtml({
+          title: "📷 キャスト写真の審査依頼",
+          body: `
+            <p style="margin:0 0 12px;color:#c0bdd8;">
+              <strong style="color:#f0eeff;">${shopName}</strong> の
+              <strong style="color:#f0eeff;">${castName}</strong>
+              さんからプロフィール写真の申請が届きました。
+            </p>
+            <div style="margin:12px 0;">
+              <img src="${urlData.publicUrl}" alt="申請写真" style="max-width:240px;border-radius:12px;border:1px solid #2d1b4e;" />
+            </div>
+          `,
+          ctaText: "管理画面で審査する",
+          ctaUrl: "https://www.night-vision.jp/admin/photo-requests",
+        }),
+      });
+      console.log("Mail sent:", JSON.stringify(mailResult));
+    } catch (mailErr: any) {
+      // メール失敗はログのみ、アップロード自体は成功扱い
+      console.error("Mail send error:", mailErr?.message || mailErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -21,16 +21,18 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
   const [endTime, setEndTime] = useState("24:00");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [msg, setMsg] = useState("");
+  const [debugInfo, setDebugInfo] = useState("");
 
   const sel: React.CSSProperties = { background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 8, color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "var(--font)", padding: "6px 10px" };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { if (castId) loadAll(); }, [castId]);
 
   const loadAll = async () => {
-    const today = new Date().toISOString().slice(0,10);
+    setDataLoading(true);
+    setDebugInfo(`castId: ${castId}`);
 
-    // cast_idで直接確定シフトを取得（shopId不要）
     const [shiftsRes, rRes] = await Promise.all([
       fetch(`/api/cast-confirmed-shifts?cast_id=${castId}`),
       fetch(`/api/shift-change-request?cast_id=${castId}`),
@@ -39,8 +41,12 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
     if (shiftsRes.ok) {
       const data = await shiftsRes.json();
       setConfirmedShifts(data || []);
+      setDebugInfo(`castId: ${castId} / 確定シフト: ${data?.length ?? 0}件`);
+    } else {
+      setDebugInfo(`APIエラー: ${shiftsRes.status}`);
     }
     if (rRes.ok) setRequests(await rRes.json());
+    setDataLoading(false);
   };
 
   const selectedShift = confirmedShifts.find(s => s.id === selectedShiftId);
@@ -73,9 +79,14 @@ export default function CastChangeRequestPanel({ castId, shopId }: { castId: str
           確定されているシフトの変更や休み希望をお店に伝えることができます。
         </p>
 
-        {confirmedShifts.length === 0 ? (
+        {dataLoading ? (
+          <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 0", fontSize: 13 }}>
+            読み込み中...
+          </div>
+        ) : confirmedShifts.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 0", fontSize: 13 }}>
             変更できる確定シフトがありません
+            <div style={{ fontSize: 10, color: "var(--text-hint)", marginTop: 8 }}>{debugInfo}</div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
