@@ -1,43 +1,6 @@
-const OWL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="48" height="48">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a0828"/>
-      <stop offset="100%" style="stop-color:#08080f"/>
-    </linearGradient>
-    <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ff6b9d"/>
-      <stop offset="100%" style="stop-color:#a855f7"/>
-    </linearGradient>
-    <linearGradient id="eye" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffd700"/>
-      <stop offset="100%" style="stop-color:#ff9900"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="0.8" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
-  <ellipse cx="16" cy="22" rx="8" ry="8" fill="url(#body)" opacity="0.2"/>
-  <ellipse cx="16" cy="15" rx="8" ry="7.5" fill="#0f0f1a"/>
-  <ellipse cx="16" cy="15" rx="7.5" ry="7" fill="none" stroke="url(#body)" stroke-width="1"/>
-  <path d="M10 9 L8 4 L12 8Z" fill="url(#body)"/>
-  <path d="M22 9 L24 4 L20 8Z" fill="url(#body)"/>
-  <circle cx="12.5" cy="14.5" r="3.5" fill="#0a0a14"/>
-  <circle cx="12.5" cy="14.5" r="3.2" fill="none" stroke="url(#eye)" stroke-width="0.8" filter="url(#glow)"/>
-  <circle cx="12.5" cy="14.5" r="2" fill="url(#eye)" opacity="0.9" filter="url(#glow)"/>
-  <circle cx="12.5" cy="14.5" r="1.1" fill="#0a0a14"/>
-  <circle cx="13.2" cy="13.8" r="0.5" fill="#fff" opacity="0.9"/>
-  <circle cx="19.5" cy="14.5" r="3.5" fill="#0a0a14"/>
-  <circle cx="19.5" cy="14.5" r="3.2" fill="none" stroke="url(#eye)" stroke-width="0.8" filter="url(#glow)"/>
-  <circle cx="19.5" cy="14.5" r="2" fill="url(#eye)" opacity="0.9" filter="url(#glow)"/>
-  <circle cx="19.5" cy="14.5" r="1.1" fill="#0a0a14"/>
-  <circle cx="20.2" cy="13.8" r="0.5" fill="#fff" opacity="0.9"/>
-  <path d="M14.8 18.5 L16 20.5 L17.2 18.5Z" fill="#ffd700" opacity="0.8"/>
-  <circle cx="5" cy="5" r="0.7" fill="#ffd700" opacity="0.7" filter="url(#glow)"/>
-  <circle cx="27" cy="4" r="0.5" fill="#a855f7" opacity="0.8" filter="url(#glow)"/>
-  <circle cx="28" cy="10" r="0.4" fill="#ff6b9d" opacity="0.6"/>
-</svg>`;
+// メール共通テンプレート
+// ※ メールクライアントはSVG・CSS background-image・多くのCSS3を無視するため
+//   テーブルレイアウト＋インラインスタイルのみで実装
 
 export function emailHtml({
   preheader = "",
@@ -55,70 +18,153 @@ export function emailHtml({
   footerNote?: string;
 }) {
   const cta = ctaText && ctaUrl ? `
-    <div style="text-align:center;margin:28px 0 8px;">
-      <a href="${ctaUrl}"
-        style="display:inline-block;
-          background:linear-gradient(135deg,#a855f7,#ff6b9d);
-          color:#ffffff;font-weight:800;font-size:14px;padding:13px 32px;
-          border-radius:30px;text-decoration:none;letter-spacing:0.06em;
-          box-shadow:0 0 24px rgba(168,85,247,0.5);">
-        ${ctaText} →
+    <tr><td align="center" style="padding:24px 0 8px;">
+      <a href="${ctaUrl}" target="_blank"
+        style="display:inline-block;background-color:#a855f7;color:#ffffff;
+          font-weight:800;font-size:15px;padding:14px 36px;
+          border-radius:30px;text-decoration:none;letter-spacing:0.05em;">
+        ${ctaText} &rarr;
       </a>
-    </div>` : "";
+    </td></tr>` : "";
 
   return `<!DOCTYPE html>
-<html lang="ja">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>${title}</title>
+<html lang="ja" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${title}</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background:#08080f;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
-  ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#08080f;">${preheader}</div>` : ""}
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#08080f;padding:40px 0;">
-    <tr><td align="center" style="padding:0 16px;">
-      <table width="100%" style="max-width:540px;" cellpadding="0" cellspacing="0" border="0">
+<body style="margin:0;padding:0;background-color:#08080f;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#08080f;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>` : ""}
 
-        <!-- ロゴヘッダー -->
-        <tr><td style="text-align:center;padding-bottom:24px;">
-          <table cellpadding="0" cellspacing="0" border="0" style="display:inline-table;background:linear-gradient(135deg,#12022a,#0d0d1a);border:1px solid rgba(168,85,247,0.25);border-radius:20px;padding:20px 36px;">
-            <tr><td style="text-align:center;">
-              ${OWL_SVG}
-              <div style="margin-top:10px;font-size:17px;font-weight:900;letter-spacing:-0.01em;">
-                <span style="background:linear-gradient(135deg,#ff6b9d,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;color:#ff6b9d;">釧路ナイトビジョン</span>
-              </div>
-              <div style="color:#4b4466;font-size:10px;margin-top:3px;letter-spacing:0.18em;">KUSHIRO NIGHT VISION</div>
-            </td></tr>
-          </table>
-        </td></tr>
+  <!-- 外側ラッパー -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#08080f;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
 
-        <!-- メインカード -->
-        <tr><td style="background:#0f0f1a;border:1px solid rgba(168,85,247,0.18);border-radius:20px;padding:32px 28px;">
+        <!-- 本体テーブル（最大560px） -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
 
-          <!-- タイトル -->
-          <div style="font-size:17px;font-weight:800;color:#f0eeff;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.07);">
-            ${title}
-          </div>
+          <!-- ===== ロゴヘッダー ===== -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0" border="0" style="background-color:#12022a;border:1px solid #3b1f5e;border-radius:16px;">
+                <tr>
+                  <td align="center" style="padding:20px 40px;">
 
-          <!-- 本文 -->
-          <div style="color:#c0bdd8;font-size:14px;line-height:1.9;">
-            ${body}
-          </div>
+                    <!-- フクロウアイコン（テキストアート） -->
+                    <div style="font-size:36px;line-height:1;margin-bottom:8px;">🦉</div>
 
-          ${cta}
-        </td></tr>
+                    <!-- サイト名 -->
+                    <div style="font-size:20px;font-weight:900;color:#e879f9;letter-spacing:-0.01em;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
+                      釧路ナイトビジョン
+                    </div>
+                    <div style="font-size:10px;color:#6b21a8;letter-spacing:0.18em;margin-top:4px;font-family:Arial,sans-serif;">
+                      KUSHIRO NIGHT VISION
+                    </div>
 
-        <!-- フッター -->
-        <tr><td style="text-align:center;padding:24px 0 8px;">
-          ${footerNote ? `<p style="color:#3b3555;font-size:12px;margin:0 0 10px;">${footerNote}</p>` : ""}
-          <p style="color:#2e2a44;font-size:11px;margin:0;line-height:2;">
-            釧路ナイトビジョン &nbsp;·&nbsp;
-            <a href="https://www.night-vision.jp" style="color:#6d28d9;text-decoration:none;">night-vision.jp</a>
-            &nbsp;·&nbsp; info@night-vision.jp
-          </p>
-        </td></tr>
+                    <!-- アクセントライン -->
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin:10px auto 0;">
+                      <tr>
+                        <td style="width:20px;height:2px;background-color:#ff6b9d;border-radius:1px;"></td>
+                        <td style="width:6px;"></td>
+                        <td style="width:40px;height:2px;background-color:#a855f7;border-radius:1px;"></td>
+                        <td style="width:6px;"></td>
+                        <td style="width:20px;height:2px;background-color:#ff6b9d;border-radius:1px;"></td>
+                      </tr>
+                    </table>
 
-      </table>
-    </td></tr>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ===== メインカード ===== -->
+          <tr>
+            <td style="background-color:#0f0f1a;border:1px solid #2d1b4e;border-radius:20px;padding:0;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+                <!-- タイトル帯 -->
+                <tr>
+                  <td style="background-color:#1a0a2e;border-radius:20px 20px 0 0;padding:20px 28px 18px;border-bottom:1px solid #2d1b4e;">
+                    <div style="font-size:17px;font-weight:800;color:#f0eeff;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
+                      ${title}
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 本文 -->
+                <tr>
+                  <td style="padding:24px 28px;color:#c0bdd8;font-size:14px;line-height:1.9;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr><td>${body}</td></tr>
+                      ${cta}
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- ===== フッター ===== -->
+          <tr>
+            <td align="center" style="padding:20px 0 8px;">
+              ${footerNote ? `<p style="color:#4b3a6e;font-size:12px;margin:0 0 10px;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">${footerNote}</p>` : ""}
+              <p style="color:#3b2d55;font-size:11px;margin:0;line-height:2;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
+                釧路ナイトビジョン &nbsp;&middot;&nbsp;
+                <a href="https://www.night-vision.jp" style="color:#7c3aed;text-decoration:none;">night-vision.jp</a>
+                &nbsp;&middot;&nbsp; info@night-vision.jp
+              </p>
+              <!-- 下部アクセントドット -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin:12px auto 0;">
+                <tr>
+                  <td style="width:4px;height:4px;background-color:#ff6b9d;border-radius:50%;"></td>
+                  <td style="width:6px;"></td>
+                  <td style="width:4px;height:4px;background-color:#a855f7;border-radius:50%;"></td>
+                  <td style="width:6px;"></td>
+                  <td style="width:4px;height:4px;background-color:#ff6b9d;border-radius:50%;"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
+}
+
+// メール内の情報テーブル（キー・バリュー形式）
+export function emailInfoTable(rows: { label: string; value: string; highlight?: boolean }[]) {
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a1a;border-radius:10px;margin:12px 0;overflow:hidden;">
+      ${rows.map((r, i) => `
+        <tr style="border-top:${i > 0 ? "1px solid #1e1a35" : "none"};">
+          <td style="padding:10px 14px;font-size:12px;color:#7c6fa8;width:130px;vertical-align:top;">${r.label}</td>
+          <td style="padding:10px 14px;font-size:14px;color:${r.highlight ? "#e879f9" : "#e2e0ef"};font-weight:${r.highlight ? "800" : "600"};letter-spacing:${r.highlight ? "0.08em" : "0"};">${r.value}</td>
+        </tr>`).join("")}
+    </table>`;
+}
+
+// メール内の日程リスト
+export function emailDateList(items: { date: string; time: string; note?: string }[]) {
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a1a;border-radius:10px;margin:12px 0;overflow:hidden;">
+      ${items.map((item, i) => `
+        <tr style="border-top:${i > 0 ? "1px solid #1e1a35" : "none"};">
+          <td style="padding:10px 14px;">
+            <span style="font-size:13px;color:#a855f7;font-weight:700;">${item.date}</span>
+            <span style="font-size:13px;color:#e2e0ef;margin-left:12px;">${item.time}</span>
+            ${item.note ? `<span style="font-size:12px;color:#6b5a8e;margin-left:8px;">※${item.note}</span>` : ""}
+          </td>
+        </tr>`).join("")}
+    </table>`;
 }
