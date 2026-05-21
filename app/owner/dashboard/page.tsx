@@ -1109,13 +1109,15 @@ export default function OwnerDashboard() {
                         </div>
                         <label style={{ ...labelStyle, fontSize: 11 }}>メールアドレスを変更</label>
                         <div style={{ display: "flex", gap: 8 }}>
-                          <input type="email" placeholder="新しいメールアドレス" id={`cast-email-${editCast.id}`} style={{ ...inputStyle, flex: 1, fontSize: 13 }} />
+                          <input type="email" placeholder="新しいメールアドレス"
+                            value={castAccountEmail[editCast.id!] || ""}
+                            onChange={e => setCastAccountEmail({ ...castAccountEmail, [editCast.id!]: e.target.value })}
+                            style={{ ...inputStyle, flex: 1, fontSize: 13 }} />
                           <button onClick={async () => {
-                            const input = document.getElementById(`cast-email-${editCast.id}`) as HTMLInputElement;
-                            const newEmail = input?.value?.trim();
+                            const newEmail = castAccountEmail[editCast.id!]?.trim();
                             if (!newEmail) return;
                             const res = await fetch("/api/cast-account-update", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cast_id: editCast.id, shop_id: shopId, new_email: newEmail }) });
-                            if (res.ok) { showMsg("メールアドレスを変更しました"); input.value = ""; setCastAccounts({ ...castAccounts, [editCast.id!]: newEmail }); }
+                            if (res.ok) { showMsg("メールアドレスを変更しました"); setCastAccounts({ ...castAccounts, [editCast.id!]: newEmail }); setCastAccountEmail({ ...castAccountEmail, [editCast.id!]: "" }); }
                             else showMsg("変更に失敗しました");
                           }} style={{ padding: "8px 14px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer" }}>変更</button>
                         </div>

@@ -19,6 +19,18 @@ function getMonthDates(year: number, month: number): string[] {
   }
   return dates;
 }
+function getWeekDates(baseDate: string): string[] {
+  const base = new Date(baseDate + "T00:00:00");
+  // その週の月曜日に合わせる
+  const day = base.getDay(); // 0=日
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - (day === 0 ? 6 : day - 1));
+  return Array.from({length: 7}, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return getDateStr(d);
+  });
+}
 function fmtFull(ds: string) {
   const d = new Date(ds+"T00:00:00");
   return `${d.getMonth()+1}月${d.getDate()}日(${["日","月","火","水","木","金","土"][d.getDay()]})`;
@@ -84,16 +96,33 @@ export default function ShiftManagementTab({
   const [paySelectedDate, setPaySelectedDate] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
-  const dates = getMonthDates(calYear, calMonth);
+  const [weekBase, setWeekBase] = useState(getDateStr(new Date()));
+  const dates = getWeekDates(weekBase);
 
   useEffect(() => { if (!loaded) { loadAll(); setLoaded(true); } }, []);
   useEffect(() => { loadAllowances(); }, [payrollMonth]);
 
   const loadAll = async () => {
     setShiftLoading(true);
-    const res = await fetch(`/api/confirm-shift?shop_id=${shopId}&year=${calYear}&month=${calMonth}`);
-    if (res.ok) { const d=await res.json(); setShiftRequests(d.requests||[]); setConfirmedShifts(d.confirmed||[]); setClosedDates(d.closedDates||[]); }
-    setShiftLoading(false);
+    // weekBaseから年月を算出
+    const wb = new Date(weekBase + "T00:00:00");
+    const wy = wb.getFullYear(), wm = wb.getMonth() + 1;
+    // 次の週も含めるため翌月も取得
+    const nextWb = new Date(wb); nextWb.setDate(wb.getDate() + 6);
+    const wy2 = nextWb.getFullYear(), wm2 = nextWb.getMonth() + 1;
+    const [r1, r2] = await Promise.all([
+      fetch(`/api/confirm-shift?shop_id=${shopId}&year=${wy}&month=${wm}`),
+      wy !== wy2 || wm !== wm2 ? fetch(`/api/confirm-shift?shop_id=${shopId}&year=${wy2}&month=${wm2}`) : Promise.resolve(null),
+    ]);
+    if (r1.ok) { const d = await r1.json(); setShiftRequests(d.requests||[]); setConfirmedShifts(d.confirmed||[]); setClosedDates(d.closedDates||[]); }
+    if (r2 && r2.ok) {
+      const d2 = await r2.json();
+      setConfirmedShifts(prev => {
+        const ids = new Set(prev.map((s:any)=>s.id));
+        return [...prev, ...(d2.confirmed||[]).filter((s:any)=>!ids.has(s.id))];
+      });
+    }
+    setShiftLoading(false); return;
   };
 
   const loadAllowances = async () => {
@@ -149,7 +178,7 @@ export default function ShiftManagementTab({
     if (!shifts.length) { setShiftMsg("確定するシフトがありません"); return; }
     setShiftLoading(true); setShiftMsg("");
     const res = await fetch("/api/confirm-shift",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,shifts})});
-    if (res.ok) { setShiftMsg(`${shifts.length}件保存しました。キャストにメール通知しました。`); setDraft({}); await loadAll(); }
+    if (res.ok) { setShiftMsg(`${shifts.length}件のシフトを確定して通知しました。`); setDraft({}); await loadAll(); }
     else setShiftMsg("保存に失敗しました。");
     setShiftLoading(false);
   };
@@ -301,16 +330,18 @@ ${casts.map(cast=>{
       {/* ===== 出勤表（シフトカレンダー） ===== */}
       {view==="calendar"&&!shiftLoading&&(
         <div>
-          {/* 月ナビ */}
+          {/* 週ナビ */}
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-            <button onClick={()=>{if(calMonth===1){setCalYear(y=>y-1);setCalMonth(12);}else setCalMonth(m=>m-1);}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前月</button>
-            <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>{calYear}年{calMonth}月</span>
-            <button onClick={()=>{if(calMonth===12){setCalYear(y=>y+1);setCalMonth(1);}else setCalMonth(m=>m+1);}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>次月 →</button>
-            <button onClick={()=>{const n=new Date();setCalYear(n.getFullYear());setCalMonth(n.getMonth()+1);}} style={{padding:"6px 10px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer",fontSize:12}}>今月</button>
-            <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:"auto"}}>📩 = 希望あり　🚫 = 定休日・店休日</span>
+            <button onClick={()=>{const d=new Date(weekBase+"T00:00:00");d.setDate(d.getDate()-7);setWeekBase(getDateStr(d));}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前週</button>
+            <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>
+              {(() => { const w=getWeekDates(weekBase); return `${w[0].slice(5).replace("-","/")} 〜 ${w[6].slice(5).replace("-","/")}`;})()}
+            </span>
+            <button onClick={()=>{const d=new Date(weekBase+"T00:00:00");d.setDate(d.getDate()+7);setWeekBase(getDateStr(d));}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>次週 →</button>
+            <button onClick={()=>setWeekBase(getDateStr(new Date()))} style={{padding:"6px 10px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer",fontSize:12}}>今週</button>
+            <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:"auto"}}>📩 = 希望あり　🚫 = 定休日</span>
           </div>
           {totalDraftShifts>0&&<button onClick={handleConfirm} disabled={shiftLoading} style={{...btnPrimary as any,marginBottom:16,position:"sticky",top:8,zIndex:10,boxShadow:"0 4px 20px var(--accent)44"}}>
-            💾 {totalDraftShifts}件の確定シフトを保存してメール通知
+            📲 {totalDraftShifts}件のシフトを確定して通知
           </button>}
 
           <div style={{display:"flex",flexDirection:"column",gap:0}}>
@@ -358,7 +389,7 @@ ${casts.map(cast=>{
                               <span style={{color,fontWeight:700,fontSize:13,minWidth:56}}>{req.casts?.name}</span>
                               <span style={{fontSize:12,color:"var(--text-secondary)"}}>{req.start_time?.slice(0,5)}〜{req.end_time?.slice(0,5)}</span>
                               {req.note&&<span style={{fontSize:11,color:"var(--text-muted)"}}>📝{req.note}</span>}
-                              <button onClick={()=>addCastToDraft(date,req.cast_id)} style={{padding:"3px 10px",borderRadius:6,background:"var(--accent)22",border:"1px solid var(--accent)55",color:"var(--accent)",fontSize:11,cursor:"pointer",marginLeft:"auto"}}>取り込み</button>
+                              <button onClick={()=>addCastToDraft(date,req.cast_id)} style={{padding:"3px 10px",borderRadius:6,background:"var(--accent)22",border:"1px solid var(--accent)55",color:"var(--accent)",fontSize:11,cursor:"pointer",marginLeft:"auto"}}>✅ 確定</button>
                               <button onClick={()=>{ if(confirm("この希望シフトを削除しますか？")) deleteShiftRequest(req.id); }} style={{padding:"3px 10px",borderRadius:6,background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",fontSize:11,cursor:"pointer"}}>削除</button>
                             </div>;
                           })}
@@ -373,7 +404,7 @@ ${casts.map(cast=>{
                             const selected=hasDraft(date,cast.id);
                             const hasReq=shiftRequests.some(r=>r.cast_id===cast.id&&r.date===date);
                             const color=getColor(cast.id);
-                            return <button key={cast.id} onClick={()=>selected?removeCastFromDraft(date,cast.id):addCastToDraft(date,cast.id)} style={{padding:"7px 16px",borderRadius:20,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:selected?700:500,background:selected?`${color}22`:"var(--bg-input)",border:`1.5px solid ${selected?color:hasReq?color+"88":"var(--border)"}`,color:selected?color:hasReq?color:"var(--text-secondary)"}}>{cast.name}{hasReq&&!selected?" 📩":""}</button>;
+                            return <button key={cast.id} onClick={()=>selected?removeCastFromDraft(date,cast.id):addCastToDraft(date,cast.id)} style={{padding:"7px 16px",borderRadius:20,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:selected?800:500,background:selected?color:"var(--bg-input)",border:`2px solid ${selected?color:hasReq?color+"88":"var(--border)"}`,color:selected?"#fff":hasReq?color:"var(--text-secondary)",boxShadow:selected?`0 0 10px ${color}66`:"none"}}>{selected?"✓ ":""}{cast.name}{hasReq&&!selected?" 📩":""}</button>;
                           })}
                         </div>
                       </div>
@@ -422,7 +453,7 @@ ${casts.map(cast=>{
               );
             })}
           </div>
-          {totalDraftShifts>0&&<button onClick={handleConfirm} disabled={shiftLoading} style={{...btnPrimary as any,marginTop:20}}>💾 {totalDraftShifts}件の確定シフトを保存してメール通知</button>}
+          {totalDraftShifts>0&&<button onClick={handleConfirm} disabled={shiftLoading} style={{...btnPrimary as any,marginTop:20}}>📲 {totalDraftShifts}件のシフトを確定して通知</button>}
         </div>
       )}
 
