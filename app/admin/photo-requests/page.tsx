@@ -19,6 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
   banner: "バナー画像",
   icon: "アイコン画像",
   photos: "店内写真",
+  cast_photo: "キャスト写真",
 };
 
 export default function PhotoRequestsPage() {
@@ -38,7 +39,7 @@ export default function PhotoRequestsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("photo_requests")
-      .select("*, shops(name, slug), shop_owners(email)")
+      .select("*, shops(name, slug), shop_owners(email), casts(name)")
       .order("created_at", { ascending: false });
     setRequests(data ?? []);
     setLoading(false);

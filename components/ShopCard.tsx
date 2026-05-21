@@ -144,21 +144,22 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
             </div>
             {tweet && (
               <div style={{
-                position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)",
-                marginBottom: 6, minWidth: 100, maxWidth: 160, zIndex: 10,
+                position: "absolute", bottom: "100%", left: 0,
+                marginBottom: 5, zIndex: 10, whiteSpace: "nowrap",
               }}>
                 <div style={{
-                  background: "#fff", color: "#111", fontSize: 11, fontWeight: 700,
-                  padding: "5px 8px", borderRadius: 8, whiteSpace: "nowrap",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
-                  border: `1.5px solid ${tc.border}88`,
+                  background: "#1a0a2e", color: "#f0eeff", fontSize: 10, fontWeight: 700,
+                  padding: "4px 8px", borderRadius: 6,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                  border: `1px solid ${tc.border}99`,
+                  display: "inline-flex", alignItems: "center", gap: 5,
                 }}>
-                  {tweet.message}
-                  <div style={{ fontSize: 9, color: "#888", fontWeight: 400, marginTop: 1 }}>
+                  <span style={{ color: tc.border, fontSize: 9 }}>
                     {(() => { const d=(Date.now()-new Date(tweet.created_at).getTime())/60000; return d<1?"今":""+Math.floor(d)+"分前"; })()}
-                  </div>
+                  </span>
+                  <span>{tweet.message}</span>
                 </div>
-                <div style={{ width: 8, height: 6, background: "#fff", clipPath: "polygon(0 0,100% 0,50% 100%)", margin: "0 auto", borderLeft: `1.5px solid ${tc.border}88`, borderRight: `1.5px solid ${tc.border}88` }} />
+                <div style={{ width: 6, height: 4, background: "#1a0a2e", clipPath: "polygon(0 0,100% 0,50% 100%)", marginLeft: 10 }} />
               </div>
             )}
           </div>

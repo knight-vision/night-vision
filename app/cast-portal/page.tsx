@@ -392,7 +392,7 @@ export default function CastPortalPage() {
       </>}
 
       {/* 写真管理 */}
-      {portalView === "photos" && castId && <CastPhotosPanel castId={castId} />}
+      {portalView === "photos" && castId && shopId && <CastPhotosPanel castId={castId} shopId={shopId} />}
 
       {/* シフト変更希望 */}
       {portalView === "change_request" && castId && shopId && (
