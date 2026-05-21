@@ -42,8 +42,16 @@ export async function GET(req: NextRequest) {
     const lineUserId = profile.userId;
     if (!lineUserId) throw new Error("no userId");
 
-    // DBに保存
-    await supabase.from("cast_accounts").update({ line_user_id: lineUserId }).eq("id", Number(state));
+    // DBに保存（cast_accounts.idはUUID）
+    const { error: updateError } = await supabase
+      .from("cast_accounts")
+      .update({ line_user_id: lineUserId })
+      .eq("id", state);
+    
+    if (updateError) {
+      console.error("DB update error:", updateError.message);
+      throw new Error("db update failed");
+    }
 
     // 確認メッセージをLINEで送信
     if (process.env.LINE_CHANNEL_ACCESS_TOKEN) {
