@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   if (owner?.email) {
     const { data: ownerLine } = await supabase.from("shop_owners").select("line_user_id").eq("shop_id", job.shop_id).single();
     if (ownerLine?.line_user_id) {
-      await sendLineMessage(ownerLine.line_user_id, `📨 求人応募が届きました\n\n求人: ${job.title}\n氏名: ${name}\nメール: ${email}${phone ? `\n電話: ${phone}` : ""}\n\n管理画面で確認してください。`);
+      await sendLineMessage(ownerLine.line_user_id, `📨 求人応募が届きました\n\n求人: ${job.title}\n氏名: ${name}\nメール: ${email}${phone ? `\n電話: ${phone}` : ""}`, "https://www.night-vision.jp/owner/dashboard", "管理画面を開く");
     }
   }
 

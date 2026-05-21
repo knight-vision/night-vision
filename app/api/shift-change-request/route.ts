@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     if (ownerLine?.line_user_id) {
       const typeLabel = type === "day_off" ? "休み希望" : "時間変更希望";
       const detail = type === "day_off" ? `${date} 休み希望` : `${date} ${requested_start_time}〜${requested_end_time} への変更希望`;
-      await sendLineMessage(ownerLine.line_user_id, `📝 シフト${typeLabel}が届きました\n\nキャスト: ${castData?.name || "キャスト"}\n${detail}${note ? `\nメモ: ${note}` : ""}\n\n管理画面で確認してください。`);
+      await sendLineMessage(ownerLine.line_user_id, `📝 シフト${typeLabel}が届きました\n\nキャスト: ${castData?.name || "キャスト"}\n${detail}${note ? `\nメモ: ${note}` : ""}`, "https://www.night-vision.jp/owner/dashboard?tab=shift", "シフト管理を開く");
     }
   }
 
