@@ -13,6 +13,18 @@ export async function GET(req: NextRequest) {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  // まず全件確認（todayフィルターなし）
+  const { data: allData, error: allError } = await supabase
+    .from("confirmed_shifts")
+    .select("id, cast_id, shop_id, date, start_time, end_time")
+    .eq("cast_id", Number(castId));
+
+  console.log(`confirmed_shifts cast_id=${castId}(${Number(castId)}): total=${allData?.length ?? 0}, error=${allError?.message}`);
+  if (allData?.length) {
+    console.log("dates:", allData.map((s: any) => `${s.date}(${s.cast_id})`).join(", "));
+  }
+
+  // 今日以降でフィルター
   const { data, error } = await supabase
     .from("confirmed_shifts")
     .select("id, cast_id, shop_id, date, start_time, end_time")
