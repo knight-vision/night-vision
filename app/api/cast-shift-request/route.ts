@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
   if (!castId) return NextResponse.json({ requests: [], shop: null }, { status: 400 });
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
-  const future = new Date(today); future.setDate(today.getDate() + 35);
+  const future = new Date(today); future.setFullYear(today.getFullYear() + 1);
   const futureStr = `${future.getFullYear()}-${String(future.getMonth()+1).padStart(2,"0")}-${String(future.getDate()).padStart(2,"0")}`;
   const [{ data: requests }, { data: shop }] = await Promise.all([
-    supabase.from("shift_requests").select("*").eq("cast_id", castId).gte("date", todayStr).lte("date", futureStr).order("date"),
+    supabase.from("shift_requests").select("*").eq("cast_id", castId).order("date"),
     shopId ? supabase.from("shops").select("open_time,close_time,open_hour,closed_week_days,name").eq("id", shopId).single() : Promise.resolve({ data: null }),
   ]);
   return NextResponse.json({ requests: requests || [], shop });

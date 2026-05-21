@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
+import TweetTab from "@/components/TweetTab";
+import JobsTab from "@/components/JobsTab";
+import FeedbackTab from "@/components/FeedbackTab";
 
 type Shop = {
   id: number;
@@ -54,7 +57,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "plan" | "password";
+type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "jobs" | "tweet" | "feedback" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -426,6 +429,9 @@ export default function OwnerDashboard() {
     { key: "images", label: "店舗画像" },
     { key: "cast", label: "キャスト" },
     { key: "shift", label: "出勤管理" },
+    { key: "jobs", label: "求人" },
+    { key: "tweet", label: "つぶやき" },
+    { key: "feedback", label: "ご意見" },
     { key: "plan", label: "プラン" },
     { key: "password", label: "パスワード" },
   ];
@@ -547,7 +553,7 @@ export default function OwnerDashboard() {
               <textarea value={shop.system ?? ""} onChange={(e) => setShop({ ...shop, system: e.target.value })} rows={4} placeholder="入店料、ドリンク料金、指名料など" style={{ ...inputStyle, resize: "vertical" } as React.CSSProperties} />
             </div>
             <div style={fieldStyle}>
-              <label style={labelStyle}>タグ</label>
+              <label style={labelStyle}>タグ <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>（最大10個・1タグ10文字まで）</span></label>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                 {(shop.tags ?? []).map((tag) => (
                   <span key={tag} style={{
@@ -570,8 +576,8 @@ export default function OwnerDashboard() {
                   style={{ ...inputStyle, flex: 1 }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      const val = (e.target as HTMLInputElement).value.trim();
-                      if (val && !(shop.tags ?? []).includes(val)) {
+                      const val = (e.target as HTMLInputElement).value.trim().slice(0, 10);
+                      if (val && !(shop.tags ?? []).includes(val) && (shop.tags ?? []).length < 10) {
                         setShop({ ...shop, tags: [...(shop.tags ?? []), val] });
                       }
                       (e.target as HTMLInputElement).value = "";
@@ -581,8 +587,8 @@ export default function OwnerDashboard() {
                 <button
                   onClick={() => {
                     const input = document.getElementById("tag-input") as HTMLInputElement;
-                    const val = input?.value.trim();
-                    if (val && !(shop.tags ?? []).includes(val)) {
+                    const val = input?.value.trim().slice(0, 10);
+                    if (val && !(shop.tags ?? []).includes(val) && (shop.tags ?? []).length < 10) {
                       setShop({ ...shop, tags: [...(shop.tags ?? []), val] });
                       input.value = "";
                     }
@@ -602,7 +608,7 @@ export default function OwnerDashboard() {
                     {(showAllTags ? tagSuggestions : tagSuggestions.slice(0, 10))
                       .filter((tag) => !(shop.tags ?? []).includes(tag))
                       .map((tag) => (
-                        <button key={tag} onClick={() => setShop({ ...shop, tags: [...(shop.tags ?? []), tag] })}
+                        <button key={tag} onClick={() => { if ((shop.tags ?? []).length < 10) setShop({ ...shop, tags: [...(shop.tags ?? []), tag] }); }}
                           style={{
                             fontSize: 11, padding: "3px 10px", borderRadius: 16, cursor: "pointer",
                             background: "var(--bg-input)", border: "1px solid var(--border)",
@@ -1163,6 +1169,22 @@ export default function OwnerDashboard() {
             labelStyle={labelStyle}
             btnPrimary={btnPrimary}
           />
+        )}
+
+
+        {/* つぶやき */}
+        {tab === "tweet" && (
+          <TweetTab shopId={shopId!} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+        )}
+
+        {/* 求人 */}
+        {tab === "jobs" && (
+          <JobsTab shopId={shopId!} shopPlan={shop.plan} shopSlug={shop.slug} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+        )}
+
+        {/* ご意見・ご要望 */}
+        {tab === "feedback" && (
+          <FeedbackTab shopId={shopId!} sectionStyle={sectionStyle} inputStyle={inputStyle} btnPrimary={btnPrimary} />
         )}
 
         {/* プラン */}

@@ -17,10 +17,22 @@ function getDateStr(d: Date) {
 export async function GET(req: NextRequest) {
   const shopId = req.nextUrl.searchParams.get("shop_id");
   if (!shopId) return NextResponse.json({}, { status: 400 });
-  const today = new Date();
-  const todayStr = getDateStr(today);
-  const future = new Date(today); future.setDate(today.getDate() + 35);
-  const futureStr = getDateStr(future);
+
+  // 月指定があればその月、なければ今日から35日
+  const yearParam = req.nextUrl.searchParams.get("year");
+  const monthParam = req.nextUrl.searchParams.get("month");
+  let todayStr: string, futureStr: string;
+  if (yearParam && monthParam) {
+    const y = Number(yearParam), m = Number(monthParam);
+    todayStr = `${y}-${String(m).padStart(2,"0")}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    futureStr = `${y}-${String(m).padStart(2,"0")}-${lastDay}`;
+  } else {
+    const today = new Date();
+    todayStr = getDateStr(today);
+    const future = new Date(today); future.setDate(today.getDate() + 35);
+    futureStr = getDateStr(future);
+  }
   const [{ data: confirmed }, { data: requests }, { data: closedDates }] = await Promise.all([
     supabase.from("confirmed_shifts").select("*, casts(id, name)").eq("shop_id", shopId).gte("date", todayStr).lte("date", futureStr).order("date"),
     supabase.from("shift_requests").select("*, casts(id, name)").eq("shop_id", shopId).gte("date", todayStr).lte("date", futureStr).order("date"),

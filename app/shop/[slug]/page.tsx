@@ -214,6 +214,15 @@ export default async function ShopPage({ params }: { params: { slug: string } })
 
           {/* SNSボタン */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a href={`/shop/${shop.slug}/jobs`}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                background: "var(--accent)22", border: "1px solid var(--accent)55",
+                color: "var(--accent)", padding: "10px 20px", borderRadius: 25,
+                fontSize: 14, fontWeight: 700, textDecoration: "none",
+              }}>
+              💼 求人情報
+            </a>
             {shop.instagram && (
               <a href={"https://instagram.com/" + shop.instagram} target="_blank" rel="noopener noreferrer"
                 style={{

@@ -53,6 +53,29 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
     return window.matchMedia("(prefers-color-scheme: light)").matches;
   });
   const { isFavorite } = useFavorites();
+  const [tweets, setTweets] = useState<Record<number, { message: string; created_at: string } | null>>({});
+
+  useEffect(() => {
+    // 全店舗のつぶやきを取得
+    const fetchTweets = async () => {
+      const shopIds = shops.map(s => s.id);
+      const results: Record<number, { message: string; created_at: string } | null> = {};
+      await Promise.all(
+        shopIds.map(async (id) => {
+          try {
+            const res = await fetch(`/api/tweet?shop_id=${id}`);
+            if (res.ok) { const d = await res.json(); results[id] = d; }
+            else results[id] = null;
+          } catch { results[id] = null; }
+        })
+      );
+      setTweets(results);
+    };
+    fetchTweets();
+    // 5分ごとに更新
+    const interval = setInterval(fetchTweets, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -363,7 +386,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
             {favOnly ? "お気に入りに登録されたお店がありません" : "条件に合う店舗が見つかりませんでした"}
           </div>
         ) : (
-          paginated.map((shop) => <ShopCard key={shop.id} shop={shop} />)
+          paginated.map((shop) => <ShopCard key={shop.id} shop={shop} tweet={tweets[shop.id]} />)
         )}
       </div>
 

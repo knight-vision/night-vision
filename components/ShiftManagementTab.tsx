@@ -10,9 +10,14 @@ type Allowance = { id: string; cast_id: number; date: string; label: string; amo
 function getDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-function getDates(): string[] {
-  const today = new Date();
-  return Array.from({length:35}, (_,i) => { const d=new Date(today); d.setDate(today.getDate()+i); return getDateStr(d); });
+function getMonthDates(year: number, month: number): string[] {
+  const dates: string[] = [];
+  const d = new Date(year, month - 1, 1);
+  while (d.getMonth() === month - 1) {
+    dates.push(getDateStr(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
 }
 function fmtFull(ds: string) {
   const d = new Date(ds+"T00:00:00");
@@ -78,14 +83,14 @@ export default function ShiftManagementTab({
   const [showPresets, setShowPresets] = useState(false);
   const [paySelectedDate, setPaySelectedDate] = useState<string|null>(null);
 
-  const dates = getDates();
+  const dates = getMonthDates(calYear, calMonth);
 
   useEffect(() => { if (!loaded) { loadAll(); setLoaded(true); } }, []);
   useEffect(() => { loadAllowances(); }, [payrollMonth]);
 
   const loadAll = async () => {
     setShiftLoading(true);
-    const res = await fetch(`/api/confirm-shift?shop_id=${shopId}`);
+    const res = await fetch(`/api/confirm-shift?shop_id=${shopId}&year=${calYear}&month=${calMonth}`);
     if (res.ok) { const d=await res.json(); setShiftRequests(d.requests||[]); setConfirmedShifts(d.confirmed||[]); setClosedDates(d.closedDates||[]); }
     setShiftLoading(false);
   };
@@ -296,10 +301,14 @@ ${casts.map(cast=>{
       {/* ===== 出勤表（シフトカレンダー） ===== */}
       {view==="calendar"&&!shiftLoading&&(
         <div>
-          <p style={{fontSize:13,color:"var(--text-secondary)",marginBottom:16,lineHeight:1.7}}>
-            日付をタップして出勤キャストと時間を設定し「保存」してください。<br/>
-            <span style={{opacity:0.7,fontSize:12}}>📩 = 希望あり　🚫 = 定休日・店休日</span>
-          </p>
+          {/* 月ナビ */}
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+            <button onClick={()=>{if(calMonth===1){setCalYear(y=>y-1);setCalMonth(12);}else setCalMonth(m=>m-1);}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前月</button>
+            <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>{calYear}年{calMonth}月</span>
+            <button onClick={()=>{if(calMonth===12){setCalYear(y=>y+1);setCalMonth(1);}else setCalMonth(m=>m+1);}} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>次月 →</button>
+            <button onClick={()=>{const n=new Date();setCalYear(n.getFullYear());setCalMonth(n.getMonth()+1);}} style={{padding:"6px 10px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer",fontSize:12}}>今月</button>
+            <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:"auto"}}>📩 = 希望あり　🚫 = 定休日・店休日</span>
+          </div>
           {totalDraftShifts>0&&<button onClick={handleConfirm} disabled={shiftLoading} style={{...btnPrimary as any,marginBottom:16,position:"sticky",top:8,zIndex:10,boxShadow:"0 4px 20px var(--accent)44"}}>
             💾 {totalDraftShifts}件の確定シフトを保存してメール通知
           </button>}
@@ -389,12 +398,19 @@ ${casts.map(cast=>{
 
                       {/* 確定済み */}
                       {confirmed.length>0&&<div style={{marginTop:10}}>
-                        <div style={{fontSize:11,color:"var(--text-muted)",fontWeight:700,marginBottom:6}}>📌 確定済み</div>
-                        {confirmed.map(s=><div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                          <span style={{fontSize:13,color:getColor(s.cast_id),fontWeight:600}}>{s.casts?.name}</span>
-                          <span style={{fontSize:12,color:"var(--text-secondary)"}}>{s.start_time?.slice(0,5)}〜{s.end_time?.slice(0,5)}</span>
-                          <button onClick={()=>handleDeleteConfirmed(s.cast_id,date)} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
-                        </div>)}
+                        <div style={{fontSize:11,color:"var(--text-muted)",fontWeight:700,marginBottom:6}}>📌 確定済み（タップで時間編集）</div>
+                        {confirmed.map(s=>{
+                          const editKey = `edit-${s.cast_id}-${date}`;
+                          const isEditing = !!draft[date]?.find(e=>e.cast_id===s.cast_id && (e as any).__editing);
+                          return <div key={s.id} style={{marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:13,color:getColor(s.cast_id),fontWeight:600}}>{s.casts?.name}</span>
+                              <span style={{fontSize:12,color:"var(--text-secondary)"}}>{s.start_time?.slice(0,5)}〜{s.end_time?.slice(0,5)}</span>
+                              <button onClick={()=>addCastToDraft(date,s.cast_id)} style={{padding:"2px 8px",borderRadius:6,background:"var(--accent)22",border:"1px solid var(--accent)55",color:"var(--accent)",fontSize:11,cursor:"pointer"}}>時間変更</button>
+                              <button onClick={()=>handleDeleteConfirmed(s.cast_id,date)} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
+                            </div>
+                          </div>;
+                        })}
                       </div>}
 
                       <div style={{marginTop:14,paddingTop:12,borderTop:"1px solid var(--border)"}}>

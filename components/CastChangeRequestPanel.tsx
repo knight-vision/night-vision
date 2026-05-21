@@ -1,0 +1,140 @@
+"use client";
+import { useState, useEffect } from "react";
+
+type ChangeRequest = { id: string; date: string; type: string; requested_start_time: string | null; requested_end_time: string | null; note: string | null; status: string; created_at: string };
+type ConfirmedShift = { date: string; start_time: string; end_time: string };
+
+const HOURS = Array.from({length:31},(_,i)=>i);
+const MINUTES = ["00","10","20","30","40","50"];
+const tLabel = (h: number) => h>=24?`翌${h-24}時`:`${h}時`;
+
+function getDateStr(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+
+export default function CastChangeRequestPanel({ castId, shopId, confirmedShifts }: { castId: string; shopId: string; confirmedShifts: ConfirmedShift[] }) {
+  const [requests, setRequests] = useState<ChangeRequest[]>([]);
+  const [type, setType] = useState<"time_change"|"day_off">("day_off");
+  const [date, setDate] = useState(getDateStr(new Date()));
+  const [startTime, setStartTime] = useState("20:00");
+  const [endTime, setEndTime] = useState("24:00");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const sel: React.CSSProperties = { background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 8, color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "var(--font)", padding: "6px 10px" };
+
+  useEffect(() => { load(); }, []);
+
+  const load = async () => {
+    const res = await fetch(`/api/shift-change-request?cast_id=${castId}`);
+    if (res.ok) setRequests(await res.json());
+  };
+
+  const submit = async () => {
+    setLoading(true); setMsg("");
+    const res = await fetch("/api/shift-change-request", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cast_id: castId, shop_id: shopId, date, type,
+        requested_start_time: type === "time_change" ? startTime : null,
+        requested_end_time: type === "time_change" ? endTime : null,
+        note: note || null,
+      }),
+    });
+    if (res.ok) { setMsg("変更希望を送信しました。お店に通知されます。"); setNote(""); await load(); }
+    else setMsg("送信に失敗しました");
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 12 }}>🔄 シフト変更・休み希望</div>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.8 }}>
+          確定シフトの変更や休み希望をお店に送ることができます。
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>種別</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[{ key: "day_off", label: "🙏 休み希望" }, { key: "time_change", label: "🕐 時間変更希望" }].map(t => (
+                <button key={t.key} onClick={() => setType(t.key as any)} style={{
+                  padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontFamily: "var(--font)",
+                  background: type === t.key ? "var(--accent)22" : "var(--bg-input)",
+                  border: `1.5px solid ${type === t.key ? "var(--accent)" : "var(--border)"}`,
+                  color: type === t.key ? "var(--accent)" : "var(--text-secondary)", fontWeight: type === t.key ? 700 : 500,
+                }}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>日付</div>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={sel} />
+          </div>
+
+          {type === "time_change" && (
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>希望する時間</div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                <select value={startTime.split(":")[0]} onChange={e => setStartTime(`${e.target.value}:${startTime.split(":")[1]}`)} style={sel}>
+                  {HOURS.map(h => <option key={h} value={String(h%24).padStart(2,"0")}>{tLabel(h)}</option>)}
+                </select>
+                <select value={startTime.split(":")[1]} onChange={e => setStartTime(`${startTime.split(":")[0]}:${e.target.value}`)} style={sel}>
+                  {MINUTES.map(m => <option key={m} value={m}>{m}分</option>)}
+                </select>
+                <span style={{ color: "var(--text-muted)" }}>〜</span>
+                <select value={endTime.split(":")[0]} onChange={e => setEndTime(`${e.target.value}:${endTime.split(":")[1]}`)} style={sel}>
+                  {HOURS.map(h => <option key={h} value={String(h%24).padStart(2,"0")}>{tLabel(h)}</option>)}
+                </select>
+                <select value={endTime.split(":")[1]} onChange={e => setEndTime(`${endTime.split(":")[0]}:${e.target.value}`)} style={sel}>
+                  {MINUTES.map(m => <option key={m} value={m}>{m}分</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>メモ（任意）</div>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="理由や詳細があれば..." style={{ ...sel, width: "100%", boxSizing: "border-box" as const }} />
+          </div>
+
+          <button onClick={submit} disabled={loading} style={{ padding: "12px", borderRadius: 12, background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font)" }}>
+            {loading ? "送信中..." : "変更希望を送信"}
+          </button>
+        </div>
+
+        {msg && (
+          <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, fontSize: 13,
+            background: msg.includes("失敗") ? "#ff444418" : "var(--online-bg)",
+            border: `1px solid ${msg.includes("失敗") ? "#ff444444" : "var(--online-border)"}`,
+            color: msg.includes("失敗") ? "#ff4444" : "var(--online)",
+          }}>{msg}</div>
+        )}
+      </div>
+
+      {/* 提出済み変更希望 */}
+      {requests.length > 0 && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>📋 提出済みの変更希望</div>
+          {requests.map(r => (
+            <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+              <div>
+                <span style={{ color: "var(--text-secondary)", marginRight: 8 }}>{r.date}</span>
+                <span style={{ color: "var(--text-primary)" }}>{r.type === "day_off" ? "休み希望" : `${r.requested_start_time?.slice(0,5)}〜${r.requested_end_time?.slice(0,5)} に変更希望`}</span>
+                {r.note && <span style={{ color: "var(--text-muted)", fontSize: 11, marginLeft: 8 }}>({r.note})</span>}
+              </div>
+              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 8, flexShrink: 0,
+                background: r.status === "approved" ? "var(--online-bg)" : r.status === "rejected" ? "#ff444418" : "var(--bg-input)",
+                color: r.status === "approved" ? "var(--online)" : r.status === "rejected" ? "#ff4444" : "var(--text-muted)",
+                border: `1px solid ${r.status === "approved" ? "var(--online-border)" : r.status === "rejected" ? "#ff444444" : "var(--border)"}`,
+              }}>
+                {r.status === "approved" ? "承認" : r.status === "rejected" ? "非承認" : "確認中"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

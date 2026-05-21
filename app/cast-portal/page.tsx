@@ -1,5 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import CastPhotosPanel from "@/components/CastPhotosPanel";
+import CastChangeRequestPanel from "@/components/CastChangeRequestPanel";
+import CastFeedbackPanel from "@/components/CastFeedbackPanel";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
@@ -10,12 +13,10 @@ type ShopInfo = { open_time: string | null; close_time: string | null; open_hour
 function getDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-function getDates(): Date[] {
+function getMonthDates(year: number, month: number): Date[] {
   const dates: Date[] = [];
-  const today = new Date();
-  for (let i = 0; i < 35; i++) {
-    const d = new Date(today); d.setDate(today.getDate() + i); dates.push(d);
-  }
+  const d = new Date(year, month - 1, 1);
+  while (d.getMonth() === month - 1) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
   return dates;
 }
 function fmtDate(d: Date) {
@@ -60,7 +61,7 @@ export default function CastPortalPage() {
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const dates = getDates();
+  const dates = getMonthDates(calYear, calMonth);
   const defaultHours = parseShopHours(shopInfo);
 
   useEffect(() => {
@@ -119,6 +120,9 @@ export default function CastPortalPage() {
     setSaving(false);
   };
 
+  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback">("shift");
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [currentPw, setCurrentPw] = useState("");
@@ -182,13 +186,31 @@ export default function CastPortalPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 11, color: "var(--accent)", letterSpacing: "0.15em", marginBottom: 4 }}>CAST PORTAL</div>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)" }}>シフト希望提出</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)" }}>キャストポータル</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 2 }}>{castName}{shopInfo?.name ? ` ／ ${shopInfo.name}` : ""}</p>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button onClick={() => setShowAccountSettings(!showAccountSettings)} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 12, padding: "6px 12px", cursor: "pointer" }}>⚙️</button>
           <button onClick={handleLogout} style={{ background: "none", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 12, padding: "6px 14px", cursor: "pointer" }}>ログアウト</button>
         </div>
+      </div>
+
+      {/* ナビゲーション */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+        {[
+          { key: "shift", label: "📅 シフト希望" },
+          { key: "change_request", label: "🔄 変更希望" },
+          { key: "photos", label: "📷 写真" },
+          { key: "feedback", label: "💬 ご意見" },
+        ].map(v => (
+          <button key={v.key} onClick={() => setPortalView(v.key as any)} style={{
+            padding: "7px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13,
+            fontFamily: "var(--font)", fontWeight: portalView === v.key ? 700 : 500,
+            background: portalView === v.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+            border: `1px solid ${portalView === v.key ? "transparent" : "var(--border)"}`,
+            color: portalView === v.key ? "#fff" : "var(--text-secondary)",
+          }}>{v.label}</button>
+        ))}
       </div>
 
       {/* アカウント設定 */}
@@ -232,6 +254,7 @@ export default function CastPortalPage() {
         </div>
       )}
 
+      {portalView === "shift" && <>
       {/* 提出済みシフト */}
       {existing.length > 0 && Object.keys(draft).length === 0 && (
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 20 }}>
@@ -253,6 +276,14 @@ export default function CastPortalPage() {
           })}
         </div>
       )}
+
+      {/* 月ナビ */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <button onClick={() => { if(calMonth===1){setCalYear(y=>y-1);setCalMonth(12);}else setCalMonth(m=>m-1); }} style={{ padding: "5px 12px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer", fontSize: 13 }}>← 前月</button>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{calYear}年{calMonth}月</span>
+        <button onClick={() => { if(calMonth===12){setCalYear(y=>y+1);setCalMonth(1);}else setCalMonth(m=>m+1); }} style={{ padding: "5px 12px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer", fontSize: 13 }}>次月 →</button>
+        <button onClick={() => { setCalYear(new Date().getFullYear()); setCalMonth(new Date().getMonth()+1); }} style={{ padding: "5px 10px", borderRadius: 8, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12 }}>今月</button>
+      </div>
 
       {/* 説明 */}
       <div style={{ background: "var(--accent)11", border: "1px solid var(--accent)33", borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
@@ -357,6 +388,20 @@ export default function CastPortalPage() {
           color: saveMsg.includes("送信しました") ? "var(--online)" : "#ff4444",
           fontSize: 13, textAlign: "center",
         }}>{saveMsg}</div>
+      )}
+      </>}
+
+      {/* 写真管理 */}
+      {portalView === "photos" && castId && <CastPhotosPanel castId={castId} />}
+
+      {/* シフト変更希望 */}
+      {portalView === "change_request" && castId && shopId && (
+        <CastChangeRequestPanel castId={castId} shopId={shopId} confirmedShifts={[]} />
+      )}
+
+      {/* ご意見・ご要望 */}
+      {portalView === "feedback" && castId && shopId && (
+        <CastFeedbackPanel castId={castId} shopId={shopId} castName={castName} />
       )}
     </main></>
   );

@@ -57,7 +57,10 @@ const EMPTY_SHOP: Partial<Shop> = {
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
-  const [tab, setTab] = useState<"shops" | "casts">("shops");
+  const [tab, setTab] = useState<"shops" | "casts" | "analytics">("shops");
+  const [shopSearch, setShopSearch] = useState("");
+  const [analytics, setAnalytics] = useState<{ today: number; week: number; month: number; daily: { date: string; count: number }[] } | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
   const [casts, setCasts] = useState<Cast[]>([]);
   const [editShop, setEditShop] = useState<Partial<Shop> | null>(null);
@@ -167,6 +170,42 @@ export default function AdminPage() {
     await fetchCasts();
   }
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth()+1).padStart(2,"0")}-${String(weekAgo.getDate()).padStart(2,"0")}`;
+    const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 30);
+    const monthStr = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth()+1).padStart(2,"0")}-${String(monthAgo.getDate()).padStart(2,"0")}`;
+
+    const [todayRes, weekRes, monthRes, dailyRes] = await Promise.all([
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", todayStr + "T00:00:00"),
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", weekStr + "T00:00:00"),
+      supabase.from("view_events").select("id", { count: "exact" }).gte("created_at", monthStr + "T00:00:00"),
+      supabase.from("view_events").select("created_at").gte("created_at", weekStr + "T00:00:00").order("created_at"),
+    ]);
+
+    // 日別集計
+    const dailyMap: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      dailyMap[`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`] = 0;
+    }
+    (dailyRes.data || []).forEach((e: any) => {
+      const day = e.created_at.slice(0, 10);
+      if (dailyMap[day] !== undefined) dailyMap[day]++;
+    });
+
+    setAnalytics({
+      today: todayRes.count || 0,
+      week: weekRes.count || 0,
+      month: monthRes.count || 0,
+      daily: Object.entries(dailyMap).map(([date, count]) => ({ date, count })),
+    });
+    setAnalyticsLoading(false);
+  };
+
   if (!authed) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font)" }}>
@@ -211,6 +250,7 @@ export default function AdminPage() {
           {[
             { key: "shops", label: "店舗管理" },
             { key: "casts", label: "キャスト・出勤管理" },
+            { key: "analytics", label: "📊 アクセス解析" },
           ].map((t) => (
             <button key={t.key} onClick={() => setTab(t.key as any)} style={{
               padding: "8px 20px", borderRadius: 20, border: "none", cursor: "pointer",
@@ -222,6 +262,54 @@ export default function AdminPage() {
         </div>
 
         {/* 店舗管理 */}
+        {/* アナリティクスタブ */}
+        {tab === "analytics" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ color: "var(--text-primary)", fontSize: 18, fontWeight: 800 }}>アクセス解析</h2>
+              <button onClick={fetchAnalytics} style={{ ...btnStyle, fontSize: 12, padding: "8px 14px" }}>🔄 更新</button>
+            </div>
+            {analyticsLoading ? <p style={{ color: "var(--text-muted)" }}>読み込み中...</p> : analytics ? (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+                  {[
+                    { label: "今日", value: analytics.today, color: "var(--accent)" },
+                    { label: "過去7日", value: analytics.week, color: "#00d4ff" },
+                    { label: "過去30日", value: analytics.month, color: "#00e5a0" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>{s.label}</div>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: s.color }}>{s.value.toLocaleString()}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>PV</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 14, padding: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>過去7日間の日別PV</div>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+                    {analytics.daily.map(d => {
+                      const max = Math.max(...analytics.daily.map(x => x.count), 1);
+                      const h = Math.round((d.count / max) * 72);
+                      const isToday = d.date === new Date().toISOString().slice(0,10);
+                      return (
+                        <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                          <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{d.count}</div>
+                          <div style={{ width: "100%", height: h || 2, background: isToday ? "var(--accent)" : "var(--accent)44", borderRadius: 4 }} />
+                          <div style={{ fontSize: 9, color: isToday ? "var(--accent)" : "var(--text-hint)", fontWeight: isToday ? 700 : 400 }}>
+                            {d.date.slice(5).replace("-","/")}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button onClick={fetchAnalytics} style={btnStyle}>データを取得</button>
+            )}
+          </div>
+        )}
+
         {tab === "shops" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -336,8 +424,19 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* 店舗名検索 */}
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                value={shopSearch}
+                onChange={e => setShopSearch(e.target.value)}
+                placeholder="🔍 店舗名で検索..."
+                style={{ ...inputStyle, maxWidth: 320 }}
+              />
+            </div>
+
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {shops.map((shop) => (
+              {shops.filter(s => !shopSearch || s.name.toLowerCase().includes(shopSearch.toLowerCase())).map((shop) => (
                 <div key={shop.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{shop.name}</div>

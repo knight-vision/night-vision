@@ -51,7 +51,7 @@ const BG_GRADIENTS: Record<string, string> = {
   カジュアルバー: "radial-gradient(ellipse at 40% 60%, #a855f718 0%, transparent 70%)",
 };
 
-export default function ShopCard({ shop }: { shop: Shop }) {
+export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { message: string; created_at: string } | null }) {
   const router = useRouter();
   const tc = TYPE_COLORS[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
   const onCount = (shop.casts ?? []).filter((c) => c.on_today === true).length;
@@ -131,15 +131,36 @@ export default function ShopCard({ shop }: { shop: Shop }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 12, flexShrink: 0, overflow: "hidden",
-            background: `linear-gradient(135deg, ${tc.border}33, #1a1028)`,
-            border: `1.5px solid ${tc.border}44`,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
-          }}>
-            {hasBanner && shop.image
-              ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : emoji}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 12, overflow: "hidden",
+              background: `linear-gradient(135deg, ${tc.border}33, #1a1028)`,
+              border: `1.5px solid ${tc.border}44`,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
+            }}>
+              {hasBanner && shop.image
+                ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : emoji}
+            </div>
+            {tweet && (
+              <div style={{
+                position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)",
+                marginBottom: 6, minWidth: 100, maxWidth: 160, zIndex: 10,
+              }}>
+                <div style={{
+                  background: "#fff", color: "#111", fontSize: 11, fontWeight: 700,
+                  padding: "5px 8px", borderRadius: 8, whiteSpace: "nowrap",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+                  border: `1.5px solid ${tc.border}88`,
+                }}>
+                  {tweet.message}
+                  <div style={{ fontSize: 9, color: "#888", fontWeight: 400, marginTop: 1 }}>
+                    {(() => { const d=(Date.now()-new Date(tweet.created_at).getTime())/60000; return d<1?"今":""+Math.floor(d)+"分前"; })()}
+                  </div>
+                </div>
+                <div style={{ width: 8, height: 6, background: "#fff", clipPath: "polygon(0 0,100% 0,50% 100%)", margin: "0 auto", borderLeft: `1.5px solid ${tc.border}88`, borderRight: `1.5px solid ${tc.border}88` }} />
+              </div>
+            )}
           </div>
           <div>
             <div style={{ color: "var(--text-primary)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.2, fontFamily: "var(--font)" }}>
