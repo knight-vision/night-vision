@@ -1133,7 +1133,7 @@ export default function OwnerDashboard() {
                               if (!email) return;
                               setIssuingAccount(editCast.id!);
                               const cast = casts.find(c => c.id === editCast.id);
-                              const res = await fetch("/api/issue-cast-account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cast_id: editCast.id, email, shop_name: shopName }) });
+                              const res = await fetch("/api/issue-cast-account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cast_id: editCast.id, email, shop_name: shop?.name || "" }) });
                               if (res.ok) {
                                 showMsg(`${cast?.name}にアカウントを発行しました`);
                                 setCastAccounts({ ...castAccounts, [editCast.id!]: email });

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const { data: shopData } = await supabase.from("shops").select("name").eq("id", shop_id).single();
   const shopName = shopData?.name || "お店";
   for (const castId of castIds) {
-    const { data: account } = await supabase.from("cast_accounts").select("email, casts(name)").eq("cast_id", castId).single();
+    const { data: account } = await supabase.from("cast_accounts").select("email, line_user_id, casts(name)").eq("cast_id", castId).single();
     if (!account?.email) continue;
     const castName = (account.casts as any)?.name || "キャスト";
     const myShifts = shifts.filter((s: any) => s.cast_id === castId);
@@ -80,16 +80,11 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    // キャストにLINE通知
-    const { data: castAccount } = await supabase
-      .from("cast_accounts")
-      .select("line_user_id")
-      .eq("cast_id", castId)
-      .single();
-    if (castAccount?.line_user_id) {
+    // キャストにLINE通知（line_user_idが登録済みの場合）
+    if (account.line_user_id) {
       const dateList = myShifts.map((s: any) => `${s.date} ${s.start_time}〜${s.end_time}`).join("\n");
       await sendLineMessage(
-        castAccount.line_user_id,
+        account.line_user_id,
         `📅 確定シフトが届きました\n\n${shopName}\n\n${dateList}`,
         "https://www.night-vision.jp/cast-portal",
         "ポータルで確認"
