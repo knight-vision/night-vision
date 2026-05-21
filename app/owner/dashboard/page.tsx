@@ -1267,22 +1267,43 @@ export default function OwnerDashboard() {
             {(shop.plan === "gold" || shop.plan === "standard") && (
               <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>プランの管理</div>
-                <button
-                  onClick={async () => {
-                    const res = await fetch("/api/stripe/portal", {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ shop_id: shopId }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                    else showMsg(data.error || "管理ポータルの起動に失敗しました");
-                  }}
-                  style={{ padding: "10px 20px", borderRadius: 10, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)" }}
-                >
-                  🔧 お支払い情報・解約の管理
-                </button>
-                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 8 }}>
-                  カード情報の変更・プランの解約はこちらから行えます。
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button
+                    onClick={async () => {
+                      const res = await fetch("/api/stripe/portal", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ shop_id: shopId }),
+                      });
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                      else showMsg(data.error || "管理ポータルの起動に失敗しました");
+                    }}
+                    style={{ padding: "10px 20px", borderRadius: 10, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
+                  >
+                    🔧 お支払い情報・カードの変更
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm("フリープランに変更しますか？\nゴールドプランの機能（バナー・求人掲載・優先表示）が利用できなくなります。")) return;
+                      const res = await fetch("/api/stripe/cancel", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ shop_id: shopId }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showMsg("フリープランに変更しました");
+                        setTimeout(() => window.location.reload(), 1500);
+                      } else {
+                        showMsg(data.error || "変更に失敗しました");
+                      }
+                    }}
+                    style={{ padding: "10px 20px", borderRadius: 10, background: "#ff444418", border: "1px solid #ff444444", color: "#ff4444", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
+                  >
+                    ⬇️ フリープランに変更（解約）
+                  </button>
+                </div>
+                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 10 }}>
+                  解約すると当月末まではゴールドプランが継続します。
                 </p>
               </div>
             )}
