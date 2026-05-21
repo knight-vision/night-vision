@@ -32,9 +32,13 @@ export default function LineTab({ shopId, sectionStyle, btnPrimary }: Props) {
 
   const handleConnect = () => {
     const clientId = process.env.NEXT_PUBLIC_LINE_LOGIN_CHANNEL_ID;
+    if (!clientId) {
+      alert("LINE連携の設定が完了していません。管理者にお問い合わせください。");
+      return;
+    }
     const redirectUri = encodeURIComponent("https://www.night-vision.jp/api/line/callback");
-    const state = shopId; // shop_idをstateに入れてコールバックで使う
-    const url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=profile`;
+    const state = shopId;
+    const url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=profile&bot_prompt=normal`;
     window.location.href = url;
   };
 
