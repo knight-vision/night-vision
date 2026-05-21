@@ -64,14 +64,19 @@ export async function POST(req: NextRequest) {
     const nextOrder = ((existing?.[0]?.sort_order ?? -1) as number) + 1;
 
     // photo_requestsにpendingで登録
-    await supabase.from("photo_requests").insert({
+    const { error: insertError } = await supabase.from("photo_requests").insert({
       cast_id: Number(castId),
       shop_id: shopId ? Number(shopId) : null,
+      owner_id: null,
       type: "cast_photo",
       url: urlData.publicUrl,
       status: "pending",
       sort_order: nextOrder,
     });
+    if (insertError) {
+      console.error("Insert error:", JSON.stringify(insertError));
+      return NextResponse.json({ error: `DB登録エラー: ${insertError.message}` }, { status: 500 });
+    }
 
     // キャスト名・店名を取得してメール通知
     const { data: castData } = await supabase.from("casts").select("name, shop_id").eq("id", Number(castId)).single();
@@ -104,8 +109,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.json({ error: "アップロード失敗" }, { status: 500 });
+  } catch (err: any) {
+    console.error("Cast photo upload error:", err);
+    return NextResponse.json({ error: err?.message || "アップロード失敗" }, { status: 500 });
   }
 }
 
