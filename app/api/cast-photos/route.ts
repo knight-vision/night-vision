@@ -123,14 +123,6 @@ export async function POST(req: NextRequest) {
       console.error("Mail send error:", mailErr?.message || mailErr);
     }
 
-    // オーナーにもLINE通知
-    if (castData?.shop_id) {
-      const { data: ownerLine } = await supabase.from("shop_owners").select("line_user_id").eq("shop_id", castData.shop_id).single();
-      if (ownerLine?.line_user_id) {
-        await sendLineMessage(ownerLine.line_user_id, `📷 写真申請が届きました\n\nキャスト: ${castName}（${shopName}）\n\n管理画面で審査してください。\nhttps://www.night-vision.jp/admin/photo-requests`);
-      }
-    }
-
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("Cast photo upload error:", err);

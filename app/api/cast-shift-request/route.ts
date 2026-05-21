@@ -60,6 +60,21 @@ export async function POST(req: NextRequest) {
         ctaUrl: "https://www.night-vision.jp/owner/dashboard?tab=shift",
       }),
     });
+
+    // LINE通知
+    const { data: ownerLine } = await supabase
+      .from("shop_owners")
+      .select("line_user_id")
+      .eq("shop_id", shop_id)
+      .single();
+    if (ownerLine?.line_user_id) {
+      const castName2 = castData?.name || "キャスト";
+      const dateList = requests.map((r: any) => `${r.date} ${r.start_time}〜${r.end_time}`).join("\n");
+      await sendLineMessage(
+        ownerLine.line_user_id,
+        `📩 シフト希望が届きました\n\nキャスト: ${castName2}\n\n${dateList}\n\n管理画面で確認してください。`
+      );
+    }
   }
   return NextResponse.json({ success: true });
 }
