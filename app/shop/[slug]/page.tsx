@@ -109,9 +109,15 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const hasBanner = shop.plan === "premium" || shop.referred;
   const mapAddress = shop.area ? stripFloor(shop.area) : null;
 
-  // つぶやきを取得
+  // つぶやきを取得（service_roleでRLSをバイパス）
+  const { createClient } = await import("@supabase/supabase-js");
+  const adminSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
   const now = new Date().toISOString();
-  const { data: tweetList } = await supabase
+  const { data: tweetList } = await adminSupabase
     .from("shop_tweets")
     .select("message, created_at, expires_at")
     .eq("shop_id", shop.id)

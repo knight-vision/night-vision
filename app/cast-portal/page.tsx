@@ -395,8 +395,8 @@ export default function CastPortalPage() {
       {portalView === "photos" && castId && shopId && <CastPhotosPanel castId={castId} shopId={shopId} />}
 
       {/* シフト変更希望 */}
-      {portalView === "change_request" && castId && shopId && (
-        <CastChangeRequestPanel castId={castId} shopId={shopId} />
+      {portalView === "change_request" && castId && (
+        <CastChangeRequestPanel castId={castId} shopId={shopId || ""} />
       )}
 
       {/* ご意見・ご要望 */}
