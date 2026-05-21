@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
     // サブスクリプション開始・更新
     case "checkout.session.completed": {
-      const session = event.data.object as Stripe.CheckoutSession;
+      const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode !== "subscription") break;
       const shopId = session.metadata?.shop_id;
       if (!shopId) break;
