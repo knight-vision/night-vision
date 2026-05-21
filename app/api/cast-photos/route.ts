@@ -74,9 +74,13 @@ export async function POST(req: NextRequest) {
     });
 
     // キャスト名・店名を取得してメール通知
-    const { data: castData } = await supabase.from("casts").select("name, shop_id, shops(name)").eq("id", Number(castId)).single();
+    const { data: castData } = await supabase.from("casts").select("name, shop_id").eq("id", Number(castId)).single();
     const castName = castData?.name || "キャスト";
-    const shopName = (castData?.shops as any)?.name || "お店";
+    let shopName = "お店";
+    if (castData?.shop_id) {
+      const { data: shopData } = await supabase.from("shops").select("name").eq("id", castData.shop_id).single();
+      shopName = shopData?.name || "お店";
+    }
 
     await resend.emails.send({
       from: "釧路ナイトビジョン <info@night-vision.jp>",

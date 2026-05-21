@@ -111,14 +111,14 @@ export default async function ShopPage({ params }: { params: { slug: string } })
 
   // つぶやきを取得
   const now = new Date().toISOString();
-  const { data: tweet } = await supabase
+  const { data: tweetList } = await supabase
     .from("shop_tweets")
     .select("message, created_at, expires_at")
     .eq("shop_id", shop.id)
     .gt("expires_at", now)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(1);
+  const tweet = tweetList?.[0] ?? null;
 
   return (
     <div>
@@ -207,7 +207,9 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               { label: "予算目安", value: shop.budget, icon: "💴" },
               { label: "営業時間", value: shop.open_hour, icon: "🕐" },
               { label: "席数", value: shop.seats ? shop.seats + "席" : "未設定", icon: "💺" },
-              { label: "定休日", value: shop.closed_days ?? "未設定", icon: "📅" },
+              { label: "定休日", value: shop.closed_days
+                ? shop.closed_days.replace(/日/g,"日曜日").replace(/月/g,"月曜日").replace(/火/g,"火曜日").replace(/水/g,"水曜日").replace(/木/g,"木曜日").replace(/金/g,"金曜日").replace(/土/g,"土曜日")
+                : "未設定", icon: "📅" },
               { label: "所在地", value: shop.area, icon: "📍" },
             ].map((item) => (
               <div key={item.label} style={{
@@ -320,22 +322,21 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         {/* 求人情報 */}
         {jobs && jobs.length > 0 && (
           <div style={{
-            background: "linear-gradient(135deg, var(--accent)18, var(--accent2)08)",
-            border: "1px solid var(--accent)44",
+            background: "var(--bg-card)", border: "1px solid var(--border)",
             borderRadius: 16, padding: 20, marginBottom: 20,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h2 style={{ color: "var(--accent)", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>
+              <h2 style={{ color: "var(--text-muted)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em" }}>
                 💼 スタッフ募集中
               </h2>
               <Link href={`/shop/${shop.slug}/jobs`} style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}>
-                すべて見る →
+                求人一覧を見る →
               </Link>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {jobs.map((job: any) => (
                 <div key={job.id} style={{
-                  background: "var(--bg-card)", borderRadius: 12, padding: "14px 16px",
+                  background: "var(--bg-input)", borderRadius: 12, padding: "14px 16px",
                   border: "1px solid var(--border)",
                 }}>
                   <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 15, marginBottom: 4 }}>
@@ -350,7 +351,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                   {job.work_days && (
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>{job.work_days}</div>
                   )}
-                  <Link href={`/shop/${shop.slug}/jobs`} style={{
+                  <Link href={`/shop/${shop.slug}/jobs/${job.id}`} style={{
                     display: "inline-block", fontSize: 12, color: "var(--accent)",
                     background: "var(--accent)15", border: "1px solid var(--accent)44",
                     padding: "4px 12px", borderRadius: 20, textDecoration: "none", fontWeight: 700,
