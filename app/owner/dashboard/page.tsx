@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
+import CastPhotoManager from "@/components/CastPhotoManager";
 import TweetTab from "@/components/TweetTab";
 import JobsTab from "@/components/JobsTab";
 import FeedbackTab from "@/components/FeedbackTab";
@@ -1105,6 +1106,9 @@ export default function OwnerDashboard() {
                     </div>
                   </div>
                 )}
+
+                {/* キャスト写真管理 */}
+                {editCast.id && <CastPhotoManager castId={editCast.id} />}
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                   <button onClick={saveCast} disabled={saving} style={{ flex: 1, padding: "10px", background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     {saving ? "保存中..." : "保存"}

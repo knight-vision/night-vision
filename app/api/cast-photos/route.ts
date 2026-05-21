@@ -142,3 +142,10 @@ export async function DELETE(req: NextRequest) {
   await supabase.from("photo_requests").delete().eq("id", id);
   return NextResponse.json({ success: true });
 }
+
+// PATCH: sort_order更新
+export async function PATCH(req: NextRequest) {
+  const { id, sort_order } = await req.json();
+  await supabase.from("photo_requests").update({ sort_order }).eq("id", id);
+  return NextResponse.json({ success: true });
+}
