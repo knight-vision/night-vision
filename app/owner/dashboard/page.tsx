@@ -118,6 +118,8 @@ export default function OwnerDashboard() {
   const [newPassword, setNewPassword] = useState("");
   const [newPassword2, setNewPassword2] = useState("");
   const [pwMsg, setPwMsg] = useState("");
+  const [newOwnerEmail, setNewOwnerEmail] = useState("");
+  const [newOwnerEmail2, setNewOwnerEmail2] = useState("");
   const [uploading, setUploading] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [showAllTags, setShowAllTags] = useState(false);
@@ -1388,8 +1390,41 @@ export default function OwnerDashboard() {
             <div style={{ ...sectionStyle, marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔑 ログイン情報</div>
               <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4 }}>
-                メールアドレス：<span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{localStorage ? localStorage.getItem("owner_email") || "—" : "—"}</span>
+                現在のメールアドレス：<span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{typeof window !== "undefined" ? localStorage.getItem("owner_email") || "—" : "—"}</span>
               </div>
+            </div>
+
+            {/* メールアドレス変更 */}
+            <div style={{ ...sectionStyle, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>📧 メールアドレス変更</div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいメールアドレス</label>
+                <input type="email" value={newOwnerEmail} onChange={e => setNewOwnerEmail(e.target.value)} placeholder="new@example.com" style={inputStyle} />
+              </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいメールアドレス（確認）</label>
+                <input type="email" value={newOwnerEmail2} onChange={e => setNewOwnerEmail2(e.target.value)} placeholder="new@example.com" style={inputStyle} />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newOwnerEmail || newOwnerEmail !== newOwnerEmail2) { setPwMsg("メールアドレスが一致しません"); return; }
+                  const res = await fetch("/api/owner-account-update", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ owner_id: ownerId, new_email: newOwnerEmail }),
+                  });
+                  if (res.ok) {
+                    setPwMsg("メールアドレスを変更しました");
+                    localStorage.setItem("owner_email", newOwnerEmail);
+                    setNewOwnerEmail(""); setNewOwnerEmail2("");
+                  } else {
+                    const d = await res.json();
+                    setPwMsg(d.error || "変更に失敗しました");
+                  }
+                }}
+                disabled={saving}
+                style={btnPrimary as React.CSSProperties}
+              >メールアドレスを変更する</button>
             </div>
 
             {/* パスワード変更 */}
