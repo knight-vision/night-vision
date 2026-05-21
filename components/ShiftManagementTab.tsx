@@ -117,7 +117,7 @@ export default function ShiftManagementTab({
     if (r1.ok) { const d = await r1.json(); setShiftRequests(d.requests||[]); setConfirmedShifts(d.confirmed||[]); setClosedDates(d.closedDates||[]); }
     if (r2 && r2.ok) {
       const d2 = await r2.json();
-      setConfirmedShifts(prev => {
+      setConfirmedShifts((prev: ConfirmedShift[]) => {
         const ids = new Set(prev.map((s:any)=>s.id));
         return [...prev, ...(d2.confirmed||[]).filter((s:any)=>!ids.has(s.id))];
       });
