@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import CastPhotosPanel from "@/components/CastPhotosPanel";
 import CastChangeRequestPanel from "@/components/CastChangeRequestPanel";
 import CastFeedbackPanel from "@/components/CastFeedbackPanel";
+import CastPayrollPanel from "@/components/CastPayrollPanel";
+import CastLinePanel from "@/components/CastLinePanel";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
@@ -119,7 +121,8 @@ export default function CastPortalPage() {
     setSaving(false);
   };
 
-  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback">("shift");
+  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback"|"payroll"|"line">("shift");
+  const [castAccountId, setCastAccountId] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
   const dates = getMonthDates(calYear, calMonth);
@@ -200,8 +203,10 @@ export default function CastPortalPage() {
         {[
           { key: "shift", label: "📅 シフト希望" },
           { key: "change_request", label: "🔄 シフト変更希望" },
+          { key: "payroll", label: "💰 給与" },
           { key: "photos", label: "📷 写真" },
-          { key: "feedback", label: "💬 ご意見" },
+          { key: "line", label: "💬 LINE通知" },
+          { key: "feedback", label: "✉️ ご意見" },
         ].map(v => (
           <button key={v.key} onClick={() => setPortalView(v.key as any)} style={{
             padding: "7px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13,
@@ -402,6 +407,14 @@ export default function CastPortalPage() {
       {/* ご意見・ご要望 */}
       {portalView === "feedback" && castId && shopId && (
         <CastFeedbackPanel castId={castId} shopId={shopId} castName={castName} />
+      )}
+
+      {portalView === "payroll" && castId && (
+        <CastPayrollPanel castId={castId} castName={castName} />
+      )}
+
+      {portalView === "line" && castAccountId && castId && (
+        <CastLinePanel castAccountId={castAccountId} castId={castId} castName={castName} />
       )}
     </main></>
   );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { emailHtml, emailDateList } from "@/lib/emailTemplate";
+import { sendLineMessage } from "@/lib/line";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,6 +79,23 @@ export async function POST(req: NextRequest) {
         ctaUrl: "https://www.night-vision.jp/cast-portal",
       }),
     });
+
+      // キャストにLINE通知
+      const { data: castAccount } = await supabase
+        .from("cast_accounts")
+        .select("line_user_id")
+        .eq("cast_id", castId)
+        .single();
+      if (castAccount?.line_user_id) {
+        const dateList = myShifts.map((s: any) => `${s.date} ${s.start_time}〜${s.end_time}`).join("\n");
+        await sendLineMessage(
+          castAccount.line_user_id,
+          `📅 確定シフトが届きました\n\n${shopName}\n\n${dateList}`,
+          "https://www.night-vision.jp/cast-portal",
+          "ポータルで確認"
+        );
+      }
+    }
   }
   return NextResponse.json({ success: true });
 }
