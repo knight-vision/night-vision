@@ -61,7 +61,6 @@ export default function CastPortalPage() {
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const dates = getMonthDates(calYear, calMonth);
   const defaultHours = parseShopHours(shopInfo);
 
   useEffect(() => {
@@ -123,6 +122,7 @@ export default function CastPortalPage() {
   const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback">("shift");
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
+  const dates = getMonthDates(calYear, calMonth);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [currentPw, setCurrentPw] = useState("");
