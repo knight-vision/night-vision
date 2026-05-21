@@ -396,7 +396,7 @@ export default function CastPortalPage() {
 
       {/* シフト変更希望 */}
       {portalView === "change_request" && castId && shopId && (
-        <CastChangeRequestPanel castId={castId} shopId={shopId} confirmedShifts={[]} />
+        <CastChangeRequestPanel castId={castId} shopId={shopId} />
       )}
 
       {/* ご意見・ご要望 */}

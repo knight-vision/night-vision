@@ -80,6 +80,15 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   if (!shop) return null;
   recordPageView(shop.id);
 
+  // 求人情報を取得（最大3件）
+  const { data: jobs } = await supabase
+    .from("job_postings")
+    .select("id, title, hourly_wage_min, hourly_wage_max, work_days, description")
+    .eq("shop_id", shop.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(3);
+
   // 確定シフトから今日の出勤を反映
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -280,6 +289,52 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             {shop.system ?? "未登録"}
           </div>
         </div>
+
+        {/* 求人情報 */}
+        {jobs && jobs.length > 0 && (
+          <div style={{
+            background: "linear-gradient(135deg, var(--accent)18, var(--accent2)08)",
+            border: "1px solid var(--accent)44",
+            borderRadius: 16, padding: 20, marginBottom: 20,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h2 style={{ color: "var(--accent)", fontSize: 14, fontWeight: 800, letterSpacing: "0.08em" }}>
+                💼 スタッフ募集中
+              </h2>
+              <Link href={`/shop/${shop.slug}/jobs`} style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}>
+                すべて見る →
+              </Link>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {jobs.map((job: any) => (
+                <div key={job.id} style={{
+                  background: "var(--bg-card)", borderRadius: 12, padding: "14px 16px",
+                  border: "1px solid var(--border)",
+                }}>
+                  <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 15, marginBottom: 4 }}>
+                    {job.title}
+                  </div>
+                  {(job.hourly_wage_min || job.hourly_wage_max) && (
+                    <div style={{ color: "var(--accent)", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
+                      ¥{job.hourly_wage_min?.toLocaleString()}{job.hourly_wage_max ? `〜¥${job.hourly_wage_max.toLocaleString()}` : "〜"}
+                      <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>/時</span>
+                    </div>
+                  )}
+                  {job.work_days && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>{job.work_days}</div>
+                  )}
+                  <Link href={`/shop/${shop.slug}/jobs`} style={{
+                    display: "inline-block", fontSize: 12, color: "var(--accent)",
+                    background: "var(--accent)15", border: "1px solid var(--accent)44",
+                    padding: "4px 12px", borderRadius: 20, textDecoration: "none", fontWeight: 700,
+                  }}>
+                    詳細を見る →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Google Map */}
         {mapAddress && (
