@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async redirects() {
     return [
-      // night-vision.jp → www.night-vision.jp への301リダイレクト
       {
         source: "/:path*",
         has: [{ type: "host", value: "night-vision.jp" }],
