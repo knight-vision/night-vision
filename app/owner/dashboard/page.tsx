@@ -129,6 +129,7 @@ export default function OwnerDashboard() {
   const [shiftMsg, setShiftMsg] = useState("");
   const [castAccountEmail, setCastAccountEmail] = useState<Record<number, string>>({});
   const [issuingAccount, setIssuingAccount] = useState<number | null>(null);
+  const [castAccounts, setCastAccounts] = useState<Record<number, string>>({}); // cast_id -> email
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -177,7 +178,22 @@ export default function OwnerDashboard() {
 
   async function fetchCasts(sid: number) {
     const { data } = await supabase.from("casts").select("*").eq("shop_id", sid).order("id");
-    if (data) setCasts(data);
+    if (data) {
+      setCasts(data);
+      // キャストアカウントのメールアドレスを取得
+      const castIds = data.map((c: Cast) => c.id);
+      if (castIds.length > 0) {
+        const { data: accounts } = await supabase
+          .from("cast_accounts")
+          .select("cast_id, email")
+          .in("cast_id", castIds);
+        if (accounts) {
+          const map: Record<number, string> = {};
+          accounts.forEach((a: any) => { map[a.cast_id] = a.email; });
+          setCastAccounts(map);
+        }
+      }
+    }
   }
 
   async function fetchPhotoRequests(sid: number) {
@@ -443,7 +459,7 @@ export default function OwnerDashboard() {
     { key: "feedback", label: "ご意見" },
     { key: "line", label: "LINE通知" },
     { key: "plan", label: "プラン" },
-    { key: "password", label: "パスワード" },
+    { key: "password", label: "アカウント管理" },
   ];
 
   const pendingPhotos = photoRequests.filter((p) => p.status === "pending");
@@ -1079,34 +1095,58 @@ export default function OwnerDashboard() {
                   </div>
                 </div>
 
-                {/* キャストアカウントのメール変更 */}
+                {/* キャストアカウント管理 */}
                 {editCast.id && (
                   <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" }}>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8, letterSpacing: "0.1em" }}>🔑 ポータルアカウント</div>
-                    <label style={labelStyle}>メールアドレスを変更</label>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        type="email"
-                        placeholder="新しいメールアドレス"
-                        id={`cast-email-${editCast.id}`}
-                        style={{ ...inputStyle, flex: 1 }}
-                      />
-                      <button
-                        onClick={async () => {
-                          const input = document.getElementById(`cast-email-${editCast.id}`) as HTMLInputElement;
-                          const newEmail = input?.value?.trim();
-                          if (!newEmail) return;
-                          const res = await fetch("/api/cast-account-update", {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ cast_id: editCast.id, shop_id: shopId, new_email: newEmail }),
-                          });
-                          if (res.ok) { showMsg("メールアドレスを変更しました"); input.value = ""; }
-                          else showMsg("変更に失敗しました");
-                        }}
-                        style={{ padding: "8px 14px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer" }}
-                      >変更</button>
-                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10, letterSpacing: "0.1em" }}>🔑 ポータルアカウント</div>
+
+                    {/* 発行済みの場合 */}
+                    {castAccounts[editCast.id] ? (
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, padding: "8px 12px", background: "var(--online-bg)", border: "1px solid var(--online-border)", borderRadius: 8 }}>
+                          <span style={{ fontSize: 13, color: "var(--online)" }}>✅ 発行済み</span>
+                          <span style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>{castAccounts[editCast.id]}</span>
+                        </div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>メールアドレスを変更</label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input type="email" placeholder="新しいメールアドレス" id={`cast-email-${editCast.id}`} style={{ ...inputStyle, flex: 1, fontSize: 13 }} />
+                          <button onClick={async () => {
+                            const input = document.getElementById(`cast-email-${editCast.id}`) as HTMLInputElement;
+                            const newEmail = input?.value?.trim();
+                            if (!newEmail) return;
+                            const res = await fetch("/api/cast-account-update", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cast_id: editCast.id, shop_id: shopId, new_email: newEmail }) });
+                            if (res.ok) { showMsg("メールアドレスを変更しました"); input.value = ""; setCastAccounts({ ...castAccounts, [editCast.id!]: newEmail }); }
+                            else showMsg("変更に失敗しました");
+                          }} style={{ padding: "8px 14px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer" }}>変更</button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* 未発行の場合 */
+                      <div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>アカウントがまだ発行されていません。メールアドレスを入力してアカウントを発行してください。</div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>メールアドレス</label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input type="email" value={castAccountEmail[editCast.id!] || ""} onChange={e => setCastAccountEmail({ ...castAccountEmail, [editCast.id!]: e.target.value })} placeholder="例: cast@example.com" style={{ ...inputStyle, flex: 1, fontSize: 13 }} />
+                          <button
+                            onClick={async () => {
+                              const email = castAccountEmail[editCast.id!];
+                              if (!email) return;
+                              setIssuingAccount(editCast.id!);
+                              const cast = casts.find(c => c.id === editCast.id);
+                              const res = await fetch("/api/issue-cast-account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cast_id: editCast.id, email, shop_name: shopName }) });
+                              if (res.ok) {
+                                showMsg(`${cast?.name}にアカウントを発行しました`);
+                                setCastAccounts({ ...castAccounts, [editCast.id!]: email });
+                                setCastAccountEmail({ ...castAccountEmail, [editCast.id!]: "" });
+                              } else showMsg("発行に失敗しました");
+                              setIssuingAccount(null);
+                            }}
+                            disabled={issuingAccount === editCast.id || !castAccountEmail[editCast.id!]}
+                            style={{ padding: "8px 14px", borderRadius: 8, background: "linear-gradient(135deg,var(--accent),var(--accent2))", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: !castAccountEmail[editCast.id!] ? 0.5 : 1 }}
+                          >{issuingAccount === editCast.id ? "発行中..." : "発行"}</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1150,7 +1190,12 @@ export default function OwnerDashboard() {
                     <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{cast.name}</span>
                     <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 8 }}>{cast.age}歳</span>
                     <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>{cast.comment}</div>
-                  {cast.hourly_wage && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>時給 ¥{cast.hourly_wage.toLocaleString()}</div>}
+                    {cast.hourly_wage && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>時給 ¥{cast.hourly_wage.toLocaleString()}</div>}
+                    {/* アカウント状態 */}
+                    {castAccounts[cast.id]
+                      ? <div style={{ fontSize: 11, color: "var(--online)", marginTop: 2 }}>🔑 {castAccounts[cast.id]}</div>
+                      : <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>🔑 アカウント未発行</div>
+                    }
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => setEditCast(cast)} style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "4px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>編集</button>
@@ -1334,28 +1379,40 @@ export default function OwnerDashboard() {
           </div>
         )}
 
-        {/* パスワード */}
+        {/* アカウント管理 */}
         {tab === "password" && (
-          <div style={sectionStyle}>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>新しいパスワード（8文字以上）</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+          <div>
+            {/* ログイン情報 */}
+            <div style={{ ...sectionStyle, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔑 ログイン情報</div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4 }}>
+                メールアドレス：<span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{localStorage ? localStorage.getItem("owner_email") || "—" : "—"}</span>
+              </div>
             </div>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>新しいパスワード（確認）</label>
-              <input type="password" value={newPassword2} onChange={(e) => setNewPassword2(e.target.value)} style={inputStyle} />
+
+            {/* パスワード変更 */}
+            <div style={sectionStyle}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔒 パスワード変更</div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいパスワード（8文字以上）</label>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいパスワード（確認）</label>
+                <input type="password" value={newPassword2} onChange={(e) => setNewPassword2(e.target.value)} style={inputStyle} />
+              </div>
+              {pwMsg && (
+                <div style={{
+                  background: pwMsg.includes("変更") ? "var(--online-bg)" : "#ff444418",
+                  border: "1px solid " + (pwMsg.includes("変更") ? "var(--online-border)" : "#ff444444"),
+                  borderRadius: 10, padding: "10px 14px", color: pwMsg.includes("変更") ? "var(--online)" : "#ff4444",
+                  fontSize: 13, marginBottom: 16,
+                }}>{pwMsg}</div>
+              )}
+              <button onClick={changePassword} disabled={saving} style={btnPrimary as React.CSSProperties}>
+                {saving ? "変更中..." : "パスワードを変更する"}
+              </button>
             </div>
-            {pwMsg && (
-              <div style={{
-                background: pwMsg.includes("変更") ? "var(--online-bg)" : "#ff444418",
-                border: "1px solid " + (pwMsg.includes("変更") ? "var(--online-border)" : "#ff444444"),
-                borderRadius: 10, padding: "10px 14px", color: pwMsg.includes("変更") ? "var(--online)" : "#ff4444",
-                fontSize: 13, marginBottom: 16,
-              }}>{pwMsg}</div>
-            )}
-            <button onClick={changePassword} disabled={saving} style={btnPrimary as React.CSSProperties}>
-              {saving ? "変更中..." : "パスワードを変更する"}
-            </button>
           </div>
         )}
       </main>

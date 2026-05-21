@@ -68,7 +68,7 @@ export default function ShiftManagementTab({
   shopName, shopClosedWeekDays,
   sectionStyle, inputStyle, labelStyle, btnPrimary,
 }: Props) {
-  const [view, setView] = useState<"calendar"|"payroll"|"accounts">("calendar");
+  const [view, setView] = useState<"calendar"|"payroll">("calendar");
   const [closedDates, setClosedDates] = useState<ClosedDate[]>([]);
   const [draft, setDraft] = useState<Record<string,DraftEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<string|null>(null);
@@ -284,7 +284,6 @@ ${casts.map(cast=>{
         {[
           {key:"calendar",label:"📅 出勤表（シフトカレンダー）"},
           {key:"payroll",label:"💰 給与管理"},
-          {key:"accounts",label:"🔑 アカウント管理"},
         ].map(v=>(
           <button key={v.key} onClick={()=>setView(v.key as any)} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
