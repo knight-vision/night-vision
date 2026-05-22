@@ -66,15 +66,17 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const [slipSaving, setSlipSaving] = useState(false);
   const [slipSaved, setSlipSaved] = useState(false);
 
-  // デフォルト品名のカスタマイズ（localStateで管理、初期値はDEFAULT_PRESETS）
-  const [customDefaults, setCustomDefaults] = useState<ShopMenu[]>(DEFAULT_PRESETS);
+  // 品名管理
   const [editingId, setEditingId] = useState<string|null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+
+  const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
   const slipTax = Math.floor(slipSubtotal*TAX_RATE);
   const slipTotal = slipSubtotal + slipTax;
 
-  const allPresets = [...customDefaults, ...shopMenus];
+  // 全品名（DBのshopMenus。初回はDEFAULT_PRESETSをDB登録済み前提）
+  const allPresets = shopMenus.length > 0 ? shopMenus : DEFAULT_PRESETS;
 
   const loadMenus = useCallback(async () => {
     const res = await fetch(`/api/shop-menus?shop_id=${shopId}`);
@@ -509,8 +511,9 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
       {/* ===== 品名管理 ===== */}
       {view==="menu"&&(
         <div>
+          {/* 追加フォーム */}
           <div style={sec}>
-            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.08em"}}>新しい品名を追加</div>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.08em"}}>品名を追加</div>
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr auto",gap:8,alignItems:"end"}}>
               <div>
                 <label style={labelStyle}>品名</label>
@@ -528,49 +531,53 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
             </div>
           </div>
 
+          {/* 品名一覧（DB + デフォルト統合表示） */}
           <div style={sec}>
-            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>デフォルト品名</div>
-            {customDefaults.map(p=>(
-              <div key={p.id} style={{borderBottom:"1px solid var(--border)",padding:"6px 0"}}>
-                {editingId===p.id ? (
+            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>品名一覧</div>
+            {/* デフォルト品名（DBになければ表示） */}
+            {shopMenus.length===0&&DEFAULT_PRESETS.map(p=>(
+              <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--border)",fontSize:13}}>
+                <span style={{color:"var(--text-secondary)"}}>{p.name}</span>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{color:"var(--text-muted)"}}>¥{p.price.toLocaleString()}</span>
+                  <span style={{fontSize:10,color:"var(--text-hint)",border:"1px solid var(--border)",borderRadius:4,padding:"1px 6px"}}>デフォルト</span>
+                </div>
+              </div>
+            ))}
+            {/* DB品名 */}
+            {shopMenus.map(m=>(
+              <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"6px 0"}}>
+                {editingId===m.id ? (
                   <div style={{display:"grid",gridTemplateColumns:"2fr 1fr auto auto",gap:6,alignItems:"center"}}>
                     <input value={editName} onChange={e=>setEditName(e.target.value)} style={{...inp,fontSize:12}}/>
                     <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} style={{...inp,fontSize:12}}/>
-                    <button onClick={()=>{ setCustomDefaults(customDefaults.map(x=>x.id===p.id?{...x,name:editName,price:Number(editPrice)||x.price}:x)); setEditingId(null); }} style={{padding:"6px 10px",background:"var(--online-bg)",border:"1px solid var(--online-border)",borderRadius:6,color:"var(--online)",fontSize:11,cursor:"pointer"}}>保存</button>
+                    <button onClick={async()=>{
+                      await fetch("/api/shop-menus",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id,name:editName,price:Number(editPrice)||0})});
+                      await loadMenus(); setEditingId(null);
+                    }} style={{padding:"6px 10px",background:"var(--online-bg)",border:"1px solid var(--online-border)",borderRadius:6,color:"var(--online)",fontSize:11,cursor:"pointer"}}>保存</button>
                     <button onClick={()=>setEditingId(null)} style={{padding:"6px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,cursor:"pointer"}}>✕</button>
                   </div>
                 ) : (
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13}}>
-                    <span style={{color:"var(--text-secondary)"}}>{p.name}</span>
+                    <span style={{color:"var(--text-primary)"}}>{m.name}</span>
                     <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                      <span style={{color:"var(--text-muted)"}}>¥{p.price.toLocaleString()}</span>
-                      <button onClick={()=>{setEditingId(p.id);setEditName(p.name);setEditPrice(String(p.price));}} style={{background:"none",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",padding:"2px 8px",fontSize:11,cursor:"pointer"}}>編集</button>
-                      <button onClick={()=>setCustomDefaults(customDefaults.filter(x=>x.id!==p.id))} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
+                      <span style={{color:"var(--text-muted)"}}>¥{m.price.toLocaleString()}</span>
+                      <button onClick={()=>{setEditingId(m.id);setEditName(m.name);setEditPrice(String(m.price));}} style={{background:"none",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",padding:"2px 8px",fontSize:11,cursor:"pointer"}}>編集</button>
+                      <button onClick={async()=>{
+                        await fetch("/api/shop-menus",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id})});
+                        await loadMenus();
+                      }} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
                     </div>
                   </div>
                 )}
               </div>
             ))}
-            <button onClick={()=>{ const id="d"+Date.now(); setCustomDefaults([...customDefaults,{id,name:"新しい品名",price:0}]); setEditingId(id); setEditName("新しい品名"); setEditPrice("0"); }} style={{marginTop:8,padding:"7px 14px",background:"transparent",border:"1px dashed var(--border)",borderRadius:8,color:"var(--accent)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>＋ デフォルト品名を追加</button>
+            {shopMenus.length===0&&(
+              <div style={{fontSize:12,color:"var(--text-hint)",marginTop:10,textAlign:"center"}}>
+                品名を追加すると、デフォルト品名の代わりにここに表示されます
+              </div>
+            )}
           </div>
-
-          {shopMenus.length>0&&(
-            <div style={sec}>
-              <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>カスタム品名</div>
-              {shopMenus.map(m=>(
-                <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
-                  <span style={{fontSize:13,color:"var(--text-primary)"}}>{m.name}</span>
-                  <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                    <span style={{fontSize:13,color:"var(--text-muted)"}}>¥{m.price.toLocaleString()}</span>
-                    <button onClick={async()=>{
-                      await fetch("/api/shop-menus",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id})});
-                      await loadMenus();
-                    }} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"3px 10px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>

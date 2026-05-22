@@ -21,3 +21,9 @@ export async function DELETE(req: NextRequest) {
   await supabase.from("shop_menus").delete().eq("id", id);
   return NextResponse.json({ success: true });
 }
+export async function PATCH(req: NextRequest) {
+  const { id, name, price } = await req.json();
+  const { error } = await supabase.from("shop_menus").update({ name, price: Number(price)||0 }).eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}
