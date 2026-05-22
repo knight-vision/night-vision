@@ -5,6 +5,7 @@ import CastChangeRequestPanel from "@/components/CastChangeRequestPanel";
 import CastFeedbackPanel from "@/components/CastFeedbackPanel";
 import CastPayrollPanel from "@/components/CastPayrollPanel";
 import CastLinePanel from "@/components/CastLinePanel";
+import CastPerformancePanel from "@/components/CastPerformancePanel";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
@@ -122,7 +123,7 @@ export default function CastPortalPage() {
     setSaving(false);
   };
 
-  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback"|"payroll"|"line">("shift");
+  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback"|"payroll"|"line"|"performance">("shift");
   const [castAccountId, setCastAccountId] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
@@ -205,6 +206,7 @@ export default function CastPortalPage() {
           { key: "shift", label: "📅 シフト希望" },
           { key: "change_request", label: "🔄 シフト変更希望" },
           { key: "payroll", label: "💰 給与" },
+          { key: "performance", label: "📊 成績" },
           { key: "photos", label: "📷 写真" },
           { key: "line", label: "💬 LINE通知" },
           { key: "feedback", label: "✉️ ご意見" },
@@ -412,6 +414,10 @@ export default function CastPortalPage() {
 
       {portalView === "payroll" && castId && (
         <CastPayrollPanel castId={castId} castName={castName} />
+      )}
+
+      {portalView === "performance" && castId && shopId && (
+        <CastPerformancePanel castId={castId} shopId={shopId} castName={castName} />
       )}
 
       {portalView === "line" && castAccountId && castId && (

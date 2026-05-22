@@ -9,6 +9,7 @@ import TweetTab from "@/components/TweetTab";
 import JobsTab from "@/components/JobsTab";
 import FeedbackTab from "@/components/FeedbackTab";
 import LineTab from "@/components/LineTab";
+import SalesTab from "@/components/SalesTab";
 
 type Shop = {
   id: number;
@@ -61,7 +62,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
+type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -456,6 +457,7 @@ export default function OwnerDashboard() {
     { key: "images", label: "店舗画像" },
     { key: "cast", label: "キャスト" },
     { key: "shift", label: "出勤管理" },
+    { key: "sales", label: "📊 売上管理" },
     { key: "jobs", label: "求人" },
     { key: "tweet", label: "つぶやき" },
     { key: "feedback", label: "ご意見" },
@@ -1255,6 +1257,11 @@ export default function OwnerDashboard() {
         {/* LINE通知 */}
         {tab === "line" && (
           <LineTab shopId={shopId!} sectionStyle={sectionStyle} btnPrimary={btnPrimary} />
+        )}
+
+        {/* 売上管理 */}
+        {tab === "sales" && shopId && (
+          <SalesTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
         )}
 
         {/* ご意見・ご要望 */}
