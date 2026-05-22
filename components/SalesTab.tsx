@@ -454,8 +454,8 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:500}}>
                   <thead>
                     <tr style={{background:"var(--bg-input)"}}>
-                      {["キャスト","出勤","基本給","手当","ボトルバック","支払合計","売上合計","売上/給与"].map(h=>(
-                        <th key={h} style={{padding:"8px",textAlign:"right",color:"var(--text-muted)",fontWeight:700,whiteSpace:"nowrap",borderBottom:"1px solid var(--border)",":firstChild":{textAlign:"left"}}}>{h}</th>
+                      {["キャスト","出勤","基本給","手当","ボトルバック","支払合計","売上合計","売上/給与"].map((h,hi)=>(
+                        <th key={h} style={{padding:"8px",textAlign:hi===0?"left":"right",color:"var(--text-muted)",fontWeight:700,whiteSpace:"nowrap",borderBottom:"1px solid var(--border)"}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
