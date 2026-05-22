@@ -222,12 +222,12 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
         <div>
           <div style={{...sectionStyle,marginBottom:12}}>
             <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>基本情報</div>
-            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:12}}>
-              <div style={{flex:"1 1 130px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              <div>
                 <label style={labelStyle}>日付</label>
                 <input type="date" value={slipDate} onChange={e=>setSlipDate(e.target.value)} style={inp}/>
               </div>
-              <div style={{flex:"1 1 100px"}}>
+              <div>
                 <label style={labelStyle}>テーブル No.</label>
                 <input value={tableNo} onChange={e=>setTableNo(e.target.value)} placeholder="例: A-3" style={inp}/>
               </div>
@@ -251,26 +251,26 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
             <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>キャスト</div>
             {slipCasts.map((c,i)=>(
               <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",marginBottom:8,position:"relative"}}>
-                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                  <div style={{flex:"1 1 120px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                  <div>
                     <label style={labelStyle}>キャスト名</label>
                     <select value={c.cast_id} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,cast_id:e.target.value}:x))} style={inp}>
                       <option value="">選択...</option>
                       {casts.map(cc=><option key={cc.id} value={cc.id}>{cc.name}</option>)}
                     </select>
                   </div>
-                  <div style={{flex:"1 1 100px"}}>
+                  <div>
                     <label style={labelStyle}>指名種別</label>
                     <select value={c.type} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,type:e.target.value}:x))} style={inp}>
                       {SHIMEI_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
-                  <div style={{flex:"1 1 90px"}}>
-                    <label style={labelStyle}>入店</label>
+                  <div>
+                    <label style={labelStyle}>入店時刻</label>
                     <input type="time" value={c.timeFrom} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,timeFrom:e.target.value}:x))} style={inp}/>
                   </div>
-                  <div style={{flex:"1 1 90px"}}>
-                    <label style={labelStyle}>退店</label>
+                  <div>
+                    <label style={labelStyle}>退店時刻</label>
                     <input type="time" value={c.timeTo} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,timeTo:e.target.value}:x))} style={inp}/>
                   </div>
                 </div>
@@ -289,16 +289,16 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
                     <button key={p.name} onClick={()=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:p.name,price:p.price}:x))} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:5,color:"var(--text-muted)",fontSize:11,padding:"3px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>{p.name}</button>
                   ))}
                 </div>
-                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                  <div style={{flex:"2 1 160px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"2fr 80px 120px",gap:10}}>
+                  <div>
                     <label style={labelStyle}>品目名</label>
                     <input value={item.name} onChange={e=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:e.target.value}:x))} placeholder="品目を入力" style={inp}/>
                   </div>
-                  <div style={{flex:"0 1 70px"}}>
+                  <div>
                     <label style={labelStyle}>数量</label>
                     <input type="number" min={1} value={item.qty} onChange={e=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,qty:Number(e.target.value)}:x))} style={{...inp,textAlign:"center"}}/>
                   </div>
-                  <div style={{flex:"1 1 110px"}}>
+                  <div>
                     <label style={labelStyle}>単価（¥）</label>
                     <input type="number" min={0} value={item.price||""} onChange={e=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,price:Number(e.target.value)}:x))} style={{...inp,textAlign:"right"}}/>
                   </div>
@@ -350,20 +350,20 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
               {/* 売上入力 */}
               <div style={{...sectionStyle,marginBottom:12}}>
                 <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>売上・経費</div>
-                <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:12}}>
-                  <div style={{flex:"1 1 120px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                  <div>
                     <label style={labelStyle}>現金売上</label>
                     <input type="number" value={dailyData.cash_sales||""} onChange={e=>setDailyData(p=>({...p,cash_sales:Number(e.target.value)||0}))} style={inp} placeholder="0"/>
                   </div>
-                  <div style={{flex:"1 1 120px"}}>
+                  <div>
                     <label style={labelStyle}>カード売上</label>
                     <input type="number" value={dailyData.card_sales||""} onChange={e=>setDailyData(p=>({...p,card_sales:Number(e.target.value)||0}))} style={inp} placeholder="0"/>
                   </div>
-                  <div style={{flex:"1 1 120px"}}>
+                  <div>
                     <label style={labelStyle}>仕入・経費</label>
                     <input type="number" value={dailyData.cost||""} onChange={e=>setDailyData(p=>({...p,cost:Number(e.target.value)||0}))} style={inp} placeholder="0"/>
                   </div>
-                  <div style={{flex:"2 1 200px"}}>
+                  <div>
                     <label style={labelStyle}>メモ</label>
                     <input value={dailyData.memo||""} onChange={e=>setDailyData(p=>({...p,memo:e.target.value}))} style={inp} placeholder="備考"/>
                   </div>
