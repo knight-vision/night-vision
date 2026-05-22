@@ -13,6 +13,26 @@ type CastSale = {
 type ConfirmedShift = { cast_id: number; date: string; start_time: string; end_time: string };
 type Allowance = { cast_id: number; date: string; amount: number; label: string };
 
+// 伝票入力
+type SlipItem = { name: string; qty: number; price: number };
+type SlipCast = { cast_id: string; type: string; timeFrom: string; timeTo: string };
+
+const MENU_PRESETS = [
+  { name: "セット料金", price: 3000 },
+  { name: "ビール", price: 800 },
+  { name: "ハイボール", price: 800 },
+  { name: "ソフトドリンク", price: 600 },
+  { name: "シャンパン（モエ）", price: 35000 },
+  { name: "ドンペリ（白）", price: 80000 },
+  { name: "ドンペリ（黒）", price: 120000 },
+  { name: "場内指名料", price: 1000 },
+  { name: "同伴料", price: 2000 },
+  { name: "延長料", price: 3000 },
+];
+const SHIMEI_TYPES = ["フリー", "場内指名", "本指名"];
+const PAYMENT_TYPES = ["現金", "カード", "請求書"];
+const TAX_RATE = 0.1;
+
 const SALES_TYPES = [
   { key: "honshimei", label: "本指名", icon: "⭐" },
   { key: "baai", label: "場内指名", icon: "🎯" },
@@ -40,7 +60,7 @@ type Props = {
 };
 
 export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
-  const [view, setView] = useState<"daily"|"cast"|"monthly">("daily");
+  const [view, setView] = useState<"slip"|"daily"|"cast"|"monthly">("slip");
   const [month, setMonth] = useState(new Date().toISOString().slice(0,7));
   const [selectedDate, setSelectedDate] = useState(getDateStr(new Date()));
   const [dailySales, setDailySales] = useState<DailySales[]>([]);
@@ -50,12 +70,78 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // 伝票入力state
+  const [slipDate, setSlipDate] = useState(getDateStr(new Date()));
+  const [tableNo, setTableNo] = useState("");
+  const [payment, setPayment] = useState("現金");
+  const [slipItems, setSlipItems] = useState<SlipItem[]>([{ name: "", qty: 1, price: 0 }]);
+  const [slipCasts, setSlipCasts] = useState<SlipCast[]>([{ cast_id: "", type: "フリー", timeFrom: "", timeTo: "" }]);
+  const [slipMemo, setSlipMemo] = useState("");
+  const [slipSaving, setSlipSaving] = useState(false);
+  const [slipSaved, setSlipSaved] = useState(false);
+
   // 日次入力フォーム
   const [form, setForm] = useState<DailySales>({ date: getDateStr(new Date()), opening_cash:0, cash_sales:0, card_sales:0, invoice_sales:0, cost:0, memo:"" });
   // キャスト売上入力
   const [castForm, setCastForm] = useState({ cast_id:"", sales_type:"honshimei", amount:"", count:"1", memo:"", date: getDateStr(new Date()) });
 
-  useEffect(() => { loadAll(); }, [month]);
+  // 伝票の計算
+  const slipSubtotal = slipItems.reduce((s,i) => s + i.qty * i.price, 0);
+  const slipTax = Math.floor(slipSubtotal * TAX_RATE);
+  const slipTotal = slipSubtotal + slipTax;
+
+  const addSlipItem = () => setSlipItems([...slipItems, { name: "", qty: 1, price: 0 }]);
+  const removeSlipItem = (i: number) => setSlipItems(slipItems.filter((_,idx)=>idx!==i));
+  const updateSlipItem = (i: number, field: keyof SlipItem, val: any) => setSlipItems(slipItems.map((item,idx)=>idx===i?{...item,[field]:val}:item));
+  const applyPreset = (i: number, preset: typeof MENU_PRESETS[number]) => setSlipItems(slipItems.map((item,idx)=>idx===i?{...item,name:preset.name,price:preset.price}:item));
+
+  const addSlipCast = () => setSlipCasts([...slipCasts, { cast_id: "", type: "フリー", timeFrom: "", timeTo: "" }]);
+  const removeSlipCast = (i: number) => setSlipCasts(slipCasts.filter((_,idx)=>idx!==i));
+  const updateSlipCast = (i: number, field: keyof SlipCast, val: string) => setSlipCasts(slipCasts.map((c,idx)=>idx===i?{...c,[field]:val}:c));
+
+  const saveSlip = async () => {
+    setSlipSaving(true); setMsg("");
+    try {
+      // 日次売上に加算
+      const res = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${slipDate.slice(0,7)}`);
+      const existing = res.ok ? (await res.json()).find((d: DailySales) => d.date === slipDate) : null;
+      const newCash = (existing?.cash_sales||0) + (payment==="現金" ? slipTotal : 0);
+      const newCard = (existing?.card_sales||0) + (payment==="カード" ? slipTotal : 0);
+      const newInvoice = (existing?.invoice_sales||0) + (payment==="請求書" ? slipTotal : 0);
+      await fetch("/api/daily-sales", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ shop_id: shopId, date: slipDate, opening_cash: existing?.opening_cash||0, cash_sales: newCash, card_sales: newCard, invoice_sales: newInvoice, cost: existing?.cost||0, memo: existing?.memo||"" }),
+      });
+
+      // キャスト売上に反映
+      for (const c of slipCasts) {
+        if (!c.cast_id) continue;
+        const salesType = c.type==="本指名"?"honshimei":c.type==="場内指名"?"baai":null;
+        if (salesType) {
+          const shimeiFee = slipItems.find(i=>i.name.includes("指名"));
+          await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: salesType, amount: shimeiFee ? shimeiFee.qty*shimeiFee.price : (salesType==="honshimei"?16000:1000), count: 1, memo: `テーブル${tableNo}` }) });
+        }
+        const douhanItem = slipItems.find(i=>i.name.includes("同伴"));
+        if (douhanItem) {
+          await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "douhan", amount: douhanItem.qty*douhanItem.price, count: 1, memo: `テーブル${tableNo}` }) });
+        }
+        const bottleItem = slipItems.find(i=>i.name.includes("モエ")||i.name.includes("ドンペリ")||i.name.includes("シャンパン"));
+        if (bottleItem) {
+          const back = Math.floor(bottleItem.qty*bottleItem.price*0.1);
+          await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "bottle", amount: back, count: 1, memo: `${bottleItem.name}(10%バック)` }) });
+        }
+      }
+
+      setSlipSaved(true);
+      setMsg(`✅ 伝票を保存しました（¥${slipTotal.toLocaleString()}）`);
+      setTimeout(()=>{ setSlipSaved(false); setSlipItems([{name:"",qty:1,price:0}]); setSlipCasts([{cast_id:"",type:"フリー",timeFrom:"",timeTo:""}]); setTableNo(""); setSlipMemo(""); setPayment("現金"); }, 1500);
+      await loadAll();
+    } catch(e: any) { setMsg("保存に失敗しました: " + e.message); }
+    setSlipSaving(false);
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -142,9 +228,10 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
         {[
-          {key:"daily",label:"📋 日次入力"},
+          {key:"slip",label:"📋 伝票入力"},
+          {key:"daily",label:"📊 日次入力"},
           {key:"cast",label:"⭐ キャスト売上"},
-          {key:"monthly",label:"📊 月次集計"},
+          {key:"monthly",label:"💹 月次集計"},
         ].map(v=>(
           <button key={v.key} onClick={()=>setView(v.key as any)} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,
@@ -165,6 +252,127 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
       {msg && <div style={{marginBottom:12,padding:"10px 14px",borderRadius:10,fontSize:13,background:msg.includes("失敗")?"#ff444418":"var(--online-bg)",border:`1px solid ${msg.includes("失敗")?"#ff444444":"var(--online-border)"}`,color:msg.includes("失敗")?"#ff4444":"var(--online)"}}>{msg}</div>}
 
       {loading && <div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>}
+
+      {/* ===== 伝票入力 ===== */}
+      {view==="slip"&&(
+        <div>
+          {/* 基本情報 */}
+          <div style={{...sectionStyle,marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>基本情報</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              <div><label style={labelStyle}>日付</label><input type="date" value={slipDate} onChange={e=>setSlipDate(e.target.value)} style={inputStyle}/></div>
+              <div><label style={labelStyle}>テーブル No.</label><input value={tableNo} onChange={e=>setTableNo(e.target.value)} placeholder="例: A-3" style={inputStyle}/></div>
+            </div>
+            <div>
+              <label style={labelStyle}>支払方法</label>
+              <div style={{display:"flex",gap:8,marginTop:4}}>
+                {PAYMENT_TYPES.map(p=>(
+                  <button key={p} onClick={()=>setPayment(p)} style={{
+                    padding:"8px 20px",borderRadius:20,fontSize:13,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,
+                    background:payment===p?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
+                    color:payment===p?"#fff":"var(--text-secondary)",
+                    border:payment===p?"1px solid transparent":"1px solid var(--border)",
+                  }}>{p}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* キャスト */}
+          <div style={{...sectionStyle,marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>キャスト</div>
+            {slipCasts.map((c,i)=>(
+              <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",marginBottom:8,position:"relative"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  <div>
+                    <label style={labelStyle}>キャスト名</label>
+                    <select value={c.cast_id} onChange={e=>updateSlipCast(i,"cast_id",e.target.value)} style={inputStyle}>
+                      <option value="">選択...</option>
+                      {casts.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>指名種別</label>
+                    <select value={c.type} onChange={e=>updateSlipCast(i,"type",e.target.value)} style={inputStyle}>
+                      {SHIMEI_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>入店時刻</label>
+                    <input type="time" value={c.timeFrom} onChange={e=>updateSlipCast(i,"timeFrom",e.target.value)} style={inputStyle}/>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>退店時刻</label>
+                    <input type="time" value={c.timeTo} onChange={e=>updateSlipCast(i,"timeTo",e.target.value)} style={inputStyle}/>
+                  </div>
+                </div>
+                {slipCasts.length>1&&<button onClick={()=>removeSlipCast(i)} style={{position:"absolute",top:8,right:12,background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:18}}>×</button>}
+              </div>
+            ))}
+            <button onClick={addSlipCast} style={{width:"100%",padding:"10px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)"}}>＋ キャストを追加</button>
+          </div>
+
+          {/* 注文品目 */}
+          <div style={{...sectionStyle,marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>注文品目</div>
+            {slipItems.map((item,i)=>(
+              <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",marginBottom:8,position:"relative"}}>
+                {/* プリセット */}
+                <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
+                  {MENU_PRESETS.map(p=>(
+                    <button key={p.name} onClick={()=>applyPreset(i,p)} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:5,color:"var(--text-muted)",fontSize:11,padding:"3px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>{p.name}</button>
+                  ))}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"2fr 70px 110px",gap:10}}>
+                  <div>
+                    <label style={labelStyle}>品目名</label>
+                    <input value={item.name} onChange={e=>updateSlipItem(i,"name",e.target.value)} placeholder="品目を入力" style={inputStyle}/>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>数量</label>
+                    <input type="number" min={1} value={item.qty} onChange={e=>updateSlipItem(i,"qty",Number(e.target.value))} style={{...inputStyle,textAlign:"center"}}/>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>単価（¥）</label>
+                    <input type="number" min={0} value={item.price||""} onChange={e=>updateSlipItem(i,"price",Number(e.target.value))} style={{...inputStyle,textAlign:"right"}}/>
+                  </div>
+                </div>
+                <div style={{textAlign:"right",marginTop:6,color:"var(--accent)",fontSize:12,fontWeight:600}}>小計: ¥{(item.qty*item.price).toLocaleString()}</div>
+                {slipItems.length>1&&<button onClick={()=>removeSlipItem(i)} style={{position:"absolute",top:8,right:12,background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:18}}>×</button>}
+              </div>
+            ))}
+            <button onClick={addSlipItem} style={{width:"100%",padding:"10px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)"}}>＋ 品目を追加</button>
+          </div>
+
+          {/* 合計 */}
+          <div style={{...sectionStyle,marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:13}}>
+              <span style={{color:"var(--text-muted)"}}>小計</span><span style={{color:"var(--text-secondary)"}}>¥{slipSubtotal.toLocaleString()}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,fontSize:13}}>
+              <span style={{color:"var(--text-muted)"}}>消費税（10%）</span><span style={{color:"var(--text-secondary)"}}>¥{slipTax.toLocaleString()}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:"1px solid var(--border)"}}>
+              <span style={{color:"var(--text-primary)",fontSize:16,fontWeight:700}}>合計</span>
+              <span style={{color:"var(--accent)",fontSize:24,fontWeight:900}}>¥{slipTotal.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* メモ */}
+          <div style={{marginBottom:16}}>
+            <label style={labelStyle}>メモ</label>
+            <textarea value={slipMemo} onChange={e=>setSlipMemo(e.target.value)} placeholder="特記事項など..." rows={2} style={{...inputStyle,resize:"vertical",fontFamily:"var(--font)"}}/>
+          </div>
+
+          {/* 保存ボタン */}
+          <button onClick={saveSlip} disabled={slipSaving} style={{
+            ...btnPrimary as any, width:"100%", fontSize:15,
+            background:slipSaved?"linear-gradient(135deg,#059669,#10b981)":"linear-gradient(135deg,var(--accent),var(--accent2))",
+          }}>
+            {slipSaved?"✓ 保存しました":slipSaving?"保存中...":"伝票を保存する"}
+          </button>
+        </div>
+      )}
 
       {/* ===== 日次入力 ===== */}
       {view==="daily"&&!loading&&(
