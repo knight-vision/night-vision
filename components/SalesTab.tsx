@@ -75,12 +75,25 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const slipTax = Math.floor(slipSubtotal*TAX_RATE);
   const slipTotal = slipSubtotal + slipTax;
 
-  // 全品名（DBのshopMenus。初回はDEFAULT_PRESETSをDB登録済み前提）
-  const allPresets = shopMenus.length > 0 ? shopMenus : DEFAULT_PRESETS;
+  // 全品名はDBから（初回は自動でデフォルト登録される）
+  const allPresets = shopMenus;
 
   const loadMenus = useCallback(async () => {
     const res = await fetch(`/api/shop-menus?shop_id=${shopId}`);
-    if (res.ok) setShopMenus(await res.json());
+    if (res.ok) {
+      const data = await res.json();
+      // DBが空の場合はデフォルトをDBに自動登録
+      if (data.length === 0) {
+        await Promise.all(DEFAULT_PRESETS.map((p, i) =>
+          fetch("/api/shop-menus", { method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, sort_order: i }) })
+        ));
+        const res2 = await fetch(`/api/shop-menus?shop_id=${shopId}`);
+        if (res2.ok) setShopMenus(await res2.json());
+      } else {
+        setShopMenus(data);
+      }
+    }
   }, [shopId]);
 
   const loadSales = useCallback(async (m: string) => {
@@ -180,7 +193,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"cast_sales",label:"⭐ キャスト売上"},{key:"sales",label:"📊 売上表"},{key:"menu",label:"🍽 品名管理"}].map(v=>(
+        {[{key:"slip",label:"📋 伝票入力"},{key:"cast_sales",label:"⭐ キャスト売上"},{key:"sales",label:"📊 店舗売上"},{key:"menu",label:"🍽 品名管理"}].map(v=>(
           <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales"||v.key==="cast_sales") loadSales(month); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
@@ -534,17 +547,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
           {/* 品名一覧（DB + デフォルト統合表示） */}
           <div style={sec}>
             <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>品名一覧</div>
-            {/* デフォルト品名（DBになければ表示） */}
-            {shopMenus.length===0&&DEFAULT_PRESETS.map(p=>(
-              <div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--border)",fontSize:13}}>
-                <span style={{color:"var(--text-secondary)"}}>{p.name}</span>
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span style={{color:"var(--text-muted)"}}>¥{p.price.toLocaleString()}</span>
-                  <span style={{fontSize:10,color:"var(--text-hint)",border:"1px solid var(--border)",borderRadius:4,padding:"1px 6px"}}>デフォルト</span>
-                </div>
-              </div>
-            ))}
-            {/* DB品名 */}
+            {/* DB品名（デフォルト含む） */}
             {shopMenus.map(m=>(
               <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"6px 0"}}>
                 {editingId===m.id ? (
@@ -572,11 +575,6 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
                 )}
               </div>
             ))}
-            {shopMenus.length===0&&(
-              <div style={{fontSize:12,color:"var(--text-hint)",marginTop:10,textAlign:"center"}}>
-                品名を追加すると、デフォルト品名の代わりにここに表示されます
-              </div>
-            )}
           </div>
         </div>
       )}
