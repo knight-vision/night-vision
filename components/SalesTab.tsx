@@ -40,7 +40,7 @@ function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Numb
 type Props = { shopId: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties };
 
 export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
-  const [view, setView] = useState<"slip"|"sales"|"menu">("slip");
+  const [view, setView] = useState<"slip"|"sales"|"cast_sales"|"menu">("slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"monthly">("daily");
   const [month, setMonth] = useState(new Date().toISOString().slice(0,7));
   const [dailyDate, setDailyDate] = useState(getDateStr(new Date()));
@@ -66,11 +66,15 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const [slipSaving, setSlipSaving] = useState(false);
   const [slipSaved, setSlipSaved] = useState(false);
 
-  const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
+  // デフォルト品名のカスタマイズ（localStateで管理、初期値はDEFAULT_PRESETS）
+  const [customDefaults, setCustomDefaults] = useState<ShopMenu[]>(DEFAULT_PRESETS);
+  const [editingId, setEditingId] = useState<string|null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
   const slipTax = Math.floor(slipSubtotal*TAX_RATE);
   const slipTotal = slipSubtotal + slipTax;
 
-  const allPresets = [...DEFAULT_PRESETS, ...shopMenus];
+  const allPresets = [...customDefaults, ...shopMenus];
 
   const loadMenus = useCallback(async () => {
     const res = await fetch(`/api/shop-menus?shop_id=${shopId}`);
@@ -174,8 +178,8 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"sales",label:"📊 売上表"},{key:"menu",label:"🍽 品名管理"}].map(v=>(
-          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); }} style={{
+        {[{key:"slip",label:"📋 伝票入力"},{key:"cast_sales",label:"⭐ キャスト売上"},{key:"sales",label:"📊 売上表"},{key:"menu",label:"🍽 品名管理"}].map(v=>(
+          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales"||v.key==="cast_sales") loadSales(month); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
             border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
@@ -190,17 +194,17 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
       {view==="slip"&&(
         <div style={sec}>
           {/* 日付・支払方法 */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+          <div style={{display:"flex",gap:12,marginBottom:14,alignItems:"flex-end",flexWrap:"wrap"}}>
             <div>
               <label style={labelStyle}>日付</label>
-              <input type="date" value={slipDate} onChange={e=>setSlipDate(e.target.value)} style={inp}/>
+              <input type="date" value={slipDate} onChange={e=>setSlipDate(e.target.value)} style={{...inp,width:"auto"}}/>
             </div>
             <div>
               <label style={labelStyle}>支払方法</label>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+              <div style={{display:"flex",gap:8,marginTop:4}}>
                 {PAYMENT_TYPES.map(p=>(
                   <button key={p} onClick={()=>setPayment(p)} style={{
-                    padding:"9px 4px",borderRadius:10,fontSize:13,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,
+                    padding:"9px 18px",borderRadius:10,fontSize:13,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,whiteSpace:"nowrap",
                     background:payment===p?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
                     color:payment===p?"#fff":"var(--text-secondary)",
                     border:payment===p?"1px solid transparent":"1px solid var(--border)",
@@ -281,6 +285,63 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
           <button onClick={saveSlip} disabled={slipSaving} style={{...btnPrimary as any,background:slipSaved?"linear-gradient(135deg,#059669,#10b981)":"linear-gradient(135deg,var(--accent),var(--accent2))"}}>
             {slipSaved?"✓ 保存しました":slipSaving?"保存中...":"伝票を保存する"}
           </button>
+        </div>
+      )}
+
+      {/* ===== キャスト売上 ===== */}
+      {view==="cast_sales"&&(
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+            <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()-1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>←</button>
+            <span style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>{month.replace("-","年")}月</span>
+            <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()+1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>→</button>
+          </div>
+          {loading?<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>:(
+            <>
+              {/* キャスト別売上カード */}
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+                {casts.map(cast=>{
+                  const d = calcCastMonthly(cast);
+                  const ratio = d.totalPay>0 ? d.sales/d.totalPay*100 : 0;
+                  const mySales = allCastSales.filter(s=>s.cast_id===cast.id);
+                  return (
+                    <div key={cast.id} style={{...sectionStyle,marginBottom:0}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                        <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>{cast.name}</span>
+                        <span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
+                          background:ratio>=100?"var(--online-bg)":ratio>=70?"#f59e0b22":"#ff444418",
+                          color:ratio>=100?"var(--online)":ratio>=70?"#f59e0b":"#ff4444",
+                          border:`1px solid ${ratio>=100?"var(--online-border)":ratio>=70?"#f59e0b44":"#ff444444"}`}}>
+                          {d.totalPay>0?`売上/給与 ${ratio.toFixed(0)}%`:"記録なし"}
+                        </span>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:d.days>0?10:0}}>
+                        {[["出勤",`${d.days}日`],["本指名",`¥${d.honshimei.toLocaleString()}`],["場内",`¥${d.baai.toLocaleString()}`],["同伴",`¥${d.douhan.toLocaleString()}`]].map(([l,v])=>(
+                          <div key={l} style={{background:"var(--bg-input)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                            <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:2}}>{l}</div>
+                            <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>{v}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {mySales.length>0&&(
+                        <div style={{fontSize:12}}>
+                          {mySales.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{
+                            const t = SALES_TYPE_LABELS[s.sales_type];
+                            return (
+                              <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderTop:"1px solid var(--border)",color:"var(--text-muted)"}}>
+                                <span>{fmtDate(s.date)} {t?.icon} {t?.label}</span>
+                                <span style={{color:"var(--accent)",fontWeight:600}}>¥{s.amount.toLocaleString()}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -469,12 +530,28 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
 
           <div style={sec}>
             <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>デフォルト品名</div>
-            {DEFAULT_PRESETS.map(p=>(
-              <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid var(--border)",fontSize:13}}>
-                <span style={{color:"var(--text-secondary)"}}>{p.name}</span>
-                <span style={{color:"var(--text-muted)"}}>¥{p.price.toLocaleString()}</span>
+            {customDefaults.map(p=>(
+              <div key={p.id} style={{borderBottom:"1px solid var(--border)",padding:"6px 0"}}>
+                {editingId===p.id ? (
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1fr auto auto",gap:6,alignItems:"center"}}>
+                    <input value={editName} onChange={e=>setEditName(e.target.value)} style={{...inp,fontSize:12}}/>
+                    <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} style={{...inp,fontSize:12}}/>
+                    <button onClick={()=>{ setCustomDefaults(customDefaults.map(x=>x.id===p.id?{...x,name:editName,price:Number(editPrice)||x.price}:x)); setEditingId(null); }} style={{padding:"6px 10px",background:"var(--online-bg)",border:"1px solid var(--online-border)",borderRadius:6,color:"var(--online)",fontSize:11,cursor:"pointer"}}>保存</button>
+                    <button onClick={()=>setEditingId(null)} style={{padding:"6px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,cursor:"pointer"}}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13}}>
+                    <span style={{color:"var(--text-secondary)"}}>{p.name}</span>
+                    <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                      <span style={{color:"var(--text-muted)"}}>¥{p.price.toLocaleString()}</span>
+                      <button onClick={()=>{setEditingId(p.id);setEditName(p.name);setEditPrice(String(p.price));}} style={{background:"none",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",padding:"2px 8px",fontSize:11,cursor:"pointer"}}>編集</button>
+                      <button onClick={()=>setCustomDefaults(customDefaults.filter(x=>x.id!==p.id))} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+            <button onClick={()=>{ const id="d"+Date.now(); setCustomDefaults([...customDefaults,{id,name:"新しい品名",price:0}]); setEditingId(id); setEditName("新しい品名"); setEditPrice("0"); }} style={{marginTop:8,padding:"7px 14px",background:"transparent",border:"1px dashed var(--border)",borderRadius:8,color:"var(--accent)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>＋ デフォルト品名を追加</button>
           </div>
 
           {shopMenus.length>0&&(
