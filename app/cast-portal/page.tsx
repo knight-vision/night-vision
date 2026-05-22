@@ -206,7 +206,7 @@ export default function CastPortalPage() {
           { key: "shift", label: "📅 シフト希望" },
           { key: "change_request", label: "🔄 シフト変更希望" },
           { key: "payroll", label: "💰 給与" },
-          { key: "performance", label: "📊 成績" },
+          { key: "performance", label: "📊 実績" },
           { key: "photos", label: "📷 写真" },
           { key: "line", label: "💬 LINE通知" },
           { key: "feedback", label: "✉️ ご意見" },

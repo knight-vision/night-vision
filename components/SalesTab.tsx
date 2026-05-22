@@ -191,7 +191,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     setSlipSaving(false);
   };
 
-  const inp: React.CSSProperties = { ...inputStyle as any, padding:"8px 10px", fontSize:13, boxSizing:"border-box" };
+  const inp: React.CSSProperties = { ...inputStyle as any, padding:"8px 10px", fontSize:13, boxSizing:"border-box", width:"100%" };
 
   return (
     <div>
@@ -227,10 +227,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
                 <label style={labelStyle}>日付</label>
                 <input type="date" value={slipDate} onChange={e=>setSlipDate(e.target.value)} style={inp}/>
               </div>
-              <div>
-                <label style={labelStyle}>テーブル No.</label>
-                <input value={tableNo} onChange={e=>setTableNo(e.target.value)} placeholder="例: A-3" style={inp}/>
-              </div>
+
             </div>
             <div>
               <label style={labelStyle}>支払方法</label>
@@ -251,7 +248,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
             <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>キャスト</div>
             {slipCasts.map((c,i)=>(
               <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",marginBottom:8,position:"relative"}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
                     <label style={labelStyle}>キャスト名</label>
                     <select value={c.cast_id} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,cast_id:e.target.value}:x))} style={inp}>
@@ -265,23 +262,15 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
                       {SHIMEI_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label style={labelStyle}>入店時刻</label>
-                    <input type="time" value={c.timeFrom} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,timeFrom:e.target.value}:x))} style={inp}/>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>退店時刻</label>
-                    <input type="time" value={c.timeTo} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,timeTo:e.target.value}:x))} style={inp}/>
-                  </div>
+
                 </div>
                 {slipCasts.length>1&&<button onClick={()=>setSlipCasts(slipCasts.filter((_,idx)=>idx!==i))} style={{position:"absolute",top:8,right:10,background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>}
               </div>
             ))}
             <button onClick={()=>setSlipCasts([...slipCasts,{cast_id:"",type:"フリー",timeFrom:"",timeTo:""}])} style={{width:"100%",padding:"10px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)"}}>＋ キャストを追加</button>
-          </div>
 
-          <div style={{...sectionStyle,marginBottom:12}}>
-            <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.1em"}}>注文品目</div>
+            {/* 注文品目 */}
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",margin:"16px 0 10px",letterSpacing:"0.1em"}}>注文品目</div>
             {slipItems.map((item,i)=>(
               <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",marginBottom:8,position:"relative"}}>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
@@ -308,9 +297,9 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
               </div>
             ))}
             <button onClick={()=>setSlipItems([...slipItems,{name:"",qty:1,price:0}])} style={{width:"100%",padding:"10px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)"}}>＋ 品目を追加</button>
-          </div>
 
-          <div style={{...sectionStyle,marginBottom:12}}>
+            {/* 合計 */}
+            <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid var(--border)"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:13}}>
               <span style={{color:"var(--text-muted)"}}>小計</span><span style={{color:"var(--text-secondary)"}}>¥{slipSubtotal.toLocaleString()}</span>
             </div>
@@ -320,6 +309,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
             <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:"1px solid var(--border)"}}>
               <span style={{color:"var(--text-primary)",fontSize:16,fontWeight:700}}>合計</span>
               <span style={{color:"var(--accent)",fontSize:24,fontWeight:900}}>¥{slipTotal.toLocaleString()}</span>
+            </div>
             </div>
           </div>
 
