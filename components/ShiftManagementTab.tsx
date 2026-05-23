@@ -531,25 +531,74 @@ ${casts.map(cast=>{
                       <div style={{textAlign:"center",color:"var(--text-muted)",padding:"12px 0",fontSize:13}}>この月の記録はありません</div>
                     ):activeDates.map(date=>{
                       const d=calcCastDay(cast,date);
+                      const isOpen = paySelectedDate===`${cast.id}-${date}`;
                       return (
-                        <div key={date} style={{padding:"10px 0",borderBottom:"1px solid var(--border)"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:d.dayAllowances.length>0?6:0}}>
-                            <div>
+                        <div key={date} style={{borderBottom:"1px solid var(--border)"}}>
+                          {/* 日付行（タップで展開） */}
+                          <div
+                            onClick={()=>setPaySelectedDate(isOpen?null:`${cast.id}-${date}`)}
+                            style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",cursor:"pointer"}}
+                          >
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
                               <span style={{fontWeight:600,fontSize:13,color:"var(--text-primary)"}}>{fmtShort(date)}</span>
-                              {d.shift&&<span style={{fontSize:12,color:"var(--text-muted)",marginLeft:8}}>{d.shift.start_time?.slice(0,5)}〜{d.shift.end_time?.slice(0,5)} ({fmtH(d.mins)})</span>}
-                              {d.baseWage>0&&<span style={{fontSize:11,color:"var(--text-muted)",marginLeft:6}}>基本給¥{d.baseWage.toLocaleString()}</span>}
+                              {d.shift&&<span style={{fontSize:11,color:"var(--text-muted)"}}>{d.shift.start_time?.slice(0,5)}〜{d.shift.end_time?.slice(0,5)}</span>}
+                              {d.dayAllowances.length>0&&<span style={{fontSize:10,background:"var(--accent)22",color:"var(--accent)",padding:"1px 6px",borderRadius:4}}>+{d.dayAllowances.length}件</span>}
                             </div>
-                            <span style={{fontWeight:700,color,fontSize:14}}>¥{d.total.toLocaleString()}</span>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontWeight:700,color,fontSize:14}}>¥{d.total.toLocaleString()}</span>
+                              <span style={{fontSize:11,color:"var(--text-muted)"}}>{isOpen?"▲":"▼"}</span>
+                            </div>
                           </div>
-                          {d.dayAllowances.map(a=>(
-                            <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,padding:"2px 0 2px 8px",color:"var(--text-muted)"}}>
-                              <span>{a.label}</span>
-                              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{color:a.amount>=0?"var(--online)":"#ff4444",fontWeight:600}}>{a.amount>=0?"+":""}¥{a.amount.toLocaleString()}</span>
-                                <button onClick={()=>deleteAllowance(a.id)} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"1px 6px",borderRadius:4,fontSize:10,cursor:"pointer"}}>削除</button>
+
+                          {/* 展開時：詳細 */}
+                          {isOpen&&(
+                            <div style={{background:"var(--bg-input)",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                              {/* 勤務時間・基本給 */}
+                              {d.shift&&(
+                                <div style={{marginBottom:d.dayAllowances.length>0?10:0}}>
+                                  <div style={{fontSize:11,color:"var(--text-muted)",fontWeight:700,marginBottom:6}}>📋 勤務</div>
+                                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:3}}>
+                                    <span style={{color:"var(--text-secondary)"}}>勤務時間</span>
+                                    <span style={{color:"var(--text-primary)"}}>{d.shift.start_time?.slice(0,5)}〜{d.shift.end_time?.slice(0,5)}（{fmtH(d.mins)}）</span>
+                                  </div>
+                                  {d.baseWage>0&&(
+                                    <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+                                      <span style={{color:"var(--text-secondary)"}}>基本給</span>
+                                      <span style={{color:"var(--text-primary)",fontWeight:600}}>¥{d.baseWage.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* 手当・控除明細 */}
+                              {d.dayAllowances.length>0&&(
+                                <div style={{borderTop:d.shift?"1px solid var(--border)":"none",paddingTop:d.shift?10:0}}>
+                                  <div style={{fontSize:11,color:"var(--text-muted)",fontWeight:700,marginBottom:6}}>💴 手当・控除</div>
+                                  {d.dayAllowances.map(a=>(
+                                    <div key={a.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,marginBottom:4}}>
+                                      <span style={{color:"var(--text-secondary)"}}>{a.label}</span>
+                                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                        <span style={{color:a.amount>=0?"var(--online)":"#ff4444",fontWeight:600}}>{a.amount>=0?"+":""}¥{a.amount.toLocaleString()}</span>
+                                        <button onClick={e=>{e.stopPropagation();deleteAllowance(a.id);}} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"1px 6px",borderRadius:4,fontSize:10,cursor:"pointer"}}>削除</button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* 日計 */}
+                              <div style={{display:"flex",justifyContent:"space-between",paddingTop:10,borderTop:"1px solid var(--border)",marginTop:6}}>
+                                <span style={{fontWeight:700,color:"var(--text-muted)",fontSize:13}}>日計</span>
+                                <span style={{fontWeight:900,color,fontSize:16}}>¥{d.total.toLocaleString()}</span>
                               </div>
+
+                              {/* この日に手当追加ボタン */}
+                              <button
+                                onClick={e=>{e.stopPropagation();setNewA(p=>({...p,cast_id:String(cast.id),date}));}}
+                                style={{marginTop:10,width:"100%",padding:"7px",background:"transparent",border:"1px dashed var(--accent)44",borderRadius:8,color:"var(--accent)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}
+                              >＋ この日に手当・控除を追加</button>
                             </div>
-                          ))}
+                          )}
                         </div>
                       );
                     })}
