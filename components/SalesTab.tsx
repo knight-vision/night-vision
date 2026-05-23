@@ -86,9 +86,11 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     const res = await fetch(`/api/shop-menus?shop_id=${shopId}`);
     if (res.ok) {
       const data = await res.json();
-      // DBが空の場合はデフォルトをDBに自動登録
-      if (data.length === 0) {
-        await Promise.all(DEFAULT_PRESETS.map((p, i) =>
+      const existingNames = data.map((d: any) => d.name);
+      // デフォルト品名でDBにないものを追加
+      const missing = DEFAULT_PRESETS.filter(p => !existingNames.includes(p.name));
+      if (missing.length > 0) {
+        await Promise.all(missing.map((p, i) =>
           fetch("/api/shop-menus", { method:"POST", headers:{"Content-Type":"application/json"},
             body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, sort_order: i }) })
         ));
