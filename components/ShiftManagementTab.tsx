@@ -88,6 +88,7 @@ export default function ShiftManagementTab({
 
   // 給与管理
   const [allowances, setAllowances] = useState<Allowance[]>([]);
+  const [shopMenuNames, setShopMenuNames] = useState<string[]>([]);
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0,7));
   const [allowanceLoading, setAllowanceLoading] = useState(false);
   // 新規手当フォーム
@@ -103,6 +104,11 @@ export default function ShiftManagementTab({
   useEffect(() => { if (!loaded) { loadAll(); setLoaded(true); } }, []);
   useEffect(() => { if (loaded) { loadAll(); } }, [weekBase]);
   useEffect(() => { loadAllowances(); }, [payrollMonth]);
+  useEffect(() => {
+    fetch(`/api/shop-menus?shop_id=${shopId}`)
+      .then(r=>r.ok?r.json():[])
+      .then((data:any[])=>setShopMenuNames(data.map((m:any)=>m.name)));
+  }, [shopId]);
 
   const loadAll = async () => {
     setShiftLoading(true);
@@ -573,7 +579,7 @@ ${casts.map(cast=>{
                   {showPresets&&(
                     <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:20,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,padding:4,boxShadow:"0 4px 16px #00000044"}}>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:4}}>
-                        {ALLOWANCE_PRESETS.filter(p=>!newA.label||p.includes(newA.label)).map(p=>(
+                        {[...shopMenuNames, ...ALLOWANCE_PRESETS.filter(p=>!shopMenuNames.includes(p))].filter(p=>!newA.label||p.includes(newA.label)).map(p=>(
                           <button key={p} onClick={()=>{setNewA(prev=>({...prev,label:p}));setShowPresets(false);}} style={{padding:"5px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>{p}</button>
                         ))}
                       </div>
