@@ -65,6 +65,10 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const [slipCasts, setSlipCasts] = useState<SlipCast[]>([{ cast_id:"", type:"フリー" }]);
   const [slipSaving, setSlipSaving] = useState(false);
   const [slipSaved, setSlipSaved] = useState(false);
+  const [slipMemo, setSlipMemo] = useState("");
+  const [editingSlipId, setEditingSlipId] = useState<string|null>(null);
+  const [todaySlips, setTodaySlips] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(true);
 
   // 品名管理
   const [editingId, setEditingId] = useState<string|null>(null);
@@ -112,7 +116,13 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     setLoading(false);
   }, [shopId]);
 
+  const loadTodaySlips = useCallback(async (date: string) => {
+    const res = await fetch(`/api/slips?shop_id=${shopId}&date=${date}`);
+    if (res.ok) setTodaySlips(await res.json());
+  }, [shopId]);
+
   useEffect(() => { loadMenus(); }, [loadMenus]);
+  useEffect(() => { loadTodaySlips(slipDate); }, [slipDate, loadTodaySlips]);
   useEffect(() => { if (view==="sales") loadSales(month); }, [view, month, loadSales]);
 
   // 伝票保存
@@ -120,31 +130,98 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
     setSlipSaving(true); setMsg("");
     try {
       const m = slipDate.slice(0,7);
-      const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${m}`);
-      const existing = dsRes.ok ? (await dsRes.json()).find((d: DailySales)=>d.date===slipDate) : null;
-      await fetch("/api/daily-sales", { method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ shop_id:shopId, date:slipDate, opening_cash:0,
-          cash_sales:(existing?.cash_sales||0)+(payment==="現金"?slipTotal:0),
-          card_sales:(existing?.card_sales||0)+(payment==="カード"?slipTotal:0),
-          invoice_sales:0, cost:existing?.cost||0, memo:existing?.memo||"" }),
-      });
-      for (const c of slipCasts) {
-        if (!c.cast_id) continue;
-        const salesType = c.type==="本指名"?"honshimei":c.type==="場内指名"?"baai":null;
-        if (salesType) {
-          const fee = slipItems.find(i=>i.name.includes("指名"));
-          await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:salesType,amount:fee?fee.qty*fee.price:(salesType==="honshimei"?16000:1000),count:1,memo:""})});
+
+      if (editingSlipId) {
+        // === 編集モード：既存伝票を更新 ===
+        // まず古い伝票の金額をdaily_salesから引く
+        const oldSlip = todaySlips.find(s => s.id === editingSlipId);
+        if (oldSlip) {
+          const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${m}`);
+          const existing = dsRes.ok ? (await dsRes.json()).find((d: DailySales)=>d.date===slipDate) : null;
+          if (existing) {
+            await fetch("/api/daily-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ shop_id:shopId, date:slipDate, opening_cash:0,
+                cash_sales: Math.max(0,(existing.cash_sales||0) - (oldSlip.payment==="現金"?oldSlip.total:0) + (payment==="現金"?slipTotal:0)),
+                card_sales: Math.max(0,(existing.card_sales||0) - (oldSlip.payment==="カード"?oldSlip.total:0) + (payment==="カード"?slipTotal:0)),
+                invoice_sales:0, cost:existing.cost||0, memo:existing.memo||"" }),
+            });
+          }
         }
-        const douhan = slipItems.find(i=>i.name.includes("同伴"));
-        if (douhan) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"douhan",amount:douhan.qty*douhan.price,count:1,memo:""})});
-        const bottle = slipItems.find(i=>i.name.includes("モエ")||i.name.includes("ドンペリ")||i.name.includes("シャンパン")||i.name.includes("シャン"));
-        if (bottle) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"bottle",amount:Math.floor(bottle.qty*bottle.price*0.1),count:1,memo:`${bottle.name}(10%バック)`})});
+        await fetch("/api/slips", { method:"PATCH", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ id:editingSlipId, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
+        });
+        setMsg("✅ 伝票を更新しました");
+        setEditingSlipId(null);
+      } else {
+        // === 新規保存 ===
+        const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${m}`);
+        const existing = dsRes.ok ? (await dsRes.json()).find((d: DailySales)=>d.date===slipDate) : null;
+        await fetch("/api/daily-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ shop_id:shopId, date:slipDate, opening_cash:0,
+            cash_sales:(existing?.cash_sales||0)+(payment==="現金"?slipTotal:0),
+            card_sales:(existing?.card_sales||0)+(payment==="カード"?slipTotal:0),
+            invoice_sales:0, cost:existing?.cost||0, memo:existing?.memo||"" }),
+        });
+        // slipsテーブルに記録
+        await fetch("/api/slips", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ shop_id:shopId, date:slipDate, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
+        });
+        // キャスト売上反映
+        for (const c of slipCasts) {
+          if (!c.cast_id) continue;
+          const salesType = c.type==="本指名"?"honshimei":c.type==="場内指名"?"baai":null;
+          if (salesType) {
+            const fee = slipItems.find(i=>i.name.includes("指名"));
+            await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:salesType,amount:fee?fee.qty*fee.price:(salesType==="honshimei"?16000:1000),count:1,memo:""})});
+          }
+          const douhan = slipItems.find(i=>i.name.includes("同伴"));
+          if (douhan) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"douhan",amount:douhan.qty*douhan.price,count:1,memo:""})});
+          const bottle = slipItems.find(i=>i.name.includes("モエ")||i.name.includes("ドンペリ")||i.name.includes("シャンパン")||i.name.includes("シャン"));
+          if (bottle) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"bottle",amount:Math.floor(bottle.qty*bottle.price*0.1),count:1,memo:`${bottle.name}(10%バック)`})});
+        }
+        setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
       }
+
       setSlipSaved(true);
-      setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
-      setTimeout(()=>{ setSlipSaved(false); setSlipItems([{name:"",qty:1,price:0}]); setSlipCasts([{cast_id:"",type:"フリー"}]); setPayment("現金"); }, 1500);
+      await loadTodaySlips(slipDate);
+      setTimeout(()=>{ setSlipSaved(false); resetForm(); }, 1200);
     } catch(e:any) { setMsg("保存失敗: "+e.message); }
     setSlipSaving(false);
+  };
+
+  const resetForm = () => {
+    setSlipItems([{name:"",qty:1,price:0}]);
+    setSlipCasts([{cast_id:"",type:"フリー"}]);
+    setPayment("現金"); setSlipMemo(""); setEditingSlipId(null);
+  };
+
+  const startEdit = (slip: any) => {
+    setSlipItems(slip.items || [{name:"",qty:1,price:0}]);
+    setSlipCasts(slip.cast_entries || [{cast_id:"",type:"フリー"}]);
+    setPayment(slip.payment || "現金");
+    setSlipMemo(slip.memo || "");
+    setEditingSlipId(slip.id);
+    setSlipDate(slip.date);
+    window.scrollTo({top:0, behavior:"smooth"});
+  };
+
+  const deleteSlip = async (slip: any) => {
+    if (!confirm("この伝票を削除しますか？")) return;
+    // daily_salesから金額を引く
+    const m = slip.date.slice(0,7);
+    const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${m}`);
+    const existing = dsRes.ok ? (await dsRes.json()).find((d: DailySales)=>d.date===slip.date) : null;
+    if (existing) {
+      await fetch("/api/daily-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ shop_id:shopId, date:slip.date, opening_cash:0,
+          cash_sales: Math.max(0,(existing.cash_sales||0)-(slip.payment==="現金"?slip.total:0)),
+          card_sales: Math.max(0,(existing.card_sales||0)-(slip.payment==="カード"?slip.total:0)),
+          invoice_sales:0, cost:existing.cost||0, memo:existing.memo||"" }),
+      });
+    }
+    await fetch("/api/slips",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:slip.id})});
+    await loadTodaySlips(slip.date);
+    setMsg("伝票を削除しました");
   };
 
   // 月次計算
@@ -207,7 +284,16 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
 
       {/* ===== 伝票入力 ===== */}
       {view==="slip"&&(
-        <div style={sec}>
+        <div>
+          {/* 編集モードバナー */}
+          {editingSlipId && (
+            <div style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{color:"#f59e0b",fontWeight:700,fontSize:13}}>✏️ 伝票を編集中</span>
+              <button onClick={resetForm} style={{background:"none",border:"1px solid #f59e0b44",borderRadius:8,color:"#f59e0b",padding:"4px 12px",fontSize:12,cursor:"pointer"}}>キャンセル</button>
+            </div>
+          )}
+
+          <div style={sec}>
           {/* 日付・支払方法 */}
           <div style={{display:"flex",gap:12,marginBottom:14,alignItems:"flex-end",flexWrap:"wrap"}}>
             <div>
@@ -297,9 +383,64 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
             </div>
           </div>
 
+          {/* メモ */}
+          <div style={{marginBottom:14}}>
+            <label style={labelStyle}>メモ（任意）</label>
+            <input value={slipMemo} onChange={e=>setSlipMemo(e.target.value)} placeholder="客名・備考など" style={inp}/>
+          </div>
+
           <button onClick={saveSlip} disabled={slipSaving} style={{...btnPrimary as any,background:slipSaved?"linear-gradient(135deg,#059669,#10b981)":"linear-gradient(135deg,var(--accent),var(--accent2))"}}>
-            {slipSaved?"✓ 保存しました":slipSaving?"保存中...":"伝票を保存する"}
+            {slipSaved?"✓ 完了":slipSaving?"保存中...":editingSlipId?"✏️ 伝票を更新する":"伝票を保存する"}
           </button>
+          </div>{/* sec close */}
+
+          {/* 本日の伝票履歴 */}
+          <div style={{marginTop:16}}>
+            <button onClick={()=>setShowHistory(v=>!v)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"10px 14px",background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,cursor:"pointer",fontFamily:"var(--font)"}}>
+              <span style={{fontWeight:700,fontSize:13,color:"var(--text-primary)"}}>
+                📋 {slipDate === getDateStr(new Date()) ? "本日" : slipDate}の伝票履歴
+                {todaySlips.length > 0 && <span style={{marginLeft:8,fontSize:12,color:"var(--accent)"}}>
+                  {todaySlips.length}件 ¥{todaySlips.reduce((s:number,sl:any)=>s+sl.total,0).toLocaleString()}
+                </span>}
+              </span>
+              <span style={{color:"var(--text-muted)"}}>{showHistory?"▲":"▼"}</span>
+            </button>
+
+            {showHistory && (
+              <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
+                {todaySlips.length === 0 ? (
+                  <div style={{textAlign:"center",color:"var(--text-muted)",padding:"20px 0",fontSize:13}}>まだ伝票がありません</div>
+                ) : todaySlips.map((slip:any, idx:number) => {
+                  const castNames = (slip.cast_entries||[]).map((c:any)=>{
+                    const cast = casts.find(x=>String(x.id)===String(c.cast_id));
+                    return cast ? `${cast.name}(${c.type})` : null;
+                  }).filter(Boolean).join("・");
+                  const timeStr = new Date(slip.created_at).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+                  return (
+                    <div key={slip.id} style={{background:"var(--bg-card)",border:`1px solid ${editingSlipId===slip.id?"var(--accent)":"var(--border)"}`,borderRadius:12,padding:"12px 14px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                        <div>
+                          <span style={{fontSize:12,color:"var(--text-muted)",marginRight:8}}>#{todaySlips.length-idx}</span>
+                          <span style={{fontSize:12,color:"var(--text-muted)"}}>{timeStr}</span>
+                          <span style={{marginLeft:8,fontSize:12,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,padding:"1px 8px",color:"var(--text-secondary)"}}>{slip.payment}</span>
+                        </div>
+                        <span style={{fontWeight:900,fontSize:16,color:"var(--accent)"}}>¥{slip.total.toLocaleString()}</span>
+                      </div>
+                      {castNames && <div style={{fontSize:12,color:"var(--text-secondary)",marginBottom:4}}>👤 {castNames}</div>}
+                      <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:8}}>
+                        {(slip.items||[]).map((item:any)=>`${item.name}×${item.qty}`).join("　")}
+                      </div>
+                      {slip.memo && <div style={{fontSize:11,color:"var(--text-hint)",marginBottom:8}}>📝 {slip.memo}</div>}
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>startEdit(slip)} style={{flex:1,padding:"6px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>✏️ 修正</button>
+                        <button onClick={()=>deleteSlip(slip)} style={{padding:"6px 12px",background:"#ff444418",border:"1px solid #ff444444",borderRadius:8,color:"#ff4444",fontSize:12,cursor:"pointer"}}>削除</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
