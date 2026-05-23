@@ -242,6 +242,101 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const totalMonthlyPayroll = casts.reduce((s,c)=>s+calcCastMonthly(c).totalPay,0);
   const totalMonthlyCost = allDailySales.reduce((s,d)=>s+(d.cost||0),0);
 
+  const printPayslips = () => {
+    const [y, m] = month.split("-").map(Number);
+    const monthDatesAll: string[] = [];
+    const dd = new Date(y, m-1, 1);
+    while(dd.getMonth()===m-1){ monthDatesAll.push(getDateStr(dd)); dd.setDate(dd.getDate()+1); }
+
+    const rows = casts.map(cast => {
+      const d = calcCastMonthly(cast);
+      const myShifts = allShifts.filter(s=>s.cast_id===cast.id);
+      const dayRows = monthDatesAll.map(date=>{
+        const shift = myShifts.find(s=>s.date===date);
+        if (!shift) return null;
+        const mins = calcMinutes(shift.start_time, shift.end_time);
+        const base = cast.hourly_wage ? Math.round(cast.hourly_wage*mins/60) : 0;
+        const allows = allAllowances.filter(a=>a.cast_id===cast.id&&a.date===date);
+        const bottles = allCastSales.filter(s=>s.cast_id===cast.id&&s.date===date&&s.sales_type==="bottle");
+        const honshimeis = allCastSales.filter(s=>s.cast_id===cast.id&&s.date===date&&s.sales_type==="honshimei");
+        const baais = allCastSales.filter(s=>s.cast_id===cast.id&&s.date===date&&s.sales_type==="baai");
+        const douhans = allCastSales.filter(s=>s.cast_id===cast.id&&s.date===date&&s.sales_type==="douhan");
+        const dayTotal = base + allows.reduce((s:number,a:any)=>s+a.amount,0) + bottles.reduce((s:number,b:any)=>s+b.amount,0);
+        return { date, shift, mins, base, allows, bottles, honshimeis, baais, douhans, dayTotal };
+      }).filter(Boolean) as any[];
+      return { cast, d, dayRows };
+    }).filter(r => r.dayRows.length > 0);
+
+    const fmtD = (ds: string) => { const x=new Date(ds+"T00:00:00"); return `${x.getMonth()+1}/${x.getDate()}`; };
+
+    const html = `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><title>${month}月 給与明細</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; font-size:11px; color:#000; }
+.page { width:100%; padding:16px; page-break-after:always; }
+.page:last-child { page-break-after:auto; }
+.header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; border-bottom:2px solid #333; padding-bottom:6px; }
+.title { font-size:16px; font-weight:bold; }
+.subtitle { font-size:12px; color:#555; }
+table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+th,td { border:1px solid #bbb; padding:4px 6px; font-size:10px; }
+th { background:#f5f5f5; text-align:center; font-weight:bold; }
+.num { text-align:right; }
+.center { text-align:center; }
+.summary { border:2px solid #333; padding:10px 14px; margin-top:8px; }
+.srow { display:flex; justify-content:space-between; padding:4px 0; font-size:11px; border-bottom:1px solid #e0e0e0; }
+.srow:last-child { border-bottom:none; }
+.total { display:flex; justify-content:space-between; padding:8px 0 0; font-weight:bold; font-size:15px; border-top:2px solid #333; margin-top:4px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style></head><body>
+${rows.map(({ cast, d, dayRows }) => `
+<div class="page">
+  <div class="header">
+    <div class="title">${cast.name}　給与明細書</div>
+    <div class="subtitle">${month.replace("-","年")}月分${cast.hourly_wage ? `　時給 ¥${cast.hourly_wage.toLocaleString()}` : ""}</div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>日付</th><th>勤務時間</th><th>基本給</th><th>本指名</th><th>場内</th><th>同伴</th><th>ボトルバック</th><th>手当・控除</th><th>日計</th>
+    </tr></thead>
+    <tbody>
+      ${dayRows.map((row: any) => {
+        const honAmt = row.honshimeis.reduce((s:number,x:any)=>s+x.amount,0);
+        const baaiAmt = row.baais.reduce((s:number,x:any)=>s+x.amount,0);
+        const douAmt = row.douhans.reduce((s:number,x:any)=>s+x.amount,0);
+        const bottleAmt = row.bottles.reduce((s:number,x:any)=>s+x.amount,0);
+        const allowAmt = row.allows.reduce((s:number,x:any)=>s+x.amount,0);
+        return `<tr>
+          <td class="center">${fmtD(row.date)}</td>
+          <td class="center">${row.shift.start_time.slice(0,5)}〜${row.shift.end_time.slice(0,5)}</td>
+          <td class="num">${row.base>0?"¥"+row.base.toLocaleString():""}</td>
+          <td class="num">${honAmt>0?"¥"+honAmt.toLocaleString():""}</td>
+          <td class="num">${baaiAmt>0?"¥"+baaiAmt.toLocaleString():""}</td>
+          <td class="num">${douAmt>0?"¥"+douAmt.toLocaleString():""}</td>
+          <td class="num">${bottleAmt>0?"¥"+bottleAmt.toLocaleString():""}</td>
+          <td class="num">${allowAmt!==0?(allowAmt>0?"+":"-")+"¥"+Math.abs(allowAmt).toLocaleString():""}</td>
+          <td class="num"><strong>¥${row.dayTotal.toLocaleString()}</strong></td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table>
+  <div class="summary">
+    ${[
+      ["出勤日数", `${d.days}日`],
+      ["基本給合計", `¥${d.base.toLocaleString()}`],
+      ["ボトルバック", `¥${d.bottle.toLocaleString()}`],
+      ["手当・控除", `${d.allow>=0?"+":""}¥${d.allow.toLocaleString()}`],
+    ].map(([l,v])=>`<div class="srow"><span>${l}</span><span>${v}</span></div>`).join("")}
+    <div class="total"><span>支払合計</span><span>¥${d.totalPay.toLocaleString()}</span></div>
+  </div>
+</div>`).join("")}
+</body></html>`;
+
+    const w = window.open("","_blank","width=900,height=700");
+    if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(), 800); }
+  };
+
   // 日次データ
   const dailyRecord = allDailySales.find(d=>d.date===dailyDate);
   const dailySalesTotal = (dailyRecord?.cash_sales||0) + (dailyRecord?.card_sales||0);
@@ -624,7 +719,12 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
 
                   {/* キャスト別成績表 */}
                   <div style={{...sectionStyle,overflowX:"auto"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10}}>キャスト売上・給与</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>キャスト売上・給与</div>
+                      <button onClick={()=>printPayslips()} style={{padding:"6px 14px",borderRadius:8,background:"var(--accent)22",border:"1px solid var(--accent)44",color:"var(--accent)",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                        🖨️ 給与明細を印刷
+                      </button>
+                    </div>
                     <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:520}}>
                       <thead>
                         <tr style={{background:"var(--bg-input)"}}>
