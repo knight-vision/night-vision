@@ -607,6 +607,81 @@ ${rows.map(({ cast, d, dayRows }) => `
 
             return (
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+                {/* ===== キャスト比較グラフ ===== */}
+                {(()=>{
+                  const castTotals = casts.map(cast=>({
+                    cast,
+                    total: filteredSales.filter(s=>s.cast_id===cast.id).reduce((a,b)=>a+b.amount,0),
+                    honshimei: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="honshimei").reduce((a,b)=>a+b.amount,0),
+                    baai: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="baai").reduce((a,b)=>a+b.amount,0),
+                    douhan: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="douhan").reduce((a,b)=>a+b.amount,0),
+                    bottle: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="bottle").reduce((a,b)=>a+b.amount,0),
+                  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+                  if (castTotals.length===0) return null;
+                  const maxTotal = castTotals[0].total;
+                  const CAST_COLORS = ["#ff6b9d","#00d4ff","#ffd700","#a855f7","#00e5a0","#ff9500","#00c7be","#ff3b30"];
+                  const getColor = (id: number) => CAST_COLORS[casts.findIndex(c=>c.id===id) % CAST_COLORS.length];
+                  return (
+                    <div style={{...sectionStyle,marginBottom:0}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:14}}>📊 キャスト売上比較</div>
+                      {castTotals.map((item, rank)=>{
+                        const color = getColor(item.cast.id);
+                        const pct = item.total / maxTotal * 100;
+                        return (
+                          <div key={item.cast.id} style={{marginBottom:12}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                                <span style={{fontSize:13,fontWeight:700,color:"var(--text-muted)",minWidth:20}}>{rank+1}位</span>
+                                <span style={{fontWeight:700,color:"var(--text-primary)",fontSize:14}}>{item.cast.name}</span>
+                              </div>
+                              <span style={{fontWeight:800,color,fontSize:14}}>¥{item.total.toLocaleString()}</span>
+                            </div>
+                            {/* メインバー */}
+                            <div style={{background:"var(--bg-input)",borderRadius:6,height:12,overflow:"hidden",marginBottom:4}}>
+                              <div style={{height:"100%",borderRadius:6,background:color,width:`${pct}%`,transition:"width 0.4s"}}/>
+                            </div>
+                            {/* 内訳バー */}
+                            <div style={{display:"flex",gap:3,height:5,borderRadius:3,overflow:"hidden"}}>
+                              {[
+                                {val:item.honshimei,color:"#f59e0b"},
+                                {val:item.baai,color:"#8b5cf6"},
+                                {val:item.douhan,color:"#06b6d4"},
+                                {val:item.bottle,color:"#10b981"},
+                              ].filter(t=>t.val>0).map((t,i)=>(
+                                <div key={i} style={{flex:t.val,background:t.color,borderRadius:2}}/>
+                              ))}
+                            </div>
+                            {/* 内訳数字 */}
+                            <div style={{display:"flex",gap:10,marginTop:4,flexWrap:"wrap"}}>
+                              {[
+                                {label:"⭐本指名",val:item.honshimei},
+                                {label:"🎯場内",val:item.baai},
+                                {label:"🚗同伴",val:item.douhan},
+                                {label:"🍾ボトル",val:item.bottle},
+                              ].filter(t=>t.val>0).map(t=>(
+                                <span key={t.label} style={{fontSize:10,color:"var(--text-muted)"}}>
+                                  {t.label} ¥{t.val.toLocaleString()}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* 凡例 */}
+                      <div style={{display:"flex",gap:12,flexWrap:"wrap",paddingTop:8,borderTop:"1px solid var(--border)",marginTop:4}}>
+                        {[{c:"#f59e0b",l:"本指名"},{c:"#8b5cf6",l:"場内"},{c:"#06b6d4",l:"同伴"},{c:"#10b981",l:"ボトル"}].map(t=>(
+                          <div key={t.l} style={{display:"flex",alignItems:"center",gap:4}}>
+                            <div style={{width:8,height:8,borderRadius:2,background:t.c}}/>
+                            <span style={{fontSize:10,color:"var(--text-muted)"}}>{t.l}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 個別カード */}
                 {casts.filter(c=>filteredSales.some(s=>s.cast_id===c.id)).map(cast=>{
                   const mySales = filteredSales.filter(s=>s.cast_id===cast.id);
                   const total = mySales.reduce((s,c)=>s+c.amount,0);
