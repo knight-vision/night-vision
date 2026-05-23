@@ -1329,17 +1329,25 @@ export default function OwnerDashboard() {
                 </ul>
                 <button
                   onClick={async () => {
-                    const res = await fetch("/api/stripe/checkout", {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                    else showMsg(data.error || "決済画面の起動に失敗しました");
+                    const btn = document.getElementById("upgrade-btn") as HTMLButtonElement;
+                    if (btn) { btn.disabled = true; btn.textContent = "処理中..."; }
+                    try {
+                      const res = await fetch("/api/stripe/checkout", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }),
+                      });
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                      else { showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました")); if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; } }
+                    } catch(e: any) {
+                      showMsg("通信エラー: " + e.message);
+                      if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
+                    }
                   }}
+                  id="upgrade-btn"
                   style={{ ...btnPrimary, width: "100%" } as React.CSSProperties}
                 >
-                  💳 クレジットカードで申し込む
+                  🚀 プランをアップグレードする
                 </button>
                 <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 8, textAlign: "center" }}>
                   Stripeの安全な決済画面に移動します。いつでもキャンセル可能です。

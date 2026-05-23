@@ -35,15 +35,23 @@ function getDateStr(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+
 function fmtDate(ds: string) { const d = new Date(ds+"T00:00:00"); return `${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`; }
 function fmtDateLong(ds: string) { const d = new Date(ds+"T00:00:00"); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`; }
 function addDays(ds: string, n: number) { const d = new Date(ds+"T00:00:00"); d.setDate(d.getDate()+n); return getDateStr(d); }
+function getWeekDates(base: string): string[] {
+  const d = new Date(base+"T00:00:00");
+  const day = d.getDay();
+  const mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
+  return Array.from({length:7},(_,i)=>{ const x=new Date(mon); x.setDate(mon.getDate()+i); return getDateStr(x); });
+}
 function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number); let a=sh*60+sm,b=eh*60+em; if(b<=a)b+=1440; return b-a; }
 
 type Props = { shopId: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties };
 
 export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
   const [view, setView] = useState<"slip"|"sales"|"cast_sales"|"menu">("slip");
-  const [salesPeriod, setSalesPeriod] = useState<"daily"|"monthly">("daily");
+  const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
+  const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
   const [month, setMonth] = useState(new Date().toISOString().slice(0,7));
   const [dailyDate, setDailyDate] = useState(getDateStr(new Date()));
+  const [weekBase, setWeekBase] = useState(getDateStr(new Date()));
 
   // データ
   const [shopMenus, setShopMenus] = useState<ShopMenu[]>([]);
@@ -545,56 +553,106 @@ ${rows.map(({ cast, d, dayRows }) => `
       {view==="cast_sales"&&(
         <div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+            {/* 月ナビ */}
             <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()-1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>←</button>
             <span style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>{month.replace("-","年")}月</span>
             <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()+1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>→</button>
+            {/* 期間切替 */}
+            <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+              {(["daily","weekly","monthly"] as const).map(p=>(
+                <button key={p} onClick={()=>setCastSalesPeriod(p)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"var(--font)",background:castSalesPeriod===p?"var(--accent)":"var(--bg-input)",color:castSalesPeriod===p?"#fff":"var(--text-secondary)",border:`1px solid ${castSalesPeriod===p?"transparent":"var(--border)"}`}}>
+                  {p==="daily"?"日次":p==="weekly"?"週次":"月次"}
+                </button>
+              ))}
+            </div>
           </div>
-          {loading?<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>:(
-            <>
-              {/* キャスト別売上カード */}
-              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
-                {casts.map(cast=>{
+
+          {/* 週ナビ（週次のみ） */}
+          {castSalesPeriod==="weekly"&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <button onClick={()=>setWeekBase(addDays(weekBase,-7))} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前週</button>
+              <span style={{flex:1,textAlign:"center",fontWeight:700,color:"var(--text-primary)",fontSize:13}}>
+                {(()=>{ const w=getWeekDates(weekBase); return `${fmtDate(w[0])} 〜 ${fmtDate(w[6])}`; })()}
+              </span>
+              <button onClick={()=>setWeekBase(addDays(weekBase,7))} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>次週 →</button>
+            </div>
+          )}
+
+          {/* 日次ナビ（日次のみ） */}
+          {castSalesPeriod==="daily"&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+              <button onClick={()=>setDailyDate(addDays(dailyDate,-1))} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前日</button>
+              <span style={{flex:1,textAlign:"center",fontWeight:700,color:"var(--text-primary)"}}>{fmtDateLong(dailyDate)}</span>
+              <button onClick={()=>setDailyDate(addDays(dailyDate,1))} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>翌日 →</button>
+              <button onClick={()=>setDailyDate(getDateStr(new Date()))} style={{padding:"6px 8px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer",fontSize:11}}>今日</button>
+            </div>
+          )}
+
+          {loading?<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>:(()=>{
+            // 期間でフィルタ
+            const weekDates = getWeekDates(weekBase);
+            const filteredSales = castSalesPeriod==="daily"
+              ? allCastSales.filter(s=>s.date===dailyDate)
+              : castSalesPeriod==="weekly"
+              ? allCastSales.filter(s=>weekDates.includes(s.date))
+              : allCastSales;
+
+            const castsWithData = casts.filter(cast=>filteredSales.some(s=>s.cast_id===cast.id));
+
+            if (castsWithData.length===0) return (
+              <div style={{textAlign:"center",color:"var(--text-muted)",padding:"32px 0",fontSize:13}}>この期間のキャスト売上データがありません</div>
+            );
+
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {casts.filter(c=>filteredSales.some(s=>s.cast_id===c.id)).map(cast=>{
+                  const mySales = filteredSales.filter(s=>s.cast_id===cast.id);
+                  const total = mySales.reduce((s,c)=>s+c.amount,0);
+                  const honshimei = mySales.filter(s=>s.sales_type==="honshimei").reduce((s,c)=>s+c.amount,0);
+                  const baai = mySales.filter(s=>s.sales_type==="baai").reduce((s,c)=>s+c.amount,0);
+                  const douhan = mySales.filter(s=>s.sales_type==="douhan").reduce((s,c)=>s+c.amount,0);
+                  const bottle = mySales.filter(s=>s.sales_type==="bottle").reduce((s,c)=>s+c.amount,0);
                   const d = calcCastMonthly(cast);
-                  const ratio = d.totalPay>0 ? d.sales/d.totalPay*100 : 0;
-                  const mySales = allCastSales.filter(s=>s.cast_id===cast.id);
+                  const ratio = castSalesPeriod==="monthly" && d.totalPay>0 ? d.sales/d.totalPay*100 : null;
                   return (
                     <div key={cast.id} style={{...sectionStyle,marginBottom:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                         <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>{cast.name}</span>
-                        <span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
-                          background:ratio>=100?"var(--online-bg)":ratio>=70?"#f59e0b22":"#ff444418",
-                          color:ratio>=100?"var(--online)":ratio>=70?"#f59e0b":"#ff4444",
-                          border:`1px solid ${ratio>=100?"var(--online-border)":ratio>=70?"#f59e0b44":"#ff444444"}`}}>
-                          {d.totalPay>0?`売上/給与 ${ratio.toFixed(0)}%`:"記録なし"}
-                        </span>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          {ratio!=null&&<span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
+                            background:ratio>=100?"var(--online-bg)":ratio>=70?"#f59e0b22":"#ff444418",
+                            color:ratio>=100?"var(--online)":ratio>=70?"#f59e0b":"#ff4444",
+                            border:`1px solid ${ratio>=100?"var(--online-border)":ratio>=70?"#f59e0b44":"#ff444444"}`}}>
+                            売上/給与 {ratio.toFixed(0)}%
+                          </span>}
+                          <span style={{fontWeight:800,color:"var(--accent)",fontSize:16}}>¥{total.toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:d.days>0?10:0}}>
-                        {[["出勤",`${d.days}日`],["本指名",`¥${d.honshimei.toLocaleString()}`],["場内",`¥${d.baai.toLocaleString()}`],["同伴",`¥${d.douhan.toLocaleString()}`]].map(([l,v])=>(
-                          <div key={l} style={{background:"var(--bg-input)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:mySales.length>0?10:0}}>
+                        {[["本指名",honshimei],["場内",baai],["同伴",douhan],["ボトル",bottle]].map(([l,v])=>(
+                          <div key={l as string} style={{background:"var(--bg-input)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
                             <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:2}}>{l}</div>
-                            <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>{v}</div>
+                            <div style={{fontSize:12,fontWeight:700,color:(v as number)>0?"var(--text-primary)":"var(--text-hint)"}}>{(v as number)>0?`¥${(v as number).toLocaleString()}`:"—"}</div>
                           </div>
                         ))}
                       </div>
-                      {mySales.length>0&&(
-                        <div style={{fontSize:12}}>
-                          {mySales.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{
-                            const t = SALES_TYPE_LABELS[s.sales_type];
-                            return (
-                              <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderTop:"1px solid var(--border)",color:"var(--text-muted)"}}>
-                                <span>{fmtDate(s.date)} {t?.icon} {t?.label}</span>
-                                <span style={{color:"var(--accent)",fontWeight:600}}>¥{s.amount.toLocaleString()}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <div style={{fontSize:12}}>
+                        {mySales.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(s=>{
+                          const t=SALES_TYPE_LABELS[s.sales_type];
+                          return (
+                            <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderTop:"1px solid var(--border)",color:"var(--text-muted)"}}>
+                              <span>{castSalesPeriod!=="daily"&&`${fmtDate(s.date)} `}{t?.icon} {t?.label}</span>
+                              <span style={{color:"var(--accent)",fontWeight:600}}>¥{s.amount.toLocaleString()}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            </>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -607,9 +665,9 @@ ${rows.map(({ cast, d, dayRows }) => `
             <span style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>{month.replace("-","年")}月</span>
             <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()+1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>→</button>
             <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-              {(["daily","monthly"] as const).map(p=>(
-                <button key={p} onClick={()=>setSalesPeriod(p)} style={{padding:"6px 14px",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"var(--font)",background:salesPeriod===p?"var(--accent)":"var(--bg-input)",color:salesPeriod===p?"#fff":"var(--text-secondary)",border:`1px solid ${salesPeriod===p?"transparent":"var(--border)"}`}}>
-                  {p==="daily"?"日次":"月次"}
+              {(["daily","weekly","monthly"] as const).map(p=>(
+                <button key={p} onClick={()=>setSalesPeriod(p)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,cursor:"pointer",fontFamily:"var(--font)",background:salesPeriod===p?"var(--accent)":"var(--bg-input)",color:salesPeriod===p?"#fff":"var(--text-secondary)",border:`1px solid ${salesPeriod===p?"transparent":"var(--border)"}`}}>
+                  {p==="daily"?"日次":p==="weekly"?"週次":"月次"}
                 </button>
               ))}
             </div>
@@ -692,6 +750,96 @@ ${rows.map(({ cast, d, dayRows }) => `
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* 週次表示 */}
+              {salesPeriod==="weekly"&&(
+                <div>
+                  {/* 週ナビ */}
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <button onClick={()=>setWeekBase(addDays(weekBase,-7))} style={{padding:"7px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>← 前週</button>
+                    <span style={{flex:1,textAlign:"center",fontWeight:700,color:"var(--text-primary)",fontSize:13}}>
+                      {(()=>{ const w=getWeekDates(weekBase); return `${fmtDate(w[0])} 〜 ${fmtDate(w[6])}`; })()}
+                    </span>
+                    <button onClick={()=>setWeekBase(addDays(weekBase,7))} style={{padding:"7px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>次週 →</button>
+                    <button onClick={()=>setWeekBase(getDateStr(new Date()))} style={{padding:"7px 10px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer",fontSize:11}}>今週</button>
+                  </div>
+
+                  {/* 週次売上バー */}
+                  {(()=>{
+                    const weekDates = getWeekDates(weekBase);
+                    const weekData = weekDates.map(date=>{
+                      const d = allDailySales.find(s=>s.date===date);
+                      return { date, total:(d?.cash_sales||0)+(d?.card_sales||0), cash:d?.cash_sales||0, card:d?.card_sales||0 };
+                    });
+                    const weekTotal = weekData.reduce((s,d)=>s+d.total,0);
+                    const maxVal = Math.max(...weekData.map(d=>d.total), 1);
+                    const DAY_LABEL = ["月","火","水","木","金","土","日"];
+                    return (
+                      <div style={{...sectionStyle,marginBottom:12}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                          <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>週次売上</div>
+                          <div style={{fontSize:18,fontWeight:900,color:"var(--accent)"}}>¥{weekTotal.toLocaleString()}</div>
+                        </div>
+                        <div style={{display:"flex",gap:6,alignItems:"flex-end",height:100,marginBottom:10}}>
+                          {weekData.map((d,i)=>{
+                            const pct = d.total/maxVal;
+                            const isToday = d.date===getDateStr(new Date());
+                            return (
+                              <div key={d.date} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                                <div style={{fontSize:10,color:"var(--text-muted)",fontWeight:600}}>
+                                  {d.total>0?`¥${Math.round(d.total/1000)}k`:""}
+                                </div>
+                                <div style={{
+                                  width:"100%",borderRadius:"6px 6px 0 0",
+                                  height:Math.max(pct*72,d.total>0?4:0),
+                                  background:isToday?"var(--accent)":d.total>0?"var(--accent)66":"var(--bg-input)",
+                                  transition:"height 0.3s",
+                                }}/>
+                                <div style={{fontSize:12,fontWeight:isToday?800:500,color:isToday?"var(--accent)":"var(--text-muted)"}}>{DAY_LABEL[i]}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {weekData.filter(d=>d.total>0).map(d=>(
+                          <div key={d.date} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderTop:"1px solid var(--border)",fontSize:12}}>
+                            <span style={{color:"var(--text-primary)",fontWeight:600}}>{fmtDate(d.date)}</span>
+                            <div style={{display:"flex",gap:10}}>
+                              {d.cash>0&&<span style={{color:"var(--text-muted)"}}>現 ¥{d.cash.toLocaleString()}</span>}
+                              {d.card>0&&<span style={{color:"var(--text-muted)"}}>カ ¥{d.card.toLocaleString()}</span>}
+                              <span style={{color:"var(--accent)",fontWeight:700}}>¥{d.total.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 週次キャスト売上 */}
+                  {(()=>{
+                    const weekDates = getWeekDates(weekBase);
+                    const weekCastSales = allCastSales.filter(s=>weekDates.includes(s.date));
+                    if (weekCastSales.length===0) return null;
+                    return (
+                      <div style={sectionStyle}>
+                        <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10}}>週次キャスト売上</div>
+                        {weekCastSales.map(s=>{
+                          const cast=casts.find(c=>c.id===s.cast_id);
+                          const t=SALES_TYPE_LABELS[s.sales_type];
+                          return (
+                            <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid var(--border)",fontSize:12}}>
+                              <span style={{color:"var(--text-primary)",fontWeight:600}}>{fmtDate(s.date)} {cast?.name}</span>
+                              <div style={{display:"flex",gap:8}}>
+                                <span style={{color:"var(--text-muted)"}}>{t?.icon} {t?.label}</span>
+                                <span style={{color:"var(--accent)",fontWeight:700}}>¥{s.amount.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
