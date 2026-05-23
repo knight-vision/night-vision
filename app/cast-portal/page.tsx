@@ -6,6 +6,7 @@ import CastFeedbackPanel from "@/components/CastFeedbackPanel";
 import CastPayrollPanel from "@/components/CastPayrollPanel";
 import CastLinePanel from "@/components/CastLinePanel";
 import CastPerformancePanel from "@/components/CastPerformancePanel";
+import CastHomePanel from "@/components/CastHomePanel";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
@@ -123,7 +124,8 @@ export default function CastPortalPage() {
     setSaving(false);
   };
 
-  const [portalView, setPortalView] = useState<"shift"|"photos"|"change_request"|"feedback"|"payroll"|"line"|"performance">("shift");
+  const [portalView, setPortalView] = useState<"home"|"shift"|"payroll"|"photos"|"settings">("home");
+  const [shiftSubView, setShiftSubView] = useState<"request"|"change">("request");
   const [castAccountId, setCastAccountId] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
@@ -203,13 +205,11 @@ export default function CastPortalPage() {
       {/* ナビゲーション */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
         {[
-          { key: "shift", label: "📅 シフト希望" },
-          { key: "change_request", label: "🔄 シフト変更希望" },
-          { key: "payroll", label: "💰 給与" },
-          { key: "performance", label: "📊 実績" },
+          { key: "home", label: "🏠 ホーム" },
+          { key: "shift", label: "📅 シフト" },
+          { key: "payroll", label: "💰 給与・実績" },
           { key: "photos", label: "📷 写真" },
-          { key: "line", label: "💬 LINE通知" },
-          { key: "feedback", label: "✉️ ご意見" },
+          { key: "settings", label: "⚙️ 設定" },
         ].map(v => (
           <button key={v.key} onClick={() => setPortalView(v.key as any)} style={{
             padding: "7px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13,
@@ -221,47 +221,7 @@ export default function CastPortalPage() {
         ))}
       </div>
 
-      {/* アカウント設定 */}
-      {showAccountSettings && (
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>⚙️ アカウント設定</div>
-
-          {/* メール変更 */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>メールアドレスを変更</div>
-            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="新しいメールアドレス"
-              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
-            <button onClick={handleChangeEmail} disabled={accountLoading || !newEmail} style={{
-              padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-              border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !newEmail ? 0.5 : 1,
-            }}>メールを変更する</button>
-          </div>
-
-          {/* パスワード変更 */}
-          <div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>パスワードを変更</div>
-            <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="現在のパスワード"
-              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
-            <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="新しいパスワード（6文字以上）"
-              style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
-            <button onClick={handleChangePassword} disabled={accountLoading || !currentPw || !newPw} style={{
-              padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-              border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!currentPw || !newPw) ? 0.5 : 1,
-            }}>パスワードを変更する</button>
-          </div>
-
-          {accountMsg && (
-            <div style={{
-              marginTop: 12, padding: "10px 14px", borderRadius: 10,
-              background: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444418" : "var(--online-bg)",
-              border: `1px solid ${accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444444" : "var(--online-border)"}`,
-              color: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff4444" : "var(--online)",
-              fontSize: 13,
-            }}>{accountMsg}</div>
-          )}
-        </div>
-      )}
-
+      {/* シフト希望 */}
       {portalView === "shift" && <>
       {/* 提出済みシフト */}
       {existing.length > 0 && Object.keys(draft).length === 0 && (
@@ -397,31 +357,93 @@ export default function CastPortalPage() {
           fontSize: 13, textAlign: "center",
         }}>{saveMsg}</div>
       )}
+      {/* シフト内サブナビ（変更希望） */}
+      {portalView === "shift" && castId && (
+        <>
+          <div style={{ display:"flex", gap:8, marginTop:16 }}>
+            {[{key:"request",label:"希望を出す"},{key:"change",label:"🔄 変更・休み希望"}].map(v=>(
+              <button key={v.key} onClick={()=>setShiftSubView(v.key as any)} style={{
+                flex:1, padding:"10px", borderRadius:10, cursor:"pointer", fontFamily:"var(--font)", fontSize:13,
+                fontWeight:shiftSubView===v.key?700:500,
+                background:shiftSubView===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
+                border:`1px solid ${shiftSubView===v.key?"transparent":"var(--border)"}`,
+                color:shiftSubView===v.key?"#fff":"var(--text-secondary)",
+              }}>{v.label}</button>
+            ))}
+          </div>
+          {shiftSubView==="change" && (
+            <div style={{marginTop:16}}>
+              <CastChangeRequestPanel castId={castId} shopId={shopId||""} />
+            </div>
+          )}
+        </>
+      )}
       </>}
 
       {/* 写真管理 */}
       {portalView === "photos" && castId && shopId && <CastPhotosPanel castId={castId} shopId={shopId} />}
 
-      {/* シフト変更希望 */}
-      {portalView === "change_request" && castId && (
-        <CastChangeRequestPanel castId={castId} shopId={shopId || ""} />
-      )}
-
-      {/* ご意見・ご要望 */}
-      {portalView === "feedback" && castId && shopId && (
-        <CastFeedbackPanel castId={castId} shopId={shopId} castName={castName} />
-      )}
-
+      {/* 給与・実績 */}
       {portalView === "payroll" && castId && (
-        <CastPayrollPanel castId={castId} castName={castName} />
+        <div>
+          <CastPayrollPanel castId={castId} castName={castName} />
+          <div style={{marginTop:16}}>
+            <CastPerformancePanel castId={castId} shopId={shopId||""} castName={castName} />
+          </div>
+        </div>
       )}
 
-      {portalView === "performance" && castId && shopId && (
-        <CastPerformancePanel castId={castId} shopId={shopId} castName={castName} />
+      {/* 設定（LINE・ご意見・アカウント） */}
+      {portalView === "settings" && (
+        <div>
+          {castAccountId && castId && (
+            <div style={{marginBottom:16}}>
+              <CastLinePanel castAccountId={castAccountId} castId={castId} castName={castName} />
+            </div>
+          )}
+          {castId && shopId && (
+            <div style={{marginBottom:16}}>
+              <CastFeedbackPanel castId={castId} shopId={shopId} castName={castName} />
+            </div>
+          )}
+          {/* アカウント設定 */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>⚙️ アカウント設定</div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>メールアドレスを変更</div>
+              <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="新しいメールアドレス"
+                style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+              <button onClick={handleChangeEmail} disabled={accountLoading || !newEmail} style={{
+                padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: !newEmail ? 0.5 : 1,
+              }}>メールを変更する</button>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 700, marginBottom: 8 }}>パスワードを変更</div>
+              <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="現在のパスワード"
+                style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+              <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="新しいパスワード（6文字以上）"
+                style={{ width: "100%", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--border-hover)", borderRadius: 10, color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+              <button onClick={handleChangePassword} disabled={accountLoading || !currentPw || !newPw} style={{
+                padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!currentPw || !newPw) ? 0.5 : 1,
+              }}>パスワードを変更する</button>
+            </div>
+            {accountMsg && (
+              <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10,
+                background: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444418" : "var(--online-bg)",
+                border: `1px solid ${accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff444444" : "var(--online-border)"}`,
+                color: accountMsg.includes("失敗") || accountMsg.includes("正しくありません") ? "#ff4444" : "var(--online)",
+                fontSize: 13,
+              }}>{accountMsg}</div>
+            )}
+          </div>
+        </div>
       )}
 
-      {portalView === "line" && castAccountId && castId && (
-        <CastLinePanel castAccountId={castAccountId} castId={castId} castName={castName} />
+      {/* ホームタブ */}
+      {portalView === "home" && castId && shopId && (
+        <CastHomePanel castId={castId} shopId={shopId} castName={castName} castAccountId={castAccountId||""} setPortalView={(v) => setPortalView(v as any)} />
       )}
     </main></>
   );
