@@ -10,6 +10,7 @@ import JobsTab from "@/components/JobsTab";
 import FeedbackTab from "@/components/FeedbackTab";
 import LineTab from "@/components/LineTab";
 import SalesTab from "@/components/SalesTab";
+import TodayTab from "@/components/TodayTab";
 
 type Shop = {
   id: number;
@@ -62,7 +63,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
+type Tab = "today" | "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -112,7 +113,7 @@ export default function OwnerDashboard() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
-  const [tab, setTab] = useState<Tab>("basic");
+  const [tab, setTab] = useState<Tab>("today");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [editCast, setEditCast] = useState<Partial<Cast> | null>(null);
@@ -451,6 +452,7 @@ export default function OwnerDashboard() {
   );
 
   const TABS: { key: Tab; label: string }[] = [
+    { key: "today", label: "🏠 今日" },
     { key: "basic", label: "基本情報" },
     { key: "hours", label: "営業時間" },
     { key: "sns", label: "SNS" },
@@ -508,6 +510,11 @@ export default function OwnerDashboard() {
             </button>
           ))}
         </div>
+
+        {/* 今日 */}
+        {tab === "today" && shopId && (
+          <TodayTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} btnPrimary={btnPrimary} setTab={(t: any) => setTab(t)} showMsg={showMsg} />
+        )}
 
         {/* 基本情報 */}
         {tab === "basic" && (
