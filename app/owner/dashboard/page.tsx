@@ -5,6 +5,7 @@ import { supabase } from "@/lib/shops";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
 import CastPhotoManager from "@/components/CastPhotoManager";
+import PrintPayslipButton from "@/components/PrintPayslipButton";
 import TweetTab from "@/components/TweetTab";
 import JobsTab from "@/components/JobsTab";
 import FeedbackTab from "@/components/FeedbackTab";
@@ -1165,6 +1166,14 @@ export default function OwnerDashboard() {
 
                 {/* キャスト写真管理 */}
                 {editCast.id && <CastPhotoManager castId={editCast.id} />}
+
+                {/* 給与明細出力 */}
+                {editCast.id && (
+                  <div style={{ marginTop: 12 }}>
+                    <PrintPayslipButton castId={editCast.id} castName={editCast.name || ""} shopId={shopId!} />
+                  </div>
+                )}
+
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                   <button onClick={saveCast} disabled={saving} style={{ flex: 1, padding: "10px", background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     {saving ? "保存中..." : "保存"}
