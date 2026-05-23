@@ -207,7 +207,9 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[
               { icon: "🕐", label: "営業時間", value: shop.open_hour },
-              { icon: "📅", label: "定休日", value: shop.closed_days },
+              { icon: "📅", label: "定休日", value: shop.closed_days
+                ? shop.closed_days.replace(/月/g,"月曜日").replace(/火/g,"火曜日").replace(/水/g,"水曜日").replace(/木/g,"木曜日").replace(/金/g,"金曜日").replace(/土/g,"土曜日").replace(/日/g,"日曜日")
+                : null },
               { icon: "💴", label: "予算目安", value: shop.budget },
               { icon: "💺", label: "席数", value: shop.seats ? shop.seats + "席" : null },
               { icon: "📍", label: "所在地", value: shop.area },
