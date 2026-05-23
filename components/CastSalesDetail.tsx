@@ -129,7 +129,7 @@ export default function CastSalesDetail({ cast, allCastSales, allShifts, month, 
                 const color = TYPE_LABELS[displayType]?.color || "var(--accent)";
                 return (
                   <div key={d.date} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-                    {d.value>0 && <div style={{ fontSize:9, color:"var(--text-muted)" }}>¥{Math.round(d.value/1000)}k</div>}
+                    {d.value>0 && <div style={{ fontSize:9, color:"var(--text-muted)" }}>¥{d.value.toLocaleString()}</div>}
                     <div style={{
                       width:"100%", borderRadius:"4px 4px 0 0",
                       height: Math.max(pct*60, d.value>0?4:0),

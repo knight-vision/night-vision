@@ -10,44 +10,53 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  const { shop_id, owner_id } = await req.json();
-  if (!shop_id || !owner_id) return NextResponse.json({ error: "パラメータ不足" }, { status: 400 });
+  try {
+    const { shop_id, owner_id } = await req.json();
+    if (!shop_id || !owner_id) return NextResponse.json({ error: "パラメータ不足" }, { status: 400 });
 
-  // 店舗情報取得
-  const { data: shop } = await supabase.from("shops").select("name, stripe_customer_id").eq("id", shop_id).single();
-  if (!shop) return NextResponse.json({ error: "店舗が見つかりません" }, { status: 404 });
+    if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "STRIPE_SECRET_KEY未設定" }, { status: 500 });
+    if (!process.env.STRIPE_PRICE_ID) return NextResponse.json({ error: "STRIPE_PRICE_ID未設定" }, { status: 500 });
 
-  // オーナーメール取得
-  const { data: owner } = await supabase.from("shop_owners").select("email").eq("id", owner_id).single();
+    const priceId = process.env.STRIPE_PRICE_ID;
+    if (!priceId.startsWith("price_")) return NextResponse.json({ error: `STRIPE_PRICE_IDの形式が不正: ${priceId.slice(0,10)}` }, { status: 500 });
 
-  // Stripe顧客を作成 or 既存を使用
-  let customerId = shop.stripe_customer_id;
-  // customer_idの形式チェック（cus_で始まる必要がある）
-  if (customerId && !customerId.startsWith("cus_")) {
-    customerId = null;
-    await supabase.from("shops").update({ stripe_customer_id: null }).eq("id", shop_id);
-  }
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: owner?.email,
-      name: shop.name,
+    // 店舗情報取得
+    const { data: shop } = await supabase.from("shops").select("name, stripe_customer_id").eq("id", shop_id).single();
+    if (!shop) return NextResponse.json({ error: "店舗が見つかりません" }, { status: 404 });
+
+    // オーナーメール取得
+    const { data: owner } = await supabase.from("shop_owners").select("email").eq("id", owner_id).single();
+
+    // Stripe顧客を作成 or 既存を使用
+    let customerId = shop.stripe_customer_id;
+    if (customerId && !customerId.startsWith("cus_")) {
+      customerId = null;
+      await supabase.from("shops").update({ stripe_customer_id: null }).eq("id", shop_id);
+    }
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: owner?.email,
+        name: shop.name,
+        metadata: { shop_id: String(shop_id) },
+      });
+      customerId = customer.id;
+      await supabase.from("shops").update({ stripe_customer_id: customerId }).eq("id", shop_id);
+    }
+
+    // チェックアウトセッション作成
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=1`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&canceled=1`,
       metadata: { shop_id: String(shop_id) },
+      locale: "ja",
     });
-    customerId = customer.id;
-    await supabase.from("shops").update({ stripe_customer_id: customerId }).eq("id", shop_id);
+
+    return NextResponse.json({ url: session.url });
+  } catch(e: any) {
+    return NextResponse.json({ error: e.message || "Stripeエラー" }, { status: 500 });
   }
-
-  // チェックアウトセッション作成
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    payment_method_types: ["card"],
-    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-    mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&canceled=1`,
-    metadata: { shop_id: String(shop_id) },
-    locale: "ja",
-  });
-
-  return NextResponse.json({ url: session.url });
 }
