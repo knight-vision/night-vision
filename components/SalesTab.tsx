@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import CastSalesDetail from "@/components/CastSalesDetail";
 
 type Cast = { id: number; name: string; hourly_wage: number | null };
 type DailySales = { id?: string; date: string; cash_sales: number; card_sales: number; cost: number; memo: string };
@@ -49,6 +50,7 @@ export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labe
   const [view, setView] = useState<"slip"|"sales"|"cast_sales"|"menu">("slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
+  const [selectedCastDetail, setSelectedCastDetail] = useState<number|null>(null);
   const [month, setMonth] = useState(new Date().toISOString().slice(0,7));
   const [dailyDate, setDailyDate] = useState(getDateStr(new Date()));
   const [weekBase, setWeekBase] = useState(getDateStr(new Date()));
@@ -617,7 +619,9 @@ ${rows.map(({ cast, d, dayRows }) => `
                   return (
                     <div key={cast.id} style={{...sectionStyle,marginBottom:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                        <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>{cast.name}</span>
+                        <button onClick={()=>setSelectedCastDetail(cast.id)} style={{fontWeight:700,fontSize:15,color:"var(--accent)",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font)",padding:0,textDecoration:"underline",textDecorationColor:"var(--accent)44"}}>
+                          {cast.name} 📊
+                        </button>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           {ratio!=null&&<span style={{fontSize:11,padding:"2px 10px",borderRadius:10,fontWeight:700,
                             background:ratio>=100?"var(--online-bg)":ratio>=70?"#f59e0b22":"#ff444418",
@@ -969,6 +973,26 @@ ${rows.map(({ cast, d, dayRows }) => `
           </div>
         </div>
       )}
+      {/* キャスト売上詳細モーダル */}
+      {selectedCastDetail && (()=>{
+        const cast = casts.find(c=>c.id===selectedCastDetail);
+        if (!cast) return null;
+        return (
+          <CastSalesDetail
+            cast={cast}
+            allCastSales={allCastSales}
+            allShifts={allShifts}
+            month={month}
+            dailyDate={dailyDate}
+            weekBase={weekBase}
+            period={castSalesPeriod}
+            getWeekDates={getWeekDates}
+            fmtDate={fmtDate}
+            onClose={()=>setSelectedCastDetail(null)}
+            sectionStyle={sectionStyle}
+          />
+        );
+      })()}
     </div>
   );
 }

@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
 
   // Stripe顧客を作成 or 既存を使用
   let customerId = shop.stripe_customer_id;
+  // customer_idの形式チェック（cus_で始まる必要がある）
+  if (customerId && !customerId.startsWith("cus_")) {
+    customerId = null;
+    await supabase.from("shops").update({ stripe_customer_id: null }).eq("id", shop_id);
+  }
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: owner?.email,
