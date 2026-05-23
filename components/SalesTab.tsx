@@ -793,7 +793,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                             return (
                               <div key={d.date} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
                                 <div style={{fontSize:10,color:"var(--text-muted)",fontWeight:600}}>
-                                  {d.total>0?`¥${Math.round(d.total/1000)}k`:""}
+                                  {d.total>0?`¥${d.total.toLocaleString()}`:""}
                                 </div>
                                 <div style={{
                                   width:"100%",borderRadius:"6px 6px 0 0",
