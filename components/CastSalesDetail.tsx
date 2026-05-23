@@ -116,19 +116,20 @@ export default function CastSalesDetail({ cast, allCastSales, allShifts, month, 
         {/* グラフ（種別選択で切替） */}
         {period !== "daily" && (
           <div style={{ ...sectionStyle, marginBottom:16 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)" }}>
-                {TYPE_LABELS[displayType]?.icon} {TYPE_LABELS[displayType]?.label}
-                <span style={{ marginLeft:6, fontWeight:400 }}>（カードをタップで切替）</span>
-              </div>
+            <div style={{ fontSize:11, fontWeight:700, color:"var(--text-muted)", marginBottom:12 }}>
+              {TYPE_LABELS[displayType]?.icon} {TYPE_LABELS[displayType]?.label}
+              <span style={{ marginLeft:6, fontWeight:400 }}>（カードをタップで切替）</span>
             </div>
-            <div style={{ display:"flex", gap:period==="monthly"?2:6, alignItems:"flex-end", height:80 }}>
-              {barData.map((d, i) => {
+
+            {/* 売上金額グラフ */}
+            <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:6 }}>💴 売上金額</div>
+            <div style={{ display:"flex", gap:period==="monthly"?2:6, alignItems:"flex-end", height:80, marginBottom:16 }}>
+              {barData.map((d) => {
                 const pct = d.value / maxVal;
                 const color = TYPE_LABELS[displayType]?.color || "var(--accent)";
                 return (
                   <div key={d.date} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-                    {d.value>0 && <div style={{ fontSize:9, color:"var(--text-muted)" }}>{d.count}件</div>}
+                    {d.value>0 && <div style={{ fontSize:9, color:"var(--text-muted)" }}>¥{Math.round(d.value/1000)}k</div>}
                     <div style={{
                       width:"100%", borderRadius:"4px 4px 0 0",
                       height: Math.max(pct*60, d.value>0?4:0),
@@ -142,6 +143,39 @@ export default function CastSalesDetail({ cast, allCastSales, allShifts, month, 
                 );
               })}
             </div>
+
+            {/* 件数グラフ */}
+            {(()=>{
+              const countData = chartDates.map(date=>({
+                date,
+                count: filtered.filter(s=>s.date===date && s.sales_type===displayType).length,
+              }));
+              const maxCount = Math.max(...countData.map(d=>d.count), 1);
+              return countData.some(d=>d.count>0) ? (
+                <>
+                  <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:6 }}>📊 件数</div>
+                  <div style={{ display:"flex", gap:period==="monthly"?2:6, alignItems:"flex-end", height:50 }}>
+                    {countData.map((d) => {
+                      const pct = d.count / maxCount;
+                      const color = TYPE_LABELS[displayType]?.color || "var(--accent)";
+                      return (
+                        <div key={d.date} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+                          {d.count>0 && <div style={{ fontSize:9, color:"var(--text-muted)" }}>{d.count}</div>}
+                          <div style={{
+                            width:"100%", borderRadius:"4px 4px 0 0",
+                            height: Math.max(pct*36, d.count>0?4:0),
+                            background: d.count>0 ? color+"99" : "var(--bg-input)",
+                          }}/>
+                          <div style={{ fontSize: period==="monthly"?9:11, color:"var(--text-muted)" }}>
+                            {DAY_LABEL(d.date)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : null;
+            })()}
           </div>
         )}
 

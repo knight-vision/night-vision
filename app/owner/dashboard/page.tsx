@@ -1337,8 +1337,15 @@ export default function OwnerDashboard() {
                         body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }),
                       });
                       const data = await res.json();
-                      if (data.url) window.location.href = data.url;
-                      else { showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました")); if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; } }
+                      if (data.url && data.url.startsWith("https://checkout.stripe.com")) {
+                        window.location.href = data.url;
+                      } else if (data.url) {
+                        showMsg("URLエラー: " + data.url.slice(0, 50));
+                        if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
+                      } else {
+                        showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました"));
+                        if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
+                      }
                     } catch(e: any) {
                       showMsg("通信エラー: " + e.message);
                       if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
