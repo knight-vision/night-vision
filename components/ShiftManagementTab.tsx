@@ -483,34 +483,32 @@ ${casts.map(cast=>{
 
           {allowanceLoading?<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>:(
             <>
-              {/* 月合計サマリー（上に移動） */}
-              <div style={{...sectionStyle,marginBottom:16}}>
-                <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginBottom:10}}>月合計</div>
+              {/* キャスト選択ボタン */}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
                 {casts.map(cast=>{
-                  const m=calcCastMonth(cast); if(m.days===0) return null;
+                  const m=calcCastMonth(cast);
                   const color=getColor(cast.id);
+                  const selected=paySelectedCast===cast.id;
                   return (
-                    <div key={cast.id} style={{
-                      display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"10px 0",borderBottom:"1px solid var(--border)",
-                      cursor:"pointer",
-                    }} onClick={()=>setPaySelectedCast(paySelectedCast===cast.id?null:cast.id)}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{width:8,height:8,borderRadius:"50%",background:color,flexShrink:0}} />
-                        <span style={{fontWeight:700,color:"var(--text-primary)",fontSize:14}}>{cast.name}</span>
-                        <span style={{color:"var(--text-muted)",fontSize:11}}>{m.days}日 {fmtH(m.mins)}</span>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontWeight:800,color,fontSize:15}}>¥{m.total.toLocaleString()}</span>
-                        <span style={{fontSize:11,color:"var(--text-muted)"}}>{paySelectedCast===cast.id?"▲":"▼"}</span>
-                      </div>
-                    </div>
+                    <button key={cast.id} onClick={()=>setPaySelectedCast(selected?null:cast.id)} style={{
+                      padding:"8px 14px",borderRadius:20,cursor:"pointer",fontFamily:"var(--font)",
+                      background:selected?color:"var(--bg-input)",
+                      border:`2px solid ${selected?color:"var(--border)"}`,
+                      color:selected?"#fff":"var(--text-secondary)",
+                      fontWeight:selected?700:500,fontSize:13,
+                      boxShadow:selected?`0 0 12px ${color}66`:"none",
+                    }}>
+                      {cast.name}
+                      {m.days>0&&<span style={{fontSize:11,marginLeft:6,opacity:0.8}}>{m.days}日 ¥{m.total.toLocaleString()}</span>}
+                    </button>
                   );
                 })}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:10,marginTop:4}}>
-                  <span style={{fontWeight:700,color:"var(--text-muted)"}}>合計人件費</span>
-                  <span style={{fontWeight:900,color:"var(--accent)",fontSize:20}}>¥{casts.reduce((s,c)=>s+calcCastMonth(c).total,0).toLocaleString()}</span>
-                </div>
+              </div>
+
+              {/* 合計人件費 */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,marginBottom:16}}>
+                <span style={{fontWeight:700,color:"var(--text-muted)",fontSize:13}}>合計人件費</span>
+                <span style={{fontWeight:900,color:"var(--accent)",fontSize:20}}>¥{casts.reduce((s,c)=>s+calcCastMonth(c).total,0).toLocaleString()}</span>
               </div>
 
               {/* 選択キャストの日別明細 */}
@@ -522,10 +520,14 @@ ${casts.map(cast=>{
                   const d=calcCastDay(cast,date); return d.shift||d.dayAllowances.length>0;
                 });
                 return (
-                  <div style={{...sectionStyle,marginBottom:16,borderColor:color+"44"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                      <div style={{fontWeight:700,color,fontSize:14}}>{cast.name} の日別明細</div>
-                      <button onClick={()=>{ setNewA(p=>({...p,cast_id:String(cast.id)})); }} style={{fontSize:12,color:"var(--accent)",background:"var(--accent)15",border:"1px solid var(--accent)44",borderRadius:8,padding:"4px 12px",cursor:"pointer"}}>＋ 手当を追加</button>
+                  <div style={{...sectionStyle,marginBottom:16,borderColor:color+"55"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}} />
+                        <span style={{fontWeight:700,color,fontSize:15}}>{cast.name}</span>
+                        <span style={{fontSize:12,color:"var(--text-muted)"}}>{calcCastMonth(cast).days}日出勤</span>
+                      </div>
+                      <button onClick={()=>setNewA(p=>({...p,cast_id:String(cast.id)}))} style={{fontSize:12,color:"var(--accent)",background:"var(--accent)15",border:"1px solid var(--accent)44",borderRadius:8,padding:"4px 12px",cursor:"pointer"}}>＋ 手当を追加</button>
                     </div>
                     {activeDates.length===0?(
                       <div style={{textAlign:"center",color:"var(--text-muted)",padding:"12px 0",fontSize:13}}>この月の記録はありません</div>
