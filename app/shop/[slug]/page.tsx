@@ -26,29 +26,37 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const shop = await getShopBySlug(params.slug);
   if (!shop) return {};
+  const area = shop.area_category ?? shop.area ?? "";
+  const castNames = (shop.casts ?? []).slice(0, 3).map((c: any) => c.name).join("・");
+  const desc = `${shop.name}は釧路${area}エリアにある${shop.type}です。` +
+    (shop.description ? shop.description.slice(0, 80) : "") +
+    `営業時間：${shop.open_hour ?? ""}。` +
+    (shop.budget ? `予算：${shop.budget}。` : "") +
+    (castNames ? `在籍キャスト：${castNames}など。` : "") +
+    `釧路${shop.type}をお探しならナイトビジョンで。`;
   return {
-    title: shop.name + "｜釧路" + (shop.area_category ?? "") + "の" + shop.type,
-    description:
-      shop.name + "は釧路" + (shop.area_category ?? "") + "エリアにある" + shop.type + "です。" +
-      (shop.description ?? "") +
-      "営業時間：" + (shop.open_hour ?? "") + "。" +
-      "所在地：" + (shop.area ?? "") + "。",
+    title: `${shop.name}｜釧路${area}の${shop.type}【公式情報】`,
+    description: desc.slice(0, 160),
     keywords: [
       shop.name,
-      "釧路 " + shop.name,
-      (shop.area_category ?? "") + " " + shop.name,
-      "釧路 " + shop.type,
-      "釧路 " + (shop.area_category ?? "") + " " + shop.type,
-      shop.name + " 釧路",
-      shop.name + " " + shop.type,
-      shop.name + " 営業時間",
-      shop.name + " 場所",
+      `釧路 ${shop.name}`,
+      `${area} ${shop.name}`,
+      `釧路 ${shop.type}`,
+      `釧路 ${area} ${shop.type}`,
+      `${shop.name} 釧路`,
+      `${shop.name} ${shop.type}`,
+      `${shop.name} 営業時間`,
+      `${shop.name} 料金`,
+      `${shop.name} キャスト`,
+      `釧路 ${shop.type} 料金`,
+      `釧路 夜遊び ${shop.type}`,
     ],
     openGraph: {
-      title: shop.name + "｜釧路" + (shop.area_category ?? "") + "の" + shop.type,
-      description: shop.name + "は釧路" + (shop.area_category ?? "") + "にある" + shop.type + "です。" + (shop.description ?? ""),
+      title: `${shop.name}｜釧路${area}の${shop.type}`,
+      description: desc.slice(0, 100),
       url: "https://www.night-vision.jp/shop/" + shop.slug,
       siteName: "釧路ナイトビジョン",
+      images: shop.image ? [{ url: shop.image }] : [],
       type: "website",
     },
     alternates: { canonical: "https://www.night-vision.jp/shop/" + shop.slug },

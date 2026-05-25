@@ -4,9 +4,18 @@ import { getShops } from "@/lib/shops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "釧路ナイトビジョン｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
-  description: "釧路の飲み屋・スナック・ガールズバー・ラウンジ・キャバクラ情報ならここ。地域密着のナイトガイドで今夜のお店を見つけよう。",
+  title: "釧路ナイトビジョン｜釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報",
+  description: "釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報ならナイトビジョン。末広・愛国エリアの全店舗を掲載。今夜行きたいお店がすぐ見つかる釧路ナイトライフガイド。",
+  keywords: ["釧路 飲み屋", "釧路 キャバクラ", "釧路 スナック", "釧路 ガールズバー", "釧路 ラウンジ", "釧路 ニュークラ", "末広 スナック", "釧路 夜遊び", "釧路 ナイトライフ", "釧路 バー"],
   alternates: { canonical: "https://www.night-vision.jp" },
+  openGraph: {
+    title: "釧路ナイトビジョン｜釧路の飲み屋・キャバクラ・スナック情報",
+    description: "釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報。末広・愛国エリア全店舗掲載。",
+    url: "https://www.night-vision.jp",
+    siteName: "釧路ナイトビジョン",
+    locale: "ja_JP",
+    type: "website",
+  },
 };
 
 export const revalidate = 60;
@@ -91,6 +100,40 @@ export default async function HomePage() {
           </a>
         </section>
       </main>
+
+      {/* SEOテキストブロック */}
+      <section style={{ maxWidth: 680, margin: "0 auto", padding: "0 16px 40px" }}>
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 32 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", marginBottom: 12 }}>
+            釧路の飲み屋・キャバクラ・スナック情報ガイド
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 2, marginBottom: 16 }}>
+            釧路ナイトビジョンは、北海道釧路市の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ・ニュークラブなど夜のお店情報を一か所にまとめたナイトライフガイドです。末広エリア・愛国エリアを中心に、地元で人気のお店を厳選して掲載しています。
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            {[
+              { href: "/snack", label: "釧路のスナック一覧", desc: "アットホームな雰囲気のスナック" },
+              { href: "/girls-bar", label: "釧路のガールズバー一覧", desc: "気軽に入れるガールズバー" },
+              { href: "/lounge", label: "釧路のラウンジ・ニュークラ", desc: "上質な時間を過ごせるお店" },
+              { href: "/casual-bar", label: "釧路のカジュアルバー一覧", desc: "一人でも入りやすいバー" },
+              { href: "/area/suehiro", label: "末広エリアの飲み屋", desc: "釧路最大の繁華街" },
+              { href: "/area/aikoku", label: "愛国エリアの飲み屋", desc: "地元に根付いたお店が集まるエリア" },
+            ].map(item => (
+              <a key={item.href} href={item.href} style={{
+                display: "block", padding: "12px 14px",
+                background: "var(--bg-card)", border: "1px solid var(--border)",
+                borderRadius: 10, textDecoration: "none",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{item.desc}</div>
+              </a>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.9 }}>
+            「釧路 飲み屋」「釧路 キャバクラ」「釧路 スナック」などでお探しの方はぜひご活用ください。各店舗のキャスト情報・営業時間・予算目安・アクセスを掲載しています。掲載情報は随時更新しています。
+          </p>
+        </div>
+      </section>
 
       <footer style={{
         textAlign: "center", padding: "24px 16px 40px",
