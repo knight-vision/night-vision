@@ -161,6 +161,7 @@ export default function RankingPage() {
 
   return (
     <div>
+      <head><link rel="canonical" href="https://www.night-vision.jp/ranking" /></head>
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         <div style={{ marginBottom: 24 }}>

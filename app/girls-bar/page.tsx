@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "釧路のガールズバー一覧｜末広・愛国エリア",
   description: "釧路のガールズバー情報を掲載。末広・愛国エリアの人気ガールズバーを料金・雰囲気・キャスト情報とともに紹介。",
   keywords: ["釧路 ガールズバー", "末広 ガールズバー", "愛国 ガールズバー", "釧路 メンズバー"],
+  alternates: { canonical: "https://www.night-vision.jp/girls-bar" },
 };
 
 export const revalidate = 60;

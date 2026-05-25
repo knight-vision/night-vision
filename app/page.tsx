@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "釧路ナイトビジョン｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
   description: "釧路の飲み屋・スナック・ガールズバー・ラウンジ・キャバクラ情報ならここ。地域密着のナイトガイドで今夜のお店を見つけよう。",
+  alternates: { canonical: "https://www.night-vision.jp" },
 };
 
 export const revalidate = 60;
