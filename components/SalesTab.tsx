@@ -738,7 +738,7 @@ ${rows.map(({ cast, d, dayRows }) => `
       {/* ===== 売上表 ===== */}
       {view==="sales"&&(
         <div>
-          {/* 月ナビ + 日次/月次切替 */}
+          {/* 月ナビ + 日次/月次切替 + エクスポート */}
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
             <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()-1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>←</button>
             <span style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>{month.replace("-","年")}月</span>
@@ -750,6 +750,116 @@ ${rows.map(({ cast, d, dayRows }) => `
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* エクスポートボタン */}
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            <button onClick={()=>{
+              // CSV出力
+              const [y,m2] = month.split("-").map(Number);
+              const dates: string[] = [];
+              const dd = new Date(y,m2-1,1);
+              while(dd.getMonth()===m2-1){ dates.push(getDateStr(dd)); dd.setDate(dd.getDate()+1); }
+              const rows = [
+                ["日付","現金売上","カード売上","売上合計","仕入・経費","キャスト給与","純利益"],
+                ...dates.map(date=>{
+                  const d = allDailySales.find(s=>s.date===date);
+                  const total = (d?.cash_sales||0)+(d?.card_sales||0);
+                  const cost = d?.cost||0;
+                  const payroll = casts.reduce((s,c)=>{
+                    const sh = allShifts.find(x=>x.cast_id===c.id&&x.date===date);
+                    if (!sh) return s;
+                    const mins = calcMinutes(sh.start_time,sh.end_time);
+                    return s + (c.hourly_wage?Math.round(c.hourly_wage*mins/60):0);
+                  },0);
+                  return [date, d?.cash_sales||0, d?.card_sales||0, total, cost, payroll, total-cost-payroll];
+                }),
+                [],
+                ["合計","","", totalMonthlySales, totalMonthlyCost, totalMonthlyPayroll, totalMonthlySales-totalMonthlyCost-totalMonthlyPayroll],
+              ];
+              const csv = rows.map(r=>r.join(",")).join("\n");
+              const bom = "\uFEFF";
+              const blob = new Blob([bom+csv], {type:"text/csv;charset=utf-8"});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href=url; a.download=`売上_${month}.csv`; a.click();
+              URL.revokeObjectURL(url);
+            }} style={{padding:"8px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>
+              📄 CSVエクスポート
+            </button>
+            <button onClick={()=>{
+              // PDF出力（印刷）
+              const [y,m2] = month.split("-").map(Number);
+              const dates: string[] = [];
+              const dd = new Date(y,m2-1,1);
+              while(dd.getMonth()===m2-1){ dates.push(getDateStr(dd)); dd.setDate(dd.getDate()+1); }
+              const activeDays = dates.filter(d=>allDailySales.some(s=>s.date===d&&((s.cash_sales||0)+(s.card_sales||0))>0));
+              const fmtD = (ds: string) => { const x=new Date(ds+"T00:00:00"); return `${x.getMonth()+1}/${x.getDate()}(${["日","月","火","水","木","金","土"][x.getDay()]})`; };
+              const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${month}月 店舗売上</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; font-size:11px; padding:20px; }
+h1 { font-size:16px; margin-bottom:4px; }
+.sub { color:#666; font-size:11px; margin-bottom:16px; }
+table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+th,td { border:1px solid #ccc; padding:5px 8px; text-align:right; }
+th { background:#f5f5f5; text-align:center; font-weight:bold; }
+td:first-child { text-align:left; }
+.total { font-weight:bold; background:#fffbe6; }
+.summary { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.card { border:1px solid #ddd; border-radius:8px; padding:10px 14px; text-align:center; }
+.card-label { font-size:10px; color:#666; margin-bottom:4px; }
+.card-value { font-size:18px; font-weight:bold; }
+@media print { body { padding:10px; } }
+</style></head><body>
+<h1>${month.replace("-","年")}月 店舗売上レポート</h1>
+<div class="sub">出力日: ${new Date().toLocaleDateString("ja-JP")}</div>
+<div class="summary">
+  <div class="card"><div class="card-label">月次売上</div><div class="card-value" style="color:#7c3aed">¥${totalMonthlySales.toLocaleString()}</div></div>
+  <div class="card"><div class="card-label">人件費</div><div class="card-value" style="color:#f59e0b">¥${totalMonthlyPayroll.toLocaleString()}</div></div>
+  <div class="card"><div class="card-label">仕入・経費</div><div class="card-value" style="color:#f59e0b">¥${totalMonthlyCost.toLocaleString()}</div></div>
+  <div class="card"><div class="card-label">純利益</div><div class="card-value" style="color:${(totalMonthlySales-totalMonthlyCost-totalMonthlyPayroll)>=0?"#059669":"#dc2626"}">¥${(totalMonthlySales-totalMonthlyCost-totalMonthlyPayroll).toLocaleString()}</div></div>
+</div>
+<table>
+<thead><tr><th>日付</th><th>現金売上</th><th>カード売上</th><th>売上合計</th><th>仕入・経費</th><th>キャスト給与</th><th>純利益</th></tr></thead>
+<tbody>
+${activeDays.map(date=>{
+  const d=allDailySales.find(s=>s.date===date);
+  const total=(d?.cash_sales||0)+(d?.card_sales||0);
+  const cost=d?.cost||0;
+  const payroll=casts.reduce((s,c)=>{
+    const sh=allShifts.find(x=>x.cast_id===c.id&&x.date===date);
+    if(!sh)return s;
+    const mins=calcMinutes(sh.start_time,sh.end_time);
+    return s+(c.hourly_wage?Math.round(c.hourly_wage*mins/60):0);
+  },0);
+  const profit=total-cost-payroll;
+  return `<tr>
+    <td>${fmtD(date)}</td>
+    <td>¥${(d?.cash_sales||0).toLocaleString()}</td>
+    <td>¥${(d?.card_sales||0).toLocaleString()}</td>
+    <td><strong>¥${total.toLocaleString()}</strong></td>
+    <td style="color:#b45309">¥${cost.toLocaleString()}</td>
+    <td style="color:#b45309">¥${payroll.toLocaleString()}</td>
+    <td style="color:${profit>=0?"#059669":"#dc2626"};font-weight:bold">¥${profit.toLocaleString()}</td>
+  </tr>`;
+}).join("")}
+<tr class="total">
+  <td>合計</td>
+  <td>¥${allDailySales.reduce((s,d)=>s+(d.cash_sales||0),0).toLocaleString()}</td>
+  <td>¥${allDailySales.reduce((s,d)=>s+(d.card_sales||0),0).toLocaleString()}</td>
+  <td>¥${totalMonthlySales.toLocaleString()}</td>
+  <td>¥${totalMonthlyCost.toLocaleString()}</td>
+  <td>¥${totalMonthlyPayroll.toLocaleString()}</td>
+  <td style="color:${(totalMonthlySales-totalMonthlyCost-totalMonthlyPayroll)>=0?"#059669":"#dc2626"}">¥${(totalMonthlySales-totalMonthlyCost-totalMonthlyPayroll).toLocaleString()}</td>
+</tr>
+</tbody>
+</table>
+</body></html>`;
+              const w = window.open("","_blank","width=900,height=700");
+              if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }
+            }} style={{padding:"8px 14px",borderRadius:8,background:"var(--accent)22",border:"1px solid var(--accent)44",color:"var(--accent)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)",fontWeight:700}}>
+              🖨️ PDFエクスポート
+            </button>
           </div>
 
           {loading?<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>:(
