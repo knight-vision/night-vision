@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "釧路のラウンジ・ニュークラ一覧｜末広・愛国エリア",
   description: "釧路のラウンジ・ニュークラ情報を掲載。末広・愛国エリアの人気ラウンジを料金・雰囲気・キャスト情報とともに紹介。",
   keywords: ["釧路 ラウンジ", "釧路 ニュークラ", "釧路 キャバクラ", "末広 ラウンジ", "末広 ニュークラ"],
+  alternates: { canonical: "https://www.night-vision.jp/lounge" },
 };
 
 export const revalidate = 60;

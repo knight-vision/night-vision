@@ -77,7 +77,8 @@ export default function ApplyPage() {
   if (status === "success") {
     return (
       <>
-        <Header />
+        <head><link rel="canonical" href="https://www.night-vision.jp/apply" /></head>
+      <Header />
         <main style={{ maxWidth: 680, margin: "0 auto", padding: "60px 16px", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
           <h1 style={{ color: "var(--text-primary)", fontSize: 22, fontWeight: 800, marginBottom: 12 }}>申し込みを受け付けました</h1>

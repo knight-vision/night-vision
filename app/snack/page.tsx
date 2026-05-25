@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "釧路のスナック一覧｜末広・愛国エリア",
   description: "釧路のスナック情報を掲載。末広・愛国エリアの人気スナックを料金・雰囲気・キャスト情報とともに紹介。釧路でスナックを探すならここ。",
   keywords: ["釧路 スナック", "末広 スナック", "愛国 スナック", "釧路 スナック 一覧"],
+  alternates: { canonical: "https://www.night-vision.jp/snack" },
 };
 
 export const revalidate = 60;
