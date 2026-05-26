@@ -500,10 +500,18 @@ export default function AdminPage() {
                       {shop.type} · {shop.area_category} · {shop.plan}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button onClick={() => setEditShop(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>編集</button>
                     <button onClick={() => deleteShop(shop.id)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#ff444420", color: "#ff4444" }}>削除</button>
                     <button onClick={() => issueOwnerAccount(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#00994d20", color: "#00994d" }}>アカウント発行</button>
+                    <button onClick={async () => {
+                      const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shop.id }) });
+                      const data = await res.json();
+                      if (data.url) {
+                        await navigator.clipboard.writeText(data.url);
+                        alert(`招待URLをコピーしました！\n\n${data.url}\n\nInstagram DMに貼り付けてください。`);
+                      } else alert("エラー: " + data.error);
+                    }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#7c3aed20", color: "#a78bfa" }}>🔗 招待URL</button>
                   </div>
                 </div>
               ))}

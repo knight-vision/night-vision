@@ -40,31 +40,39 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode !== "subscription") break;
       const shopId = session.metadata?.shop_id;
+      const planType = session.metadata?.plan === "premium" ? "premium" : "gold";
       if (!shopId) break;
 
       await supabase.from("shops").update({
-        plan: "gold",
+        plan: planType,
         stripe_subscription_id: session.subscription as string,
       }).eq("id", Number(shopId));
 
-      // オーナーに確認メール
       const ownerEmail = await getOwnerEmail(Number(shopId));
       const { data: shop } = await supabase.from("shops").select("name").eq("id", Number(shopId)).single();
       if (ownerEmail) {
+        const isPremium = planType === "premium";
         await resend.emails.send({
           from: "釧路ナイトビジョン <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】ゴールドプランへのアップグレード完了",
+          subject: `【釧路ナイトビジョン】${isPremium ? "プレミアム" : "ゴールド"}プランへのアップグレード完了`,
           html: emailHtml({
-            title: "💎 ゴールドプランへのアップグレード完了",
+            title: `${isPremium ? "👑 プレミアム" : "💎 ゴールド"}プランへのアップグレード完了`,
             body: `
               <p style="margin:0 0 12px;color:#c0bdd8;">${shop?.name || "お店"} ご担当者様</p>
-              <p style="margin:0 0 16px;color:#c0bdd8;">ゴールドプラン（月額3,000円）へのアップグレードが完了しました。</p>
-              <p style="margin:0 0 8px;color:#c0bdd8;">ゴールドプランでご利用いただける機能：</p>
+              <p style="margin:0 0 16px;color:#c0bdd8;">${isPremium ? "プレミアムプラン（月額12,000円）" : "ゴールドプラン（月額3,000円）"}へのアップグレードが完了しました。</p>
               <ul style="margin:0 0 16px;padding-left:20px;color:#9ca3af;font-size:13px;line-height:2.2;">
+                ${isPremium ? `
+                <li>トップページ最上部への固定表示</li>
+                <li>「おすすめ」バッジ表示</li>
+                <li>月次集客レポート</li>
+                <li>LINEサポート優先対応</li>
+                <li>求人掲載 無制限</li>
+                ` : `
                 <li>バナー写真の掲載</li>
                 <li>おすすめ優先表示</li>
                 <li>求人情報の掲載</li>
+                `}
               </ul>
             `,
             ctaText: "管理画面を開く",
@@ -81,7 +89,10 @@ export async function POST(req: NextRequest) {
       const customerId = invoice.customer as string;
       const shop = await getShopByCustomer(customerId);
       if (shop) {
-        await supabase.from("shops").update({ plan: "gold" }).eq("id", shop.id);
+        const { data: shopData } = await supabase.from("shops").select("plan").eq("id", shop.id).single();
+        if (!shopData?.plan || (shopData.plan !== "gold" && shopData.plan !== "premium")) {
+          await supabase.from("shops").update({ plan: "gold" }).eq("id", shop.id);
+        }
       }
       break;
     }
