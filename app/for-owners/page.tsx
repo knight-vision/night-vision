@@ -36,8 +36,8 @@ const PLANS = [
   {
     key: "standard",
     name: "スタンダード",
-    price: null, // TBD
-    priceLabel: "¥ ── /月",
+    price: 3000,
+    priceLabel: "¥3,000",
     desc: "売上・給与をまるごと管理",
     badge: null,
     color: "#a78bfa",
@@ -60,8 +60,8 @@ const PLANS = [
   {
     key: "premium",
     name: "プレミアム",
-    price: null,
-    priceLabel: "¥ ── /月",
+    price: 5000,
+    priceLabel: "¥5,000",
     desc: "検索上位・目立つ掲載で集客強化",
     badge: null,
     color: "#f472b6",
@@ -83,8 +83,8 @@ const PLANS = [
   {
     key: "pro",
     name: "プロ",
-    price: null,
-    priceLabel: "¥ ── /月",
+    price: 8000,
+    priceLabel: "¥8,000",
     desc: "全機能無制限。これ一つで完結",
     badge: "おすすめ",
     color: "#fbbf24",
@@ -211,8 +211,9 @@ export default function ForOwnersPage() {
                   <div style={{ fontSize: 11, color: plan.color, letterSpacing: 3, marginBottom: 4 }}>{plan.name.toUpperCase()}</div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: "#fff" }}>
                     {plan.priceLabel}
-                    {plan.price === 0 && <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(200,190,220,0.6)", marginLeft: 4 }}>/月</span>}
-                    {plan.price === null && <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(200,190,220,0.6)", marginLeft: 4 }}>/月（税込）</span>}
+                    <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(200,190,220,0.6)", marginLeft: 4 }}>
+                      {plan.price === 0 ? "/月" : "/月（税込）"}
+                    </span>
                   </div>
                 </div>
                 <div style={{ fontSize: 28 }}>
