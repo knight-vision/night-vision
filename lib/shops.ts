@@ -62,14 +62,15 @@ export async function getShops(): Promise<Shop[]> {
   const { data: shops, error } = await supabase
     .from("shops")
     .select("*, casts(*)")
-    .neq("hidden", true)  // 非表示を除外
     .order("plan", { ascending: false })
     .order("id");
   if (error) return [];
   if (!shops) return [];
+  // hidden=trueの店舗を除外（カラムが存在しない場合は全件表示）
+  const filtered = shops.filter((s: any) => !s.hidden);
 
   // 各店舗の承認済み写真を取得
-  const shopIds = shops.map((s) => s.id);
+  const shopIds = filtered.map((s: any) => s.id);
   const { data: photoRequests } = await supabase
     .from("photo_requests")
     .select("shop_id, url, sort_order")
@@ -77,7 +78,7 @@ export async function getShops(): Promise<Shop[]> {
     .eq("status", "approved")
     .order("sort_order");
 
-  return shops.map((shop) => {
+  return filtered.map((shop: any) => {
     const photos = (photoRequests ?? [])
       .filter((p) => p.shop_id === shop.id)
       .map((p) => p.url);
@@ -94,10 +95,9 @@ export async function getShopsByType(type: string): Promise<Shop[]> {
     .from("shops")
     .select("*, casts(*)")
     .eq("type", type)
-    .neq("hidden", true)
     .order("id");
   if (error) throw error;
-  return shops as Shop[];
+  return (shops as Shop[]).filter((s: any) => !s.hidden);
 }
 
 export async function getShopBySlug(slug: string): Promise<Shop | null> {

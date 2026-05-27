@@ -1,59 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- 背景 -->
-  <rect width="512" height="512" rx="100" fill="#0a0a0f"/>
-
-  <!-- グラデーション定義 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <defs>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#f472b6;stop-opacity:1" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0828"/>
+      <stop offset="100%" style="stop-color:#08080f"/>
     </linearGradient>
-    <linearGradient id="eye1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b9d"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
     </linearGradient>
+    <linearGradient id="eye" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#ff9900"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-
-  <!-- フクロウ胴体 -->
-  <ellipse cx="256" cy="310" rx="130" ry="140" fill="url(#grad1)"/>
-
-  <!-- フクロウ頭 -->
-  <ellipse cx="256" cy="185" rx="110" ry="105" fill="url(#grad1)"/>
-
-  <!-- 耳（角） -->
-  <polygon points="165,110 145,50 195,95" fill="url(#grad1)"/>
-  <polygon points="347,110 367,50 317,95" fill="url(#grad1)"/>
-
-  <!-- 顔の白い部分 -->
-  <ellipse cx="256" cy="195" rx="85" ry="80" fill="#1a1030"/>
-
-  <!-- 左目 -->
-  <circle cx="215" cy="185" r="36" fill="url(#eye1)"/>
-  <circle cx="215" cy="185" r="22" fill="#0a0a0f"/>
-  <circle cx="223" cy="177" r="7" fill="#fff" opacity="0.9"/>
-
-  <!-- 右目 -->
-  <circle cx="297" cy="185" r="36" fill="url(#eye1)"/>
-  <circle cx="297" cy="185" r="22" fill="#0a0a0f"/>
-  <circle cx="305" cy="177" r="7" fill="#fff" opacity="0.9"/>
-
-  <!-- くちばし -->
-  <polygon points="256,218 237,245 275,245" fill="#fbbf24"/>
-
-  <!-- 翼（左） -->
-  <ellipse cx="135" cy="330" rx="55" ry="95" fill="#7c3aed" transform="rotate(-15, 135, 330)"/>
-
-  <!-- 翼（右） -->
-  <ellipse cx="377" cy="330" rx="55" ry="95" fill="#7c3aed" transform="rotate(15, 377, 330)"/>
-
-  <!-- 胸の模様 -->
-  <ellipse cx="256" cy="330" rx="70" ry="80" fill="#1a1030" opacity="0.5"/>
-
-  <!-- 足 -->
-  <rect x="220" y="430" width="14" height="35" rx="7" fill="#fbbf24"/>
-  <rect x="278" y="430" width="14" height="35" rx="7" fill="#fbbf24"/>
-  <rect x="206" y="458" width="12" height="8" rx="4" fill="#fbbf24" transform="rotate(-20,206,458)"/>
-  <rect x="248" y="462" width="12" height="8" rx="4" fill="#fbbf24"/>
-  <rect x="264" y="462" width="12" height="8" rx="4" fill="#fbbf24"/>
-  <rect x="293" y="458" width="12" height="8" rx="4" fill="#fbbf24" transform="rotate(20,293,458)"/>
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <ellipse cx="16" cy="22" rx="8" ry="8" fill="url(#body)" opacity="0.2"/>
+  <ellipse cx="16" cy="15" rx="8" ry="7.5" fill="#0f0f1a"/>
+  <ellipse cx="16" cy="15" rx="7.5" ry="7" fill="none" stroke="url(#body)" stroke-width="1"/>
+  <path d="M10 9 L8 4 L12 8Z" fill="url(#body)"/>
+  <path d="M22 9 L24 4 L20 8Z" fill="url(#body)"/>
+  <circle cx="12.5" cy="14.5" r="3.5" fill="#0a0a14"/>
+  <circle cx="12.5" cy="14.5" r="3.2" fill="none" stroke="url(#eye)" stroke-width="0.8" filter="url(#glow)"/>
+  <circle cx="12.5" cy="14.5" r="2" fill="url(#eye)" opacity="0.9" filter="url(#glow)"/>
+  <circle cx="12.5" cy="14.5" r="1.1" fill="#0a0a14"/>
+  <circle cx="13.2" cy="13.8" r="0.5" fill="#fff" opacity="0.9"/>
+  <circle cx="19.5" cy="14.5" r="3.5" fill="#0a0a14"/>
+  <circle cx="19.5" cy="14.5" r="3.2" fill="none" stroke="url(#eye)" stroke-width="0.8" filter="url(#glow)"/>
+  <circle cx="19.5" cy="14.5" r="2" fill="url(#eye)" opacity="0.9" filter="url(#glow)"/>
+  <circle cx="19.5" cy="14.5" r="1.1" fill="#0a0a14"/>
+  <circle cx="20.2" cy="13.8" r="0.5" fill="#fff" opacity="0.9"/>
+  <path d="M14.8 18.5 L16 20.5 L17.2 18.5Z" fill="#ffd700" opacity="0.8"/>
+  <circle cx="5" cy="5" r="0.7" fill="#ffd700" opacity="0.7" filter="url(#glow)"/>
+  <circle cx="27" cy="4" r="0.5" fill="#a855f7" opacity="0.8" filter="url(#glow)"/>
+  <circle cx="28" cy="10" r="0.4" fill="#ff6b9d" opacity="0.6"/>
 </svg>
