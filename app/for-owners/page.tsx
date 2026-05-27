@@ -285,7 +285,7 @@ export default function ForOwnersPage() {
           まずは無料のライトプランから。
         </p>
         <Link href="/join" style={{ display: "block", maxWidth: 340, margin: "0 auto 14px", background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", padding: "17px", borderRadius: 30, fontSize: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 8px 36px rgba(124,58,237,0.38)" }}>
-          無料で会員登録する →
+          無料で店舗会員登録する →
         </Link>
         <div style={{ fontSize: 12, color: "rgba(150,140,170,0.45)" }}>
           ご不明な点は <a href="mailto:info@night-vision.jp" style={{ color: "#a78bfa" }}>info@night-vision.jp</a> まで

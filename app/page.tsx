@@ -96,7 +96,7 @@ export default async function HomePage() {
             color: "#fff", padding: "10px 28px", borderRadius: 25,
             fontSize: 14, fontWeight: 700, textDecoration: "none",
           }}>
-            店舗向け登録はこちら →
+            店舗会員登録はこちら →
           </a>
         </section>
       </main>

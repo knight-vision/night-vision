@@ -8,7 +8,9 @@ type Shop = { id: number; name: string; type: string; area: string; slug: string
 export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
-  const token = params?.token as string | undefined;
+  // [[...token]] の場合、params.token は string[] または undefined
+  const tokenRaw = params?.token;
+  const token = Array.isArray(tokenRaw) ? tokenRaw[0] : (tokenRaw as string | undefined);
 
   const [step, setStep] = useState<"loading"|"confirm"|"search"|"register"|"done">(token ? "loading" : "search");
   const [shop, setShop] = useState<Shop | null>(null);
@@ -123,7 +125,7 @@ export default function JoinPage() {
             <label style={styles.label}>パスワード（確認）</label>
             <input type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="••••••••" style={{ ...styles.input, marginBottom: 20 }} />
             <button onClick={register} disabled={loading} style={styles.btn}>
-              {loading ? "登録中..." : "無料で会員登録する"}
+              {loading ? "登録中..." : "無料で店舗会員登録する"}
             </button>
             <div style={{ textAlign: "center", marginTop: 16 }}>
               <button onClick={() => setStep("search")} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
@@ -136,7 +138,7 @@ export default function JoinPage() {
         {/* 店舗検索（自分で検索） */}
         {step === "search" && (
           <>
-            <div style={styles.title}>会員登録</div>
+            <div style={styles.title}>店舗会員登録</div>
             <div style={styles.sub}>お店の名前を入力して検索してください</div>
             {error && <div style={styles.error}>{error}</div>}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -183,7 +185,7 @@ export default function JoinPage() {
         {/* 店舗選択後の登録フォーム */}
         {step === "register" && shop && (
           <>
-            <div style={styles.title}>アカウント作成</div>
+            <div style={styles.title}>店舗会員登録</div>
             <div style={{ background: "var(--accent)15", border: "1px solid var(--accent)44", borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
               <div style={{ fontSize: 11, color: "var(--accent)", marginBottom: 2 }}>選択中のお店</div>
               <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{shop.name}</div>
@@ -197,7 +199,7 @@ export default function JoinPage() {
             <label style={styles.label}>パスワード（確認）</label>
             <input type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="••••••••" style={{ ...styles.input, marginBottom: 20 }} />
             <button onClick={register} disabled={loading} style={styles.btn}>
-              {loading ? "登録中..." : "無料で会員登録する"}
+              {loading ? "登録中..." : "無料で店舗会員登録する"}
             </button>
             <div style={{ textAlign: "center", marginTop: 12 }}>
               <button onClick={() => { setStep("search"); setShop(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>← お店を選び直す</button>
