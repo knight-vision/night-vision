@@ -19,6 +19,13 @@ export async function GET(req: NextRequest) {
   const ownedIds: number[] = (ownedShops || []).map((o) => o.shop_id);
  
   // あいまい検索（ilike）
+
+  // 既にオーナー登録済みの店舗を取得
+  const { data: ownedShops } = await supabase
+    .from("shop_owners").select("shop_id");
+  const ownedIds: number[] = (ownedShops || []).map((o: any) => o.shop_id);
+
+  // あいまい検索
   let query = supabase
     .from("shops")
     .select("id, name, type, area, slug")
@@ -36,6 +43,15 @@ export async function GET(req: NextRequest) {
     console.error("[shop-search] error:", error);
   }
  
+
+  // 登録済み店舗を除外（存在する場合のみ）
+  if (ownedIds.length > 0) {
+    query = query.not("id", "in", `(${ownedIds.join(",")})`);
+  }
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
   return NextResponse.json(data || []);
 }
  

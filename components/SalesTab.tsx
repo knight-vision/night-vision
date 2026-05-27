@@ -1,6 +1,27 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import CastSalesDetail from "@/components/CastSalesDetail";
+import Link from "next/link";
+
+function PlanGate({ planName }: { planName: string }) {
+  return (
+    <div style={{ textAlign:"center", padding:"48px 24px" }}>
+      <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
+      <div style={{ fontSize:18, fontWeight:700, color:"var(--text-primary)", marginBottom:8 }}>
+        {planName}プラン以上の機能です
+      </div>
+      <div style={{ fontSize:14, color:"var(--text-muted)", marginBottom:24, lineHeight:1.8 }}>
+        売上管理・給与計算・キャスト成績管理は<br />
+        スタンダードプラン（¥3,000/月）から利用できます。
+      </div>
+      <Link href="/for-owners#plans" style={{
+        display:"inline-block", padding:"12px 28px",
+        background:"linear-gradient(135deg,#7c3aed,#db2777)",
+        color:"#fff", borderRadius:25, fontSize:14, fontWeight:700, textDecoration:"none",
+      }}>プランを見る →</Link>
+    </div>
+  );
+}
 
 type Cast = { id: number; name: string; hourly_wage: number | null };
 type DailySales = { id?: string; date: string; cash_sales: number; card_sales: number; cost: number; memo: string };
@@ -44,9 +65,11 @@ function getWeekDates(base: string): string[] {
 }
 function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number); let a=sh*60+sm,b=eh*60+em; if(b<=a)b+=1440; return b-a; }
 
-type Props = { shopId: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties };
+import { canUseSales } from "@/lib/plan";
 
-export default function SalesTab({ shopId, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
+type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties };
+
+export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
   const [view, setView] = useState<"slip"|"sales"|"cast_sales"|"menu">("slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
@@ -553,6 +576,9 @@ ${rows.map(({ cast, d, dayRows }) => `
 
       {/* ===== キャスト売上 ===== */}
       {view==="cast_sales"&&(
+        !canUseSales(shopPlan) ? (
+          <PlanGate planName="スタンダード" />
+        ) :
         <div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
             {/* 月ナビ */}
@@ -737,6 +763,9 @@ ${rows.map(({ cast, d, dayRows }) => `
 
       {/* ===== 売上表 ===== */}
       {view==="sales"&&(
+        !canUseSales(shopPlan) ? (
+          <PlanGate planName="スタンダード" />
+        ) :
         <div>
           {/* 月ナビ + 日次/月次切替 + エクスポート */}
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>

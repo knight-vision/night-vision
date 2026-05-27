@@ -1277,7 +1277,7 @@ export default function OwnerDashboard() {
 
         {/* 売上管理 */}
         {tab === "sales" && shopId && (
-          <SalesTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+          <SalesTab shopId={shopId} shopPlan={shop.plan || "free"} casts={casts} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
         )}
 
         {/* ご意見・ご要望 */}

@@ -15,13 +15,15 @@ export async function POST(req: NextRequest) {
     if (!shop_id || !owner_id) return NextResponse.json({ error: "パラメータ不足" }, { status: 400 });
     if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "STRIPE_SECRET_KEY未設定" }, { status: 500 });
 
-    // プランに応じた price_id を選択
-    const isPremium = plan === "premium";
-    const priceId = isPremium
-      ? process.env.STRIPE_PREMIUM_PRICE_ID
-      : process.env.STRIPE_PRICE_ID;
-
-    if (!priceId) return NextResponse.json({ error: `${isPremium ? "STRIPE_PREMIUM_PRICE_ID" : "STRIPE_PRICE_ID"}未設定` }, { status: 500 });
+    // プランに応じたprice_idを選択
+    const priceMap: Record<string, string | undefined> = {
+      standard: process.env.STRIPE_STANDARD_PRICE_ID,
+      premium:  process.env.STRIPE_PREMIUM_PRICE_ID,
+      pro:      process.env.STRIPE_PRO_PRICE_ID,
+      gold:     process.env.STRIPE_PRICE_ID, // 旧プラン互換
+    };
+    const priceId = priceMap[plan] || process.env.STRIPE_PRICE_ID;
+    if (!priceId) return NextResponse.json({ error: `${plan}プランのPrice IDが未設定です` }, { status: 500 });
     if (!priceId.startsWith("price_")) return NextResponse.json({ error: `Price IDの形式が不正: ${priceId.slice(0,10)}` }, { status: 500 });
 
     const { data: shop } = await supabase.from("shops").select("name, stripe_customer_id").eq("id", shop_id).single();
@@ -47,9 +49,13 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=${isPremium ? "premium" : "gold"}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&canceled=1`,
-      metadata: { shop_id: String(shop_id), plan: isPremium ? "premium" : "gold" },
+      subscription_data: {
+        trial_period_days: 30, // 1ヶ月無料トライアル
+        metadata: { shop_id: String(shop_id), plan },
+      },
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=${plan}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/for-owners#plans`,
+      metadata: { shop_id: String(shop_id), plan },
       locale: "ja",
     });
 
