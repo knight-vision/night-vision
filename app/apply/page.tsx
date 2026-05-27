@@ -66,7 +66,7 @@ export default function ApplyPage() {
   const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async () => {
-    if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail || !form.plan) {
+    if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail) {
       alert("必須項目を入力してください");
       return;
     }
@@ -131,51 +131,6 @@ export default function ApplyPage() {
             釧路ナイトビジョンへの掲載をご希望の方はこちらからお申し込みください。<br />
             内容確認後、3営業日以内にご連絡いたします。
           </p>
-        </div>
-
-        <div style={sectionStyle}>
-          <h2 style={h2Style}>申し込みプラン <span style={{ color: "var(--accent)" }}>*</span></h2>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>🎁 全プラン1ヶ月無料でお試しいただけます</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {PLAN_INFO.map((plan) => {
-              const selected = form.plan === plan.key;
-              return (
-                <div key={plan.key} onClick={() => set("plan", plan.key)} style={{
-                  background: selected ? `${plan.color}15` : "var(--bg-input)",
-                  border: `1px solid ${selected ? plan.color : "var(--border)"}`,
-                  borderRadius: 12, padding: 16, cursor: "pointer", position: "relative",
-                }}>
-                  {plan.recommended && (
-                    <div style={{
-                      position: "absolute", top: 12, right: 12,
-                      background: `linear-gradient(135deg, ${plan.color}, #db2777)`,
-                      color: "#fff", fontSize: 10, fontWeight: 800,
-                      padding: "2px 8px", borderRadius: 10,
-                    }}>おすすめ</div>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{
-                      width: 18, height: 18, borderRadius: "50%",
-                      border: `2px solid ${selected ? plan.color : "var(--border)"}`,
-                      background: selected ? plan.color : "none",
-                      flexShrink: 0,
-                    }} />
-                    <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>{plan.name}</span>
-                    <span style={{ color: plan.color, fontWeight: 700, fontSize: 13 }}>{plan.price}</span>
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 28 }}>
-                    {plan.features.map((f) => (
-                      <span key={f} style={{
-                        fontSize: 11, color: "var(--text-muted)",
-                        background: "var(--bg-card)", padding: "2px 8px", borderRadius: 10,
-                        border: "1px solid var(--border)",
-                      }}>✓ {f}</span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         <div style={sectionStyle}>

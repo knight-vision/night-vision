@@ -57,7 +57,9 @@ const EMPTY_SHOP: Partial<Shop> = {
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
-  const [tab, setTab] = useState<"shops" | "casts" | "analytics" | "applications">("applications");
+  const [tab, setTab] = useState<"shops" | "casts" | "analytics" | "applications" | "accounts">("applications");
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
   const [shopSearch, setShopSearch] = useState("");
   const [analytics, setAnalytics] = useState<{ today: number; week: number; month: number; daily: { date: string; count: number }[] } | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -118,6 +120,13 @@ export default function AdminPage() {
     const res = await fetch("/api/admin/applications");
     if (res.ok) setApplications(await res.json());
     setAppsLoading(false);
+  }
+
+  async function loadAccounts() {
+    setAccountsLoading(true);
+    const res = await fetch("/api/admin/accounts");
+    if (res.ok) setAccounts(await res.json());
+    setAccountsLoading(false);
   }
 
   async function approveApplication(id: string) {
@@ -291,11 +300,12 @@ export default function AdminPage() {
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           {[
             { key: "applications", label: "🔔 登録申請" },
+            { key: "accounts", label: "👤 アカウント管理" },
             { key: "shops", label: "店舗管理" },
             { key: "casts", label: "キャスト管理" },
             { key: "analytics", label: "📊 アクセス解析" },
           ].map((t) => (
-            <button key={t.key} onClick={() => { setTab(t.key as any); if (t.key==="applications") loadApplications(); }} style={{
+            <button key={t.key} onClick={() => { setTab(t.key as any); if (t.key==="applications") loadApplications(); if (t.key==="accounts") loadAccounts(); }} style={{
               padding: "8px 20px", borderRadius: 20, border: "none", cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 500, fontSize: 13, fontFamily: "var(--font)",
               background: tab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
@@ -311,6 +321,93 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
+
+        {/* アカウント管理タブ */}
+        {tab === "accounts" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ color: "var(--text-primary)", fontSize: 18, fontWeight: 800 }}>アカウント管理</h2>
+              <button onClick={loadAccounts} style={{ ...btnStyle, fontSize: 12, padding: "8px 14px" }}>🔄 更新</button>
+            </div>
+            {accountsLoading ? (
+              <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>読み込み中...</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {accounts.map((a: any) => (
+                  <div key={a.id + a.account_type} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 14, padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, background: a.account_type==="owner"?"var(--accent)22":"#10b98122", color: a.account_type==="owner"?"var(--accent)":"#10b981", border: `1px solid ${a.account_type==="owner"?"var(--accent)44":"#10b98144"}`, padding: "2px 8px", borderRadius: 10 }}>
+                            {a.account_type==="owner"?"🏪 オーナー":"💃 キャスト"}
+                          </span>
+                          <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{a.shop_name}</span>
+                        </div>
+                        {a.cast_name && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 2 }}>キャスト名: {a.cast_name}</div>}
+                        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{a.email}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button onClick={async () => {
+                        const newEmail = prompt("新しいメールアドレス:", a.email);
+                        if (!newEmail || newEmail === a.email) return;
+                        const res = await fetch("/api/admin/accounts/update", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: a.id, account_type: a.account_type, email: newEmail }),
+                        });
+                        const d = await res.json();
+                        if (d.success) { setMsg("メールを更新しました"); loadAccounts(); }
+                        else setMsg("エラー: " + d.error);
+                        setTimeout(() => setMsg(""), 2000);
+                      }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>
+                        ✏️ メール変更
+                      </button>
+                      <button onClick={async () => {
+                        const newPw = prompt("新しいパスワード（6文字以上）:");
+                        if (!newPw || newPw.length < 6) { alert("6文字以上のパスワードを入力してください"); return; }
+                        const res = await fetch("/api/admin/accounts/update", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: a.id, account_type: a.account_type, password: newPw }),
+                        });
+                        const d = await res.json();
+                        if (d.success) setMsg("パスワードを更新しました");
+                        else setMsg("エラー: " + d.error);
+                        setTimeout(() => setMsg(""), 2000);
+                      }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>
+                        🔑 PW変更
+                      </button>
+                      <button onClick={async () => {
+                        // そのアカウントでログイン
+                        if (a.account_type === "owner") {
+                          localStorage.setItem("owner_shop_id", String(a.shop_id));
+                          localStorage.setItem("owner_id", String(a.id));
+                          localStorage.setItem("owner_email", a.email);
+                          localStorage.setItem("owner_shop_name", a.shop_name);
+                          window.open("/owner/dashboard", "_blank");
+                        }
+                      }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "var(--accent)22", color: "var(--accent)" }}>
+                        🔓 管理画面を開く
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`${a.email} のアカウントを削除しますか？`)) return;
+                        const res = await fetch("/api/admin/accounts/delete", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: a.id, account_type: a.account_type }),
+                        });
+                        const d = await res.json();
+                        if (d.success) { setMsg("削除しました"); loadAccounts(); }
+                        else setMsg("エラー: " + d.error);
+                        setTimeout(() => setMsg(""), 2000);
+                      }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "#ff444418", color: "#ff4444" }}>
+                        🗑️ 削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 登録申請タブ */}
         {tab === "applications" && (
