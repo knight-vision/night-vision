@@ -21,17 +21,20 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !data) {
+    console.log(`[owner-login] not found: email=${email}`);
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います" }, { status: 401 });
   }
 
+  console.log(`[owner-login] found: id=${data.id} hash_prefix=${data.password_hash?.slice(0,10)}`);
+
   // bcryptハッシュと平文の両方に対応
   let passwordMatch = false;
-  if (data.password_hash.startsWith("$2")) {
-    // bcryptハッシュ
+  if (data.password_hash?.startsWith("$2")) {
     passwordMatch = await bcrypt.compare(password, data.password_hash);
+    console.log(`[owner-login] bcrypt compare result: ${passwordMatch}`);
   } else {
-    // 旧仕様の平文（後方互換）
     passwordMatch = data.password_hash === password;
+    console.log(`[owner-login] plain compare result: ${passwordMatch}`);
   }
 
   if (!passwordMatch) {

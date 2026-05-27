@@ -21,10 +21,15 @@ export async function POST(req: NextRequest) {
   if (app.status !== "pending") return NextResponse.json({ error: "すでに処理済みの申請です" }, { status: 400 });
 
   // オーナーアカウントを作成
+  console.log(`[approve] inserting owner: shop_id=${app.shop_id} email=${app.email} hash_prefix=${app.password_hash?.slice(0,10)}`);
   const { data: owner, error } = await supabase.from("shop_owners")
     .insert({ shop_id: app.shop_id, email: app.email, password_hash: app.password_hash })
     .select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[approve] insert error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  console.log(`[approve] owner created: id=${owner.id}`);
 
   // 申請を承認済みに
   await supabase.from("owner_applications").update({ status: "approved" }).eq("id", id);

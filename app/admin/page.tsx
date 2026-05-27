@@ -56,6 +56,13 @@ const EMPTY_SHOP: Partial<Shop> = {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
+
+  // ページ読み込み時にセッション確認
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("admin_authed") === "1") {
+      setAuthed(true);
+    }
+  }, []);
   const [pw, setPw] = useState("");
   const [tab, setTab] = useState<"shops" | "casts" | "analytics" | "applications" | "accounts">("applications");
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -275,12 +282,12 @@ export default function AdminPage() {
             type="password"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && pw === ADMIN_PASSWORD && setAuthed(true)}
+            onKeyDown={(e) => e.key === "Enter" && pw === ADMIN_PASSWORD && (sessionStorage.setItem("admin_authed","1"), setAuthed(true))}
             placeholder="パスワード"
             style={{ ...inputStyle, marginBottom: 12, textAlign: "center" }}
           />
           <button
-            onClick={() => pw === ADMIN_PASSWORD ? setAuthed(true) : alert("パスワードが違います")}
+            onClick={() => pw === ADMIN_PASSWORD ? (sessionStorage.setItem("admin_authed","1"), setAuthed(true)) : alert("パスワードが違います")}
             style={{ ...btnStyle, width: "100%" }}
           >ログイン</button>
         </div>
@@ -300,6 +307,16 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {msg && <span style={{ fontSize: 12, color: "var(--online)" }}>✓ {msg}</span>}
+            <button onClick={() => {
+              const newPw = prompt("新しい管理者パスワード:");
+              if (!newPw || newPw.length < 6) { alert("6文字以上で入力してください"); return; }
+              alert(`新しいパスワード: ${newPw}\n\nこのパスワードをコードに反映させるため、Claudeに「adminパスワードを${newPw}に変更して」と伝えてください。`);
+            }} style={{ fontSize: 12, color: "var(--text-muted)", border: "1px solid var(--border)", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
+              🔑 PW変更
+            </button>
+            <button onClick={() => { sessionStorage.removeItem("admin_authed"); window.location.reload(); }} style={{ fontSize: 12, color: "#ff4444", border: "1px solid #ff444444", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
+              ログアウト
+            </button>
             <a href="/" style={{ fontSize: 12, color: "var(--text-muted)", border: "1px solid var(--border)", padding: "5px 12px", borderRadius: 20 }}>サイトへ</a>
           </div>
         </div>
