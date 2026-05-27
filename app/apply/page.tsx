@@ -66,7 +66,7 @@ export default function ApplyPage() {
   const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = async () => {
-    if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail) {
+    if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail || !form.contactTel) {
       alert("必須項目を入力してください");
       return;
     }
@@ -144,7 +144,7 @@ export default function ApplyPage() {
             <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="例：釧路市末広町4-1-1" style={inputStyle} />
           </div>
           <div style={fieldStyle}>
-            <label style={labelStyle}>店舗電話番号（任意）</label>
+            <label style={labelStyle}>店舗電話番号 <span style={{ color: "var(--accent)" }}>*</span></label>
             <input value={form.shopTel} onChange={(e) => set("shopTel", e.target.value)} placeholder="例：0154-XX-XXXX" style={inputStyle} />
           </div>
           <div style={fieldStyle}>
@@ -232,7 +232,7 @@ export default function ApplyPage() {
             <input value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} placeholder="例：example@email.com" style={inputStyle} type="email" />
           </div>
           <div style={fieldStyle}>
-            <label style={labelStyle}>電話番号（任意）</label>
+            <label style={labelStyle}>電話番号 <span style={{ color: "var(--accent)" }}>*</span></label>
             <input value={form.contactTel} onChange={(e) => set("contactTel", e.target.value)} placeholder="例：090-XXXX-XXXX" style={inputStyle} />
           </div>
         </div>

@@ -9,8 +9,14 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   const { id, account_type } = await req.json();
+  if (!id || !account_type) return NextResponse.json({ error: "id・account_typeが必要です" }, { status: 400 });
   const table = account_type === "owner" ? "shop_owners" : "cast_accounts";
-  const { error } = await supabase.from(table).delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  console.log(`[accounts/delete] table=${table} id=${id}`);
+  const { error, count } = await supabase.from(table).delete().eq("id", id).select();
+  if (error) {
+    console.error("[accounts/delete] error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  console.log(`[accounts/delete] deleted count=${count}`);
   return NextResponse.json({ success: true });
 }

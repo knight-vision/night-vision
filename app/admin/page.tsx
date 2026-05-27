@@ -117,15 +117,23 @@ export default function AdminPage() {
 
   async function loadApplications() {
     setAppsLoading(true);
-    const res = await fetch("/api/admin/applications");
-    if (res.ok) setApplications(await res.json());
+    try {
+      const res = await fetch("/api/admin/applications");
+      const data = await res.json();
+      if (res.ok) setApplications(data);
+      else setMsg("申請取得エラー: " + (data.error || res.status));
+    } catch(e: any) { setMsg("通信エラー: " + e.message); }
     setAppsLoading(false);
   }
 
   async function loadAccounts() {
     setAccountsLoading(true);
-    const res = await fetch("/api/admin/accounts");
-    if (res.ok) setAccounts(await res.json());
+    try {
+      const res = await fetch("/api/admin/accounts");
+      const data = await res.json();
+      if (res.ok) setAccounts(data);
+      else setMsg("アカウント取得エラー: " + (data.error || res.status));
+    } catch(e: any) { setMsg("通信エラー: " + e.message); }
     setAccountsLoading(false);
   }
 
@@ -395,9 +403,9 @@ export default function AdminPage() {
                           body: JSON.stringify({ id: a.id, account_type: a.account_type }),
                         });
                         const d = await res.json();
-                        if (d.success) { setMsg("削除しました"); loadAccounts(); }
-                        else setMsg("エラー: " + d.error);
-                        setTimeout(() => setMsg(""), 2000);
+                        if (d.success) { setMsg("削除しました"); await loadAccounts(); }
+                        else { setMsg("削除エラー: " + (d.error || JSON.stringify(d))); }
+                        setTimeout(() => setMsg(""), 4000);
                       }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "#ff444418", color: "#ff4444" }}>
                         🗑️ 削除
                       </button>
