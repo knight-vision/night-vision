@@ -115,7 +115,7 @@ export default function OwnerLoginPage() {
                 <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6, display: "block" }}>パスワード</label>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  placeholder="発行されたパスワードを入力" style={inputStyle} />
+                  placeholder="パスワードを入力" style={inputStyle} />
               </div>
               {error && (
                 <div style={{
@@ -171,8 +171,7 @@ export default function OwnerLoginPage() {
           )}
 
           <p style={{ color: "var(--text-hint)", fontSize: 11, textAlign: "center", marginTop: 16, lineHeight: 1.8 }}>
-            ログイン情報はナイトビジョンから発行されます。<br />
-            不明な場合はお問い合わせください。
+            ご不明な点はお問い合わせください。
           </p>
         </div>
       </main>

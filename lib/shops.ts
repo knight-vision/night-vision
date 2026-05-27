@@ -62,6 +62,7 @@ export async function getShops(): Promise<Shop[]> {
   const { data: shops, error } = await supabase
     .from("shops")
     .select("*, casts(*)")
+    .neq("hidden", true)  // 非表示を除外
     .order("plan", { ascending: false })
     .order("id");
   if (error) return [];
@@ -93,6 +94,7 @@ export async function getShopsByType(type: string): Promise<Shop[]> {
     .from("shops")
     .select("*, casts(*)")
     .eq("type", type)
+    .neq("hidden", true)
     .order("id");
   if (error) throw error;
   return shops as Shop[];

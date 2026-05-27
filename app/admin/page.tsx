@@ -36,6 +36,7 @@ type Shop = {
   referred: boolean;
   closed_days: string;
   seats: number;
+  hidden?: boolean;
 };
 
 type Cast = {
@@ -715,9 +716,12 @@ export default function AdminPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {shops.filter(s => !shopSearch || s.name.toLowerCase().includes(shopSearch.toLowerCase())).map((shop) => (
-                <div key={shop.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div key={shop.id} style={{ background: "var(--bg-card)", border: `1px solid ${shop.hidden ? "#f59e0b44" : "var(--border)"}`, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", opacity: shop.hidden ? 0.7 : 1 }}>
                   <div>
-                    <div style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{shop.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 14 }}>{shop.name}</span>
+                      {shop.hidden && <span style={{ fontSize: 10, background: "#f59e0b22", color: "#f59e0b", border: "1px solid #f59e0b44", padding: "1px 6px", borderRadius: 8 }}>非表示</span>}
+                    </div>
                     <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>
                       {shop.type} · {shop.area_category} · {shop.plan}
                     </div>
@@ -725,6 +729,19 @@ export default function AdminPage() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button onClick={() => setEditShop(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>編集</button>
                     <button onClick={() => deleteShop(shop.id)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#ff444420", color: "#ff4444" }}>削除</button>
+                    <button onClick={async () => {
+                      const newHidden = !shop.hidden;
+                      await supabase.from("shops").update({ hidden: newHidden }).eq("id", shop.id);
+                      await fetchShops();
+                      setMsg(newHidden ? "非表示にしました" : "表示に戻しました");
+                      setTimeout(() => setMsg(""), 2000);
+                    }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: shop.hidden ? "#10b98120" : "#f59e0b20", color: shop.hidden ? "#10b981" : "#f59e0b" }}>
+                      {shop.hidden ? "👁 表示に戻す" : "🙈 非表示"}
+                    </button>
+                    <button onClick={() => {
+                      sessionStorage.setItem("admin_preview", "1");
+                      window.open(`/shop/${shop.slug}`, "_blank");
+                    }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>🔗 ページを開く</button>
                     <button onClick={() => issueOwnerAccount(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#00994d20", color: "#00994d" }}>アカウント発行</button>
                     <button onClick={async () => {
                       const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shop.id }) });

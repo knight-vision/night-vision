@@ -22,7 +22,6 @@ export default function Header() {
     { label: "📍 愛国エリア", href: "/area/aikoku" },
     { label: "⭐ ランキング", href: "/ranking" },
     { label: "📋 店舗一覧", href: "/" },
-    { label: "📝 店舗会員登録（無料）", href: "/join" },
     { label: "📝 店舗会員登録はこちら", href: "/for-owners" },
     { label: "🚨 店舗情報の報告", href: "/report" },
     { label: "📩 お問い合わせ", href: "/contact" },
