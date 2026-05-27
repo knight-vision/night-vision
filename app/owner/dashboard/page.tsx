@@ -1288,10 +1288,10 @@ export default function OwnerDashboard() {
         {/* プラン */}
         {tab === "plan" && (
           <div style={sectionStyle}>
-            {/* 成功・キャンセルメッセージ */}
-            {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("success") === "1" && (
+            {/* 成功メッセージ */}
+            {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("success") && (
               <div style={{ background: "var(--online-bg)", border: "1px solid var(--online-border)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, color: "var(--online)", fontWeight: 700 }}>
-                ✅ ゴールドプランへのアップグレードが完了しました！
+                ✅ プランへのアップグレードが完了しました！1ヶ月間は無料でご利用いただけます。
               </div>
             )}
             {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("canceled") === "1" && (
@@ -1301,122 +1301,164 @@ export default function OwnerDashboard() {
             )}
 
             {/* 現在のプラン */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>現在のプラン</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  fontSize: 20, fontWeight: 900, color: "var(--text-primary)",
-                }}>
-                  {shop.plan === "gold" || shop.plan === "standard" || shop.plan === "premium" ? "💎 ゴールドプラン" : "🆓 フリープラン"}
-                </div>
-                {(shop.plan === "gold" || shop.plan === "standard") && (
-                  <span style={{ fontSize: 12, background: "var(--accent)22", color: "var(--accent)", border: "1px solid var(--accent)44", padding: "2px 10px", borderRadius: 10 }}>
-                    月額 ¥3,000
-                  </span>
-                )}
-              </div>
-            </div>
+            {(()=>{
+              const planInfo: Record<string, { label: string; icon: string; price: string; color: string }> = {
+                free:     { label: "ライトプラン", icon: "⭐", price: "¥0/月", color: "#6b7280" },
+                light:    { label: "ライトプラン", icon: "⭐", price: "¥0/月", color: "#6b7280" },
+                standard: { label: "スタンダードプラン", icon: "🌙", price: "¥3,000/月", color: "#a78bfa" },
+                premium:  { label: "プレミアムプラン", icon: "💡", price: "¥5,000/月", color: "#f472b6" },
+                pro:      { label: "プロプラン", icon: "🌃", price: "¥8,000/月", color: "#fbbf24" },
+                gold:     { label: "ゴールドプラン", icon: "💎", price: "¥3,000/月", color: "#a78bfa" },
+              };
+              const current = planInfo[shop.plan] || planInfo.free;
+              const isPaid = ["standard","premium","pro","gold"].includes(shop.plan);
 
-            {/* フリープランの場合：アップグレードボタン */}
-            {(shop.plan === "free") && (
-              <div style={{ background: "linear-gradient(135deg, var(--accent)15, var(--accent2)08)", border: "1px solid var(--accent)44", borderRadius: 16, padding: 20, marginBottom: 20 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 8 }}>💎 ゴールドプランにアップグレード</div>
-                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4, lineHeight: 1.8 }}>月額 <strong style={{ color: "var(--accent)", fontSize: 16 }}>¥3,000</strong>（税込）</div>
-                <ul style={{ margin: "8px 0 16px", paddingLeft: 18, color: "var(--text-muted)", fontSize: 13, lineHeight: 2 }}>
-                  <li>バナー写真の掲載</li>
-                  <li>おすすめ優先表示</li>
-                  <li>求人情報の掲載</li>
-                </ul>
-                <button
-                  onClick={async () => {
-                    const btn = document.getElementById("upgrade-btn") as HTMLButtonElement;
-                    if (btn) { btn.disabled = true; btn.textContent = "処理中..."; }
-                    try {
-                      const res = await fetch("/api/stripe/checkout", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }),
-                      });
-                      const data = await res.json();
-                      if (data.url && data.url.startsWith("https://checkout.stripe.com")) {
-                        window.location.href = data.url;
-                      } else if (data.url) {
-                        showMsg("URLエラー: " + data.url.slice(0, 50));
-                        if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
-                      } else {
-                        showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました"));
-                        if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
-                      }
-                    } catch(e: any) {
-                      showMsg("通信エラー: " + e.message);
-                      if (btn) { btn.disabled = false; btn.textContent = "🚀 プランをアップグレードする"; }
-                    }
-                  }}
-                  id="upgrade-btn"
-                  style={{ ...btnPrimary, width: "100%" } as React.CSSProperties}
-                >
-                  🚀 プランをアップグレードする
-                </button>
-                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 8, textAlign: "center" }}>
-                  Stripeの安全な決済画面に移動します。いつでもキャンセル可能です。
-                </p>
-              </div>
-            )}
+              return (
+                <>
+                  {/* 現在のプラン表示 */}
+                  <div style={{ background: `${current.color}15`, border: `1px solid ${current.color}44`, borderRadius: 16, padding: "18px 20px", marginBottom: 24 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>現在のプラン</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 28 }}>{current.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)" }}>{current.label}</div>
+                        <div style={{ fontSize: 13, color: current.color, fontWeight: 700 }}>{current.price}（税込）</div>
+                      </div>
+                    </div>
+                    {isPaid && (
+                      <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
+                        🎁 初月無料トライアル中 · 翌月以降に請求が発生します
+                      </div>
+                    )}
+                  </div>
 
-            {/* ゴールドプランの場合：管理・解約 */}
-            {(shop.plan === "gold" || shop.plan === "standard") && (
-              <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>プランの管理</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <button
-                    onClick={async () => {
-                      const res = await fetch("/api/stripe/portal", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ shop_id: shopId }),
-                      });
-                      const data = await res.json();
-                      if (data.url) window.location.href = data.url;
-                      else showMsg(data.error || "管理ポータルの起動に失敗しました");
-                    }}
-                    style={{ padding: "10px 20px", borderRadius: 10, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
-                  >
-                    🔧 お支払い情報・カードの変更
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm("フリープランに変更しますか？\nゴールドプランの機能（バナー・求人掲載・優先表示）が利用できなくなります。")) return;
-                      const res = await fetch("/api/stripe/cancel", {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ shop_id: shopId }),
-                      });
-                      const data = await res.json();
-                      if (data.success) {
-                        showMsg("フリープランに変更しました");
-                        setTimeout(() => window.location.reload(), 1500);
-                      } else {
-                        showMsg(data.error || "変更に失敗しました");
-                      }
-                    }}
-                    style={{ padding: "10px 20px", borderRadius: 10, background: "#ff444418", border: "1px solid #ff444444", color: "#ff4444", fontSize: 14, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
-                  >
-                    ⬇️ フリープランに変更（解約）
-                  </button>
-                </div>
-                <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 10 }}>
-                  解約すると当月末まではゴールドプランが継続します。
-                </p>
-              </div>
-            )}
+                  {/* プラン一覧 */}
+                  {(()=>{
+                    const plans = [
+                      {
+                        key: "standard", name: "スタンダード", icon: "🌙", price: "¥3,000", color: "#a78bfa",
+                        desc: "売上・給与をまるごと管理",
+                        features: ["ライトの全機能", "伝票・日次売上管理", "月次売上グラフ・分析", "キャスト別売上・成績", "給与計算・明細PDF出力", "CSVエクスポート"],
+                      },
+                      {
+                        key: "premium", name: "プレミアム", icon: "💡", price: "¥5,000", color: "#f472b6",
+                        desc: "検索上位・目立つ掲載で集客強化",
+                        features: ["ライトの全機能", "バナー写真・キャスト写真掲載", "おすすめ優先表示", "求人情報の掲載", "LINE通知"],
+                      },
+                      {
+                        key: "pro", name: "プロ", icon: "🌃", price: "¥8,000", color: "#fbbf24",
+                        desc: "全機能無制限。これ一つで完結",
+                        features: ["全プランの機能をすべて含む", "バナー・優先表示・求人", "売上・給与・成績管理", "LINE通知", "優先サポート"],
+                        badge: "おすすめ",
+                      },
+                    ];
+
+                    return plans.map(plan => {
+                      const isCurrent = shop.plan === plan.key;
+                      return (
+                        <div key={plan.key} style={{
+                          background: plan.badge ? `${plan.color}12` : "var(--bg-input)",
+                          border: `1px solid ${isCurrent ? plan.color : plan.badge ? plan.color+"44" : "var(--border)"}`,
+                          borderRadius: 16, padding: "18px 20px", marginBottom: 12, position: "relative",
+                        }}>
+                          {plan.badge && !isCurrent && (
+                            <div style={{ position: "absolute", top: -10, right: 16, background: `linear-gradient(135deg,${plan.color},#db2777)`, fontSize: 10, color: "#fff", fontWeight: 800, padding: "3px 12px", borderRadius: 20 }}>
+                              ⭐ {plan.badge}
+                            </div>
+                          )}
+                          {isCurrent && (
+                            <div style={{ position: "absolute", top: -10, right: 16, background: plan.color, fontSize: 10, color: "#fff", fontWeight: 800, padding: "3px 12px", borderRadius: 20 }}>
+                              ✓ 現在のプラン
+                            </div>
+                          )}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                            <div>
+                              <div style={{ fontSize: 11, color: plan.color, letterSpacing: 2, marginBottom: 3 }}>{plan.icon} {plan.name.toUpperCase()}</div>
+                              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>{plan.price}<span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>/月（税込）</span></div>
+                              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{plan.desc}</div>
+                            </div>
+                          </div>
+                          <div style={{ marginBottom: 14 }}>
+                            {plan.features.map(f => (
+                              <div key={f} style={{ fontSize: 12, color: "rgba(200,190,220,0.8)", display: "flex", gap: 6, marginBottom: 4 }}>
+                                <span style={{ color: plan.color }}>✓</span>{f}
+                              </div>
+                            ))}
+                          </div>
+                          {!isCurrent && (
+                            <button
+                              onClick={async () => {
+                                const btn = document.getElementById(`upgrade-btn-${plan.key}`) as HTMLButtonElement;
+                                if (btn) { btn.disabled = true; btn.textContent = "処理中..."; }
+                                try {
+                                  const res = await fetch("/api/stripe/checkout", {
+                                    method: "POST", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, plan: plan.key }),
+                                  });
+                                  const data = await res.json();
+                                  if (data.url && data.url.startsWith("https://checkout.stripe.com")) {
+                                    window.location.href = data.url;
+                                  } else {
+                                    showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました"));
+                                    if (btn) { btn.disabled = false; btn.textContent = `🚀 1ヶ月無料で試す`; }
+                                  }
+                                } catch(e: any) {
+                                  showMsg("通信エラー: " + e.message);
+                                  if (btn) { btn.disabled = false; btn.textContent = `🚀 1ヶ月無料で試す`; }
+                                }
+                              }}
+                              id={`upgrade-btn-${plan.key}`}
+                              style={{ width: "100%", padding: "11px", background: `linear-gradient(135deg,${plan.color}44,${plan.color}22)`, border: `1px solid ${plan.color}55`, borderRadius: 12, color: plan.color, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)" }}
+                            >
+                              🚀 1ヶ月無料で試す
+                            </button>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+
+                  {/* 有料プランの管理 */}
+                  {isPaid && (
+                    <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 20, marginTop: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>プランの管理</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <button
+                          onClick={async () => {
+                            const res = await fetch("/api/stripe/portal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId }) });
+                            const data = await res.json();
+                            if (data.url) window.location.href = data.url;
+                            else showMsg(data.error || "管理ポータルの起動に失敗しました");
+                          }}
+                          style={{ padding: "10px 20px", borderRadius: 10, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 13, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
+                        >
+                          🔧 お支払い情報・カードの変更
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("ライトプラン（無料）に変更しますか？\n有料機能が利用できなくなります。")) return;
+                            const res = await fetch("/api/stripe/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId }) });
+                            const data = await res.json();
+                            if (data.success) { showMsg("ライトプランに変更しました"); setTimeout(() => window.location.reload(), 1500); }
+                            else showMsg(data.error || "変更に失敗しました");
+                          }}
+                          style={{ padding: "10px 20px", borderRadius: 10, background: "#ff444418", border: "1px solid #ff444444", color: "#ff4444", fontSize: 13, cursor: "pointer", fontFamily: "var(--font)", textAlign: "left" as const }}
+                        >
+                          ⬇️ ライトプランに変更（解約）
+                        </button>
+                      </div>
+                      <p style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 10 }}>解約すると当月末まで現在のプランが継続します。</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
-              <button onClick={requestClose} style={{
-                width: "100%", padding: "12px",
-                background: "#ff444420", border: "1px solid #ff444444",
-                borderRadius: 12, color: "#ff4444",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
-              }}>掲載終了を申請する</button>
-              <p style={{ color: "var(--text-hint)", fontSize: 11, textAlign: "center", marginTop: 8 }}>
-                申請後、担当者からご連絡します。
-              </p>
+              <button onClick={requestClose} style={{ width: "100%", padding: "12px", background: "#ff444420", border: "1px solid #ff444444", borderRadius: 12, color: "#ff4444", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                掲載終了を申請する
+              </button>
+              <p style={{ color: "var(--text-hint)", fontSize: 11, textAlign: "center", marginTop: 8 }}>申請後、担当者からご連絡します。</p>
             </div>
           </div>
         )}
