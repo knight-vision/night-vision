@@ -7,22 +7,46 @@ const PLAN_INFO = [
     key: "free",
     name: "フリープラン",
     price: "無料",
+    color: "#10b981",
     features: [
       "店舗名・業種・エリア掲載",
       "営業時間・所在地表示",
-      "キャスト登録（無制限）",
-      "キャストシフトスケジュール表示",
+      "キャスト登録・シフト管理",
     ],
   },
   {
-    key: "gold",
-    name: "ゴールドプラン",
-    price: "月額 3,000円",
+    key: "standard",
+    name: "スタンダードプラン",
+    price: "月額 ¥3,000",
+    color: "#a78bfa",
     features: [
       "フリーの全機能",
-      "バナー写真掲載",
-      "おすすめ優先表示",
+      "伝票・日次売上管理",
+      "キャスト別売上・給与管理",
+      "売上グラフ・CSV出力",
+    ],
+  },
+  {
+    key: "premium",
+    name: "プレミアムプラン",
+    price: "月額 ¥5,000",
+    color: "#f472b6",
+    features: [
+      "フリーの全機能",
+      "バナー写真・優先表示",
       "求人情報の掲載",
+      "LINE通知",
+    ],
+  },
+  {
+    key: "pro",
+    name: "プロプラン",
+    price: "月額 ¥8,000",
+    color: "#fbbf24",
+    features: [
+      "全プランの機能をすべて含む",
+      "売上管理＋集客＋求人",
+      "優先サポート",
     ],
     recommended: true,
   },
@@ -111,43 +135,46 @@ export default function ApplyPage() {
 
         <div style={sectionStyle}>
           <h2 style={h2Style}>申し込みプラン <span style={{ color: "var(--accent)" }}>*</span></h2>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>🎁 全プラン1ヶ月無料でお試しいただけます</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {PLAN_INFO.map((plan) => (
-              <div key={plan.key} onClick={() => set("plan", plan.key)} style={{
-                background: form.plan === plan.key
-                  ? "linear-gradient(135deg, var(--accent)15, var(--accent2)15)"
-                  : "var(--bg-input)",
-                border: "1px solid " + (form.plan === plan.key ? "var(--accent)55" : "var(--border)"),
-                borderRadius: 12, padding: 16, cursor: "pointer", position: "relative",
-              }}>
-                {plan.recommended && (
-                  <div style={{
-                    position: "absolute", top: 12, right: 12,
-                    background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                    color: "#fff", fontSize: 10, fontWeight: 800,
-                    padding: "2px 8px", borderRadius: 10,
-                  }}>おすすめ</div>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: "50%",
-                    border: "2px solid " + (form.plan === plan.key ? "var(--accent)" : "var(--border-hover)"),
-                    background: form.plan === plan.key ? "var(--accent)" : "none",
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>{plan.name}</span>
-                  <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 13 }}>{plan.price}</span>
+            {PLAN_INFO.map((plan) => {
+              const selected = form.plan === plan.key;
+              return (
+                <div key={plan.key} onClick={() => set("plan", plan.key)} style={{
+                  background: selected ? `${plan.color}15` : "var(--bg-input)",
+                  border: `1px solid ${selected ? plan.color : "var(--border)"}`,
+                  borderRadius: 12, padding: 16, cursor: "pointer", position: "relative",
+                }}>
+                  {plan.recommended && (
+                    <div style={{
+                      position: "absolute", top: 12, right: 12,
+                      background: `linear-gradient(135deg, ${plan.color}, #db2777)`,
+                      color: "#fff", fontSize: 10, fontWeight: 800,
+                      padding: "2px 8px", borderRadius: 10,
+                    }}>おすすめ</div>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: "50%",
+                      border: `2px solid ${selected ? plan.color : "var(--border)"}`,
+                      background: selected ? plan.color : "none",
+                      flexShrink: 0,
+                    }} />
+                    <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }}>{plan.name}</span>
+                    <span style={{ color: plan.color, fontWeight: 700, fontSize: 13 }}>{plan.price}</span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 28 }}>
+                    {plan.features.map((f) => (
+                      <span key={f} style={{
+                        fontSize: 11, color: "var(--text-muted)",
+                        background: "var(--bg-card)", padding: "2px 8px", borderRadius: 10,
+                        border: "1px solid var(--border)",
+                      }}>✓ {f}</span>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 28 }}>
-                  {plan.features.map((f) => (
-                    <span key={f} style={{
-                      fontSize: 11, color: "var(--text-muted)",
-                      background: "var(--bg-input)", padding: "2px 8px", borderRadius: 10,
-                    }}>✓ {f}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

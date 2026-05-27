@@ -17,6 +17,7 @@ export default function JoinPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Shop[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -37,6 +38,7 @@ export default function JoinPage() {
   const searchShops = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
+    setSearched(false);
     setError("");
     try {
       const res = await fetch(`/api/shop-search?q=${encodeURIComponent(searchQuery)}`);
@@ -52,6 +54,7 @@ export default function JoinPage() {
       setSearchResults([]);
     }
     setSearching(false);
+    setSearched(true);
   };
 
   // 登録実行
@@ -165,7 +168,7 @@ export default function JoinPage() {
               </div>
             )}
 
-            {searchResults.length === 0 && searchQuery && !searching && (
+            {searchResults.length === 0 && searched && !searching && (
               <div style={{ textAlign: "center", padding: "16px 0", marginBottom: 16 }}>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>「{searchQuery}」に一致するお店が見つかりませんでした</div>
                 <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>店舗名の一部でも検索できます（例：「ラウンジ」「光」）</div>
