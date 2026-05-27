@@ -11,25 +11,24 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q) return NextResponse.json([]);
 
-  // 既にオーナー登録済みの店舗を取得
-  const { data: ownedShops } = await supabase
-    .from("shop_owners").select("shop_id");
-  const ownedIds: number[] = (ownedShops || []).map((o: any) => o.shop_id);
-
-  // あいまい検索
-  let query = supabase
+  // まず全店舗をあいまい検索
+  const { data: shops, error } = await supabase
     .from("shops")
     .select("id, name, type, area, slug")
     .ilike("name", `%${q}%`)
-    .limit(10);
+    .limit(20);
 
-  // 登録済み店舗を除外（存在する場合のみ）
-  if (ownedIds.length > 0) {
-    query = query.not("id", "in", `(${ownedIds.join(",")})`);
-  }
-
-  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!shops || shops.length === 0) return NextResponse.json([]);
 
-  return NextResponse.json(data || []);
+  // 登録済みのshop_idを取得
+  const { data: ownedShops } = await supabase
+    .from("shop_owners")
+    .select("shop_id");
+  const ownedIds = new Set((ownedShops || []).map((o: any) => Number(o.shop_id)));
+
+  // 登録済みを除外
+  const results = shops.filter(s => !ownedIds.has(Number(s.id)));
+
+  return NextResponse.json(results);
 }

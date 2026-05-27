@@ -168,7 +168,8 @@ export default function JoinPage() {
 
             {searchResults.length === 0 && searchQuery && !searching && (
               <div style={{ textAlign: "center", padding: "16px 0", marginBottom: 16 }}>
-                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>お店が見つかりませんでした</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>「{searchQuery}」に一致するお店が見つかりませんでした</div>
+                <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>店舗名の一部でも検索できます（例：「ラウンジ」「光」）</div>
                 <Link href="/apply" style={{ fontSize: 13, color: "var(--accent)", textDecoration: "none", border: "1px solid var(--accent)44", padding: "8px 16px", borderRadius: 10 }}>
                   新規掲載を申し込む →
                 </Link>
