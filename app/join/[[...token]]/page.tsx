@@ -36,9 +36,20 @@ export default function JoinPage() {
   const searchShops = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
-    const res = await fetch(`/api/shop-search?q=${encodeURIComponent(searchQuery)}`);
-    const data = await res.json();
-    setSearchResults(data || []);
+    setError("");
+    try {
+      const res = await fetch(`/api/shop-search?q=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setSearchResults(data);
+      } else {
+        setSearchResults([]);
+        if (data.error) setError("検索エラー: " + data.error);
+      }
+    } catch(e: any) {
+      setError("通信エラー: " + e.message);
+      setSearchResults([]);
+    }
     setSearching(false);
   };
 

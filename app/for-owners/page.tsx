@@ -10,12 +10,12 @@ export const metadata: Metadata = {
 const PLANS = [
   {
     key: "light",
-    name: "ライト",
+    name: "フリー",
     price: 0,
     priceLabel: "無料",
     desc: "まず掲載して、集客を始める",
     badge: null,
-    color: "#6b7280",
+    color: "#10b981",
     features: [
       "店舗情報・営業時間の掲載",
       "キャスト情報の掲載",
@@ -238,11 +238,14 @@ export default function ForOwnersPage() {
 
               <Link href={plan.href} style={{
                 display: "block", textAlign: "center", padding: "13px",
-                background: plan.badge ? "linear-gradient(135deg,#f59e0b,#db2777)" : `linear-gradient(135deg,${plan.color}44,${plan.color}22)`,
-                border: `1px solid ${plan.color}55`,
+                background: plan.key === "light"
+                  ? "linear-gradient(135deg, #10b981, #059669)"
+                  : plan.badge ? "linear-gradient(135deg,#f59e0b,#db2777)" : `linear-gradient(135deg,${plan.color}44,${plan.color}22)`,
+                border: plan.key === "light" ? "none" : `1px solid ${plan.color}55`,
                 borderRadius: 14, fontSize: 14, fontWeight: 700,
-                color: plan.badge ? "#fff" : plan.color,
+                color: (plan.key === "light" || plan.badge) ? "#fff" : plan.color,
                 textDecoration: "none",
+                boxShadow: plan.key === "light" ? "0 4px 20px rgba(16,185,129,0.3)" : "none",
               }}>
                 {plan.cta} →
               </Link>

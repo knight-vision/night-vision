@@ -17,17 +17,25 @@ export async function POST(req: NextRequest) {
   let shopName: string;
 
   if (token) {
-    // 招待トークン経由
-    const { data: invite } = await supabase.from("invite_tokens")
-      .select("*, shops(id, name)")
-      .eq("token", token)
-      .is("used_at", null)
-      .single();
-    if (!invite) return NextResponse.json({ error: "無効または使用済みのURLです" }, { status: 404 });
-    resolvedShopId = invite.shop_id;
-    shopName = (invite.shops as any)?.name || "";
-    // トークンを使用済みに
-    await supabase.from("invite_tokens").update({ used_at: new Date().toISOString() }).eq("token", token);
+    // 招待トークン経由（テーブルが存在しない場合はshop_idで代替）
+    try {
+      const { data: invite } = await supabase.from("invite_tokens")
+        .select("*, shops(id, name)")
+        .eq("token", token)
+        .is("used_at", null)
+        .single();
+      if (!invite) return NextResponse.json({ error: "無効または使用済みのURLです" }, { status: 404 });
+      resolvedShopId = invite.shop_id;
+      shopName = (invite.shops as any)?.name || "";
+      await supabase.from("invite_tokens").update({ used_at: new Date().toISOString() }).eq("token", token);
+    } catch {
+      // invite_tokensテーブルが存在しない場合はshop_idが必要
+      if (!shop_id) return NextResponse.json({ error: "招待URLが無効です。店舗名から検索してください" }, { status: 404 });
+      const { data: shop } = await supabase.from("shops").select("id, name").eq("id", shop_id).single();
+      if (!shop) return NextResponse.json({ error: "店舗が見つかりません" }, { status: 404 });
+      resolvedShopId = shop.id;
+      shopName = shop.name;
+    }
   } else if (shop_id) {
     // 店舗検索から直接
     const { data: shop } = await supabase.from("shops").select("id, name").eq("id", shop_id).single();
