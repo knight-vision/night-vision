@@ -87,6 +87,7 @@ export default function AdminPage() {
       fetchShops();
       fetchCasts();
       loadApplications();
+      loadAccounts();
     }
   }, [authed]);
 
@@ -372,7 +373,9 @@ export default function AdminPage() {
                         {a.cast_name && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 2 }}>キャスト名: {a.cast_name}</div>}
                         <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{a.email}</div>
                         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, fontFamily: "monospace" }}>
-                          PW: {a.password_hash?.startsWith("$2") ? <span style={{ color: "#f59e0b" }}>bcrypt（変更不可表示）</span> : <span style={{ color: "#10b981" }}>{a.password_hash}</span>}
+                          PW: {a.password_hash?.startsWith("$2")
+  ? <><span style={{ color: "#f59e0b", marginRight: 6 }}>不明（bcrypt）</span><button onClick={async () => { const np = prompt("新しいパスワードを設定:"); if (!np || np.length < 4) return; const r = await fetch("/api/admin/accounts/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:a.id,account_type:a.account_type,password:np})}); const d = await r.json(); if(d.success){setMsg("PW変更済: "+np);loadAccounts();}else setMsg("エラー:"+d.error); setTimeout(()=>setMsg(""),5000); }} style={{fontSize:10,padding:"2px 8px",background:"#f59e0b22",border:"1px solid #f59e0b44",color:"#f59e0b",borderRadius:6,cursor:"pointer"}}>発行し直す</button></>
+  : <span style={{ color: "#10b981" }}>{a.password_hash}</span>}
                         </div>
                       </div>
                     </div>
@@ -405,13 +408,12 @@ export default function AdminPage() {
                       }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>
                         🔑 PW変更
                       </button>
-                      <button onClick={async () => {
-                        // そのアカウントでログイン
+                      <button onClick={() => {
                         if (a.account_type === "owner") {
                           localStorage.setItem("owner_shop_id", String(a.shop_id));
                           localStorage.setItem("owner_id", String(a.id));
                           localStorage.setItem("owner_email", a.email);
-                          localStorage.setItem("owner_shop_name", a.shop_name);
+                          localStorage.setItem("owner_shop_name", a.shop_name || "");
                           window.open("/owner/dashboard", "_blank");
                         }
                       }} style={{ ...btnStyle, padding: "6px 12px", fontSize: 12, background: "var(--accent)22", color: "var(--accent)" }}>
@@ -741,10 +743,19 @@ export default function AdminPage() {
                     }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: shop.hidden ? "#10b98120" : "#f59e0b20", color: shop.hidden ? "#10b981" : "#f59e0b" }}>
                       {shop.hidden ? "👁 表示に戻す" : "🙈 非表示"}
                     </button>
-                    <button onClick={() => {
-                      sessionStorage.setItem("admin_preview", "1");
-                      window.open(`/shop/${shop.slug}`, "_blank");
-                    }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>🔗 ページを開く</button>
+                      <button onClick={async () => {
+                        // オーナーアカウントを探してログイン
+                        const ownerAccount = accounts.find((a: any) => a.account_type === "owner" && a.shop_id === shop.id);
+                        if (ownerAccount) {
+                          localStorage.setItem("owner_shop_id", String(ownerAccount.shop_id));
+                          localStorage.setItem("owner_id", String(ownerAccount.id));
+                          localStorage.setItem("owner_email", ownerAccount.email);
+                          localStorage.setItem("owner_shop_name", shop.name);
+                          window.open("/owner/dashboard", "_blank");
+                        } else {
+                          alert("この店舗のオーナーアカウントがありません。先にアカウントを発行してください。");
+                        }
+                      }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--accent)22", color: "var(--accent)" }}>🔓 管理画面へ</button>
                     <button onClick={() => issueOwnerAccount(shop)} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "#00994d20", color: "#00994d" }}>アカウント発行</button>
                     <button onClick={async () => {
                       const res = await fetch("/api/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shop.id }) });
@@ -822,45 +833,35 @@ export default function AdminPage() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {shopCasts.map((cast) => {
-                      // accountsからキャストのアカウント情報を探す
-                      const castAccount = accounts.find(a => a.account_type === "cast" && a.cast_id === cast.id);
+                      const castAccount = accounts.find((a: any) => a.account_type === "cast" && Number(a.cast_id) === Number(cast.id));
                       return (
-                      <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: castAccount ? 8 : 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <button
-                            onClick={() => toggleOnToday(cast)}
-                            style={{
-                              width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-                              background: cast.on_today ? "var(--online)" : "var(--border-hover)",
-                              position: "relative", transition: "background 0.2s",
-                            }}
-                          >
-                            <span style={{
-                              position: "absolute", top: 3, left: cast.on_today ? 22 : 3,
-                              width: 18, height: 18, borderRadius: "50%", background: "#fff",
-                              transition: "left 0.2s",
-                            }} />
-                          </button>
-                          <div>
-                            <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 13 }}>{cast.name}</span>
-                            <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 6 }}>{cast.age}歳</span>
-                            <span style={{ color: cast.on_today ? "var(--online)" : "var(--text-hint)", fontSize: 11, marginLeft: 8 }}>
-                              {cast.on_today ? "本日出勤" : "休み"}
-                            </span>
+                        <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: castAccount ? 8 : 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <button onClick={() => toggleOnToday(cast)} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", background: cast.on_today ? "var(--online)" : "var(--border-hover)", position: "relative", transition: "background 0.2s" }}>
+                                <span style={{ position: "absolute", top: 3, left: cast.on_today ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+                              </button>
+                              <div>
+                                <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 13 }}>{cast.name}</span>
+                                <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 6 }}>{cast.age}歳</span>
+                                <span style={{ color: cast.on_today ? "var(--online)" : "var(--text-hint)", fontSize: 11, marginLeft: 8 }}>{cast.on_today ? "本日出勤" : "休み"}</span>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => setEditCast(cast)} style={{ ...btnStyle, padding: "4px 12px", fontSize: 11, background: "var(--bg-input)", color: "var(--text-secondary)" }}>編集</button>
+                              <button onClick={() => deleteCast(cast.id)} style={{ ...btnStyle, padding: "4px 12px", fontSize: 11, background: "#ff444420", color: "#ff4444" }}>削除</button>
+                            </div>
                           </div>
+                          {castAccount ? (
+                            <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-input)", borderRadius: 6, padding: "6px 10px", fontFamily: "monospace" }}>
+                              📧 {castAccount.email}　PW: {castAccount.password_hash?.startsWith("$2")
+                                ? <span style={{ color: "#f59e0b" }}>bcrypt（PW変更で上書き可）</span>
+                                : <span style={{ color: "#10b981" }}>{castAccount.password_hash}</span>}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 10, color: "var(--text-hint)" }}>アカウント未発行</div>
+                          )}
                         </div>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button onClick={() => setEditCast(cast)} style={{ ...btnStyle, padding: "4px 12px", fontSize: 11, background: "var(--bg-input)", color: "var(--text-secondary)" }}>編集</button>
-                          <button onClick={() => deleteCast(cast.id)} style={{ ...btnStyle, padding: "4px 12px", fontSize: 11, background: "#ff444420", color: "#ff4444" }}>削除</button>
-                        </div>
-                      </div>
-                      {castAccount && (
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-input)", borderRadius: 6, padding: "4px 10px", fontFamily: "monospace" }}>
-                          📧 {castAccount.email}　PW: {castAccount.password_hash?.startsWith("$2") ? <span style={{ color: "#f59e0b" }}>bcrypt</span> : castAccount.password_hash}
-                        </div>
-                      )}
-                      </div>
                       );
                     })}
                   </div>
