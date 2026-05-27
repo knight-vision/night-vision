@@ -34,19 +34,13 @@ export default function JoinPage() {
       });
   }, [token]);
 
-  const [debugInfo, setDebugInfo] = useState("");
-
-  // 店舗名あいまい検索
   const searchShops = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
     setError("");
-    setDebugInfo("");
     try {
       const res = await fetch(`/api/shop-search?q=${encodeURIComponent(searchQuery)}`);
-      const text = await res.text();
-      setDebugInfo(`status:${res.status} body:${text.slice(0, 200)}`);
-      const data = JSON.parse(text);
+      const data = await res.json();
       if (Array.isArray(data)) {
         setSearchResults(data);
       } else {
@@ -158,12 +152,6 @@ export default function JoinPage() {
                 {searching ? "..." : "検索"}
               </button>
             </div>
-
-            {debugInfo && (
-              <div style={{ fontSize: 10, color: "var(--text-hint)", background: "var(--bg-input)", borderRadius: 8, padding: "8px 10px", marginBottom: 8, wordBreak: "break-all" }}>
-                {debugInfo}
-              </div>
-            )}
 
             {searchResults.length > 0 && (
               <div style={{ marginBottom: 16 }}>

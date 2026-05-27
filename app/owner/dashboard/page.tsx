@@ -1303,15 +1303,16 @@ export default function OwnerDashboard() {
             {/* 現在のプラン */}
             {(()=>{
               const planInfo: Record<string, { label: string; icon: string; price: string; color: string }> = {
-                free:     { label: "ライトプラン", icon: "⭐", price: "¥0/月", color: "#6b7280" },
-                light:    { label: "ライトプラン", icon: "⭐", price: "¥0/月", color: "#6b7280" },
+                free:     { label: "フリープラン", icon: "⭐", price: "¥0/月", color: "#10b981" },
+                light:    { label: "フリープラン", icon: "⭐", price: "¥0/月", color: "#10b981" },
                 standard: { label: "スタンダードプラン", icon: "🌙", price: "¥3,000/月", color: "#a78bfa" },
                 premium:  { label: "プレミアムプラン", icon: "💡", price: "¥5,000/月", color: "#f472b6" },
                 pro:      { label: "プロプラン", icon: "🌃", price: "¥8,000/月", color: "#fbbf24" },
-                gold:     { label: "ゴールドプラン", icon: "💎", price: "¥3,000/月", color: "#a78bfa" },
+                gold:     { label: "スタンダードプラン", icon: "🌙", price: "¥3,000/月", color: "#a78bfa" },
               };
-              const current = planInfo[shop.plan] || planInfo.free;
-              const isPaid = ["standard","premium","pro","gold"].includes(shop.plan);
+              const currentPlan = shop.plan || "free";
+              const current = planInfo[currentPlan] || planInfo.free;
+              const isPaid = ["standard","premium","pro","gold"].includes(currentPlan);
 
               return (
                 <>
@@ -1354,7 +1355,8 @@ export default function OwnerDashboard() {
                     ];
 
                     return plans.map(plan => {
-                      const isCurrent = shop.plan === plan.key;
+                      const isCurrent = plan.key === currentPlan ||
+                        (plan.key === "standard" && currentPlan === "gold");
                       return (
                         <div key={plan.key} style={{
                           background: plan.badge ? `${plan.color}12` : "var(--bg-input)",

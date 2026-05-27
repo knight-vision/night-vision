@@ -142,7 +142,7 @@ export default async function HomePage() {
       }}>
         <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
           <a href="/ranking" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>⭐ ランキング</a>
-          <a href="/for-owners" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>掲載申し込み</a>
+          <a href="/for-owners" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>掲載お申し込み</a>
           <a href="/report" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>🚨 店舗情報の報告</a>
           <a href="/contact" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>お問い合わせ</a>
         </div>

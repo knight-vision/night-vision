@@ -102,7 +102,7 @@ export default function ApplyPage() {
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         <div style={{ marginBottom: 32 }}>
           <div style={{ fontSize: 11, color: "var(--accent)", letterSpacing: "0.15em", marginBottom: 6 }}>LISTING APPLICATION</div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>掲載申し込み</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>掲載お申し込み</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>
             釧路ナイトビジョンへの掲載をご希望の方はこちらからお申し込みください。<br />
             内容確認後、3営業日以内にご連絡いたします。
