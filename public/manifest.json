@@ -1,0 +1,23 @@
+{
+  "name": "釧路ナイトビジョン",
+  "short_name": "ナイトビジョン",
+  "description": "釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
