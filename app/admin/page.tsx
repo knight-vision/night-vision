@@ -57,11 +57,13 @@ const EMPTY_SHOP: Partial<Shop> = {
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
-  const [tab, setTab] = useState<"shops" | "casts" | "analytics">("shops");
+  const [tab, setTab] = useState<"shops" | "casts" | "analytics" | "applications">("applications");
   const [shopSearch, setShopSearch] = useState("");
   const [analytics, setAnalytics] = useState<{ today: number; week: number; month: number; daily: { date: string; count: number }[] } | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [appsLoading, setAppsLoading] = useState(false);
   const [casts, setCasts] = useState<Cast[]>([]);
   const [editShop, setEditShop] = useState<Partial<Shop> | null>(null);
   const [editCast, setEditCast] = useState<Partial<Cast> | null>(null);
@@ -74,6 +76,7 @@ export default function AdminPage() {
     if (authed) {
       fetchShops();
       fetchCasts();
+      loadApplications();
     }
   }, [authed]);
 
@@ -108,6 +111,36 @@ export default function AdminPage() {
     setMsg("保存しました");
     setTimeout(() => setMsg(""), 2000);
     setSaving(false);
+  }
+
+  async function loadApplications() {
+    setAppsLoading(true);
+    const res = await fetch("/api/admin/applications");
+    if (res.ok) setApplications(await res.json());
+    setAppsLoading(false);
+  }
+
+  async function approveApplication(id: string) {
+    if (!confirm("この申請を承認してアカウントを作成しますか？")) return;
+    const res = await fetch("/api/admin/applications/approve", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.success) { setMsg("承認しました！アカウントが作成されました。"); await loadApplications(); }
+    else setMsg("エラー: " + (data.error || "失敗しました"));
+    setTimeout(() => setMsg(""), 3000);
+  }
+
+  async function rejectApplication(id: string) {
+    if (!confirm("この申請を却下しますか？")) return;
+    const res = await fetch("/api/admin/applications/reject", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.success) { setMsg("却下しました"); await loadApplications(); }
+    setTimeout(() => setMsg(""), 2000);
   }
 
   async function issueOwnerAccount(shop: Shop) {
@@ -255,20 +288,87 @@ export default function AdminPage() {
         </div>
 
         {/* タブ */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           {[
+            { key: "applications", label: "🔔 登録申請" },
             { key: "shops", label: "店舗管理" },
-            { key: "casts", label: "キャスト・出勤管理" },
+            { key: "casts", label: "キャスト管理" },
             { key: "analytics", label: "📊 アクセス解析" },
           ].map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key as any)} style={{
+            <button key={t.key} onClick={() => { setTab(t.key as any); if (t.key==="applications") loadApplications(); }} style={{
               padding: "8px 20px", borderRadius: 20, border: "none", cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 500, fontSize: 13, fontFamily: "var(--font)",
               background: tab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
               color: tab === t.key ? "#fff" : "var(--text-muted)",
-            }}>{t.label}</button>
+              position: "relative" as const,
+            }}>
+              {t.label}
+              {t.key === "applications" && applications.filter(a=>a.status==="pending").length > 0 && (
+                <span style={{ position: "absolute", top: -4, right: -4, background: "#f472b6", color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {applications.filter(a=>a.status==="pending").length}
+                </span>
+              )}
+            </button>
           ))}
         </div>
+
+        {/* 登録申請タブ */}
+        {tab === "applications" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ color: "var(--text-primary)", fontSize: 18, fontWeight: 800 }}>店舗会員登録 申請一覧</h2>
+              <button onClick={loadApplications} style={{ ...btnStyle, fontSize: 12, padding: "8px 14px" }}>🔄 更新</button>
+            </div>
+            {appsLoading ? (
+              <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>読み込み中...</div>
+            ) : applications.length === 0 ? (
+              <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>申請はありません</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {applications.map(app => (
+                  <div key={app.id} style={{
+                    background: "var(--bg-card)", border: `1px solid ${app.status==="pending"?"#f472b644":"var(--border)"}`,
+                    borderRadius: 14, padding: 18,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)", marginBottom: 4 }}>
+                          {app.shops?.name || `Shop ID: ${app.shop_id}`}
+                        </div>
+                        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{app.email}</div>
+                      </div>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+                        background: app.status==="pending"?"#f472b422":app.status==="approved"?"#10b98122":"#ff444422",
+                        color: app.status==="pending"?"#f472b6":app.status==="approved"?"#10b981":"#ff4444",
+                        border: `1px solid ${app.status==="pending"?"#f472b444":app.status==="approved"?"#10b98144":"#ff444444"}`,
+                      }}>
+                        {app.status==="pending"?"承認待ち":app.status==="approved"?"承認済み":"却下"}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, background: "var(--bg-input)", borderRadius: 10, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 18 }}>📞</span>
+                      <span style={{ fontSize: 20, fontWeight: 900, color: "#f472b6", letterSpacing: 1 }}>{app.tel}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>
+                      申請日時: {new Date(app.created_at).toLocaleString("ja-JP")}
+                    </div>
+                    {app.status === "pending" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => approveApplication(app.id)} style={{ flex: 1, padding: "10px", background: "linear-gradient(135deg,#10b981,#059669)", border: "none", borderRadius: 10, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                          ✅ 承認してアカウント作成
+                        </button>
+                        <button onClick={() => rejectApplication(app.id)} style={{ padding: "10px 16px", background: "#ff444418", border: "1px solid #ff444444", borderRadius: 10, color: "#ff4444", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                          却下
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 店舗管理 */}
         {/* アナリティクスタブ */}
