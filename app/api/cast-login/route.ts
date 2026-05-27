@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +24,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います" }, { status: 401 });
   }
 
-  if (data.password_hash !== password) {
+  const passwordMatch = data.password_hash.startsWith("$2")
+    ? await bcrypt.compare(password, data.password_hash)
+    : data.password_hash === password;
+  if (!passwordMatch) {
     return NextResponse.json({ error: "メールアドレスまたはパスワードが違います" }, { status: 401 });
   }
 
