@@ -44,9 +44,6 @@ const RegisterForm = memo(function RegisterForm({
       <label style={labelStyle}>ご担当者様電話番号 <span style={{ color: "#f472b6" }}>*</span></label>
       <input type="tel" value={tel} onChange={e => setTel(e.target.value)}
         placeholder="090-0000-0000" style={inputStyle} autoComplete="tel" />
-      <div style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, padding: "8px 12px", marginBottom: 12, fontSize: 11, color: "rgba(251,191,36,0.9)", lineHeight: 1.6 }}>
-        📞 本人確認のため、担当者より電話にてご連絡します。
-      </div>
       <label style={labelStyle}>パスワード（6文字以上） <span style={{ color: "#f472b6" }}>*</span></label>
       <input type="password" value={password} onChange={e => setPassword(e.target.value)}
         placeholder="••••••••" style={inputStyle} autoComplete="new-password" />

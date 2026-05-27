@@ -20,21 +20,21 @@ export default function OwnerLoginPage() {
     setLoading(true);
     setError("");
     try {
-      const { data, error } = await supabase
-        .from("shop_owners")
-        .select("*, shops(*)")
-        .eq("email", email.toLowerCase().trim())
-        .single();
-
-      if (error || !data) { setError("メールアドレスまたはパスワードが違います"); setLoading(false); return; }
-      if (data.password_hash !== password) {
-        setError("メールアドレスまたはパスワードが違います");
+      const res = await fetch("/api/owner-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "メールアドレスまたはパスワードが違います");
         setLoading(false);
         return;
       }
-      localStorage.setItem("owner_id", String(data.id));
+      localStorage.setItem("owner_id", String(data.owner_id));
       localStorage.setItem("owner_shop_id", String(data.shop_id));
       localStorage.setItem("owner_email", data.email);
+      localStorage.setItem("owner_shop_name", data.shop_name || "");
       router.push("/owner/dashboard");
     } catch {
       setError("ログインに失敗しました");

@@ -11,22 +11,22 @@ export async function GET() {
   // オーナーアカウント
   const { data: owners } = await supabase
     .from("shop_owners")
-    .select("id, email, shop_id, shops(name)")
+    .select("id, email, shop_id, password_hash, shops(name)")
     .order("shop_id");
 
   // キャストアカウント
   const { data: casts } = await supabase
     .from("cast_accounts")
-    .select("id, email, shop_id, cast_id, shops(name), casts(name)")
+    .select("id, email, shop_id, cast_id, password_hash, shops(name), casts(name)")
     .order("shop_id");
 
   const result = [
     ...(owners||[]).map((o: any) => ({
-      id: o.id, email: o.email, shop_id: o.shop_id,
+      id: o.id, email: o.email, shop_id: o.shop_id, password_hash: o.password_hash,
       shop_name: o.shops?.name || "", account_type: "owner",
     })),
     ...(casts||[]).map((c: any) => ({
-      id: c.id, email: c.email, shop_id: c.shop_id, cast_id: c.cast_id,
+      id: c.id, email: c.email, shop_id: c.shop_id, cast_id: c.cast_id, password_hash: c.password_hash,
       shop_name: c.shops?.name || "", cast_name: c.casts?.name || "", account_type: "cast",
     })),
   ].sort((a,b) => a.shop_name.localeCompare(b.shop_name));

@@ -331,7 +331,7 @@ export default function AdminPage() {
             { key: "casts", label: "キャスト管理" },
             { key: "analytics", label: "📊 アクセス解析" },
           ].map((t) => (
-            <button key={t.key} onClick={() => { setTab(t.key as any); if (t.key==="applications") loadApplications(); if (t.key==="accounts") loadAccounts(); }} style={{
+            <button key={t.key} onClick={() => { setTab(t.key as any); if (t.key==="applications") loadApplications(); if (t.key==="accounts" || t.key==="casts") loadAccounts(); }} style={{
               padding: "8px 20px", borderRadius: 20, border: "none", cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 500, fontSize: 13, fontFamily: "var(--font)",
               background: tab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
@@ -371,6 +371,9 @@ export default function AdminPage() {
                         </div>
                         {a.cast_name && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 2 }}>キャスト名: {a.cast_name}</div>}
                         <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>{a.email}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, fontFamily: "monospace" }}>
+                          PW: {a.password_hash?.startsWith("$2") ? <span style={{ color: "#f59e0b" }}>bcrypt（変更不可表示）</span> : <span style={{ color: "#10b981" }}>{a.password_hash}</span>}
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -818,9 +821,13 @@ export default function AdminPage() {
                     {shop.name}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {shopCasts.map((cast) => (
-                      <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {shopCasts.map((cast) => {
+                      // accountsからキャストのアカウント情報を探す
+                      const castAccount = accounts.find(a => a.account_type === "cast" && a.cast_id === cast.id);
+                      return (
+                      <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: castAccount ? 8 : 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <button
                             onClick={() => toggleOnToday(cast)}
                             style={{
@@ -848,7 +855,14 @@ export default function AdminPage() {
                           <button onClick={() => deleteCast(cast.id)} style={{ ...btnStyle, padding: "4px 12px", fontSize: 11, background: "#ff444420", color: "#ff4444" }}>削除</button>
                         </div>
                       </div>
-                    ))}
+                      {castAccount && (
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-input)", borderRadius: 6, padding: "4px 10px", fontFamily: "monospace" }}>
+                          📧 {castAccount.email}　PW: {castAccount.password_hash?.startsWith("$2") ? <span style={{ color: "#f59e0b" }}>bcrypt</span> : castAccount.password_hash}
+                        </div>
+                      )}
+                      </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
