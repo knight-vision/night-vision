@@ -34,13 +34,11 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
   const [shifts, setShifts] = useState<ConfirmedShift[]>([]);
   const [allowances, setAllowances] = useState<Allowance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [now, setNow] = useState(new Date());
+  const [editingShift, setEditingShift] = useState<number | null>(null); // cast_id
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
 
-  useEffect(() => {
-    load();
-    const timer = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const load = async () => {
     const month = today.slice(0, 7);
@@ -61,10 +59,22 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
     setLoading(false);
   };
 
+  const saveShiftEdit = async (castId: number) => {
+    const res = await fetch("/api/confirm-shift/update", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shop_id: shopId, cast_id: castId, date: today, start_time: editStart, end_time: editEnd }),
+    });
+    if (res.ok) {
+      setShifts(prev => prev.map(s => s.cast_id === castId ? { ...s, start_time: editStart, end_time: editEnd } : s));
+      setEditingShift(null);
+      showMsg("シフトを更新しました");
+      load();
+    }
+  };
+
   const todaySales = (dailySales?.cash_sales || 0) + (dailySales?.card_sales || 0);
   const todayCost = dailySales?.cost || 0;
 
-  // キャスト給与計算
   const calcCastPay = (cast: Cast) => {
     const shift = shifts.find(s => s.cast_id === cast.id);
     if (!shift) return { shift: null, base: 0, allow: 0, bottle: 0, total: 0, mins: 0 };
@@ -78,63 +88,39 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
   const todayPayroll = casts.reduce((s, c) => s + calcCastPay(c).total, 0);
   const todayProfit = todaySales - todayCost - todayPayroll;
   const todayShiftCasts = casts.filter(c => shifts.some(s => s.cast_id === c.id));
-  const onTodayCasts = casts.filter(c => c.on_today === true);
 
-  const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const dateStr = `${now.getMonth() + 1}月${now.getDate()}日(${["日","月","火","水","木","金","土"][now.getDay()]})`;
+  const inputStyle: React.CSSProperties = { background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 10px", fontSize: 13, fontFamily: "var(--font)" };
+  const timeOptions = Array.from({ length: 24 }, (_, h) =>
+    ["00","15","30","45"].map(m => `${String(h).padStart(2,"0")}:${m}`)
+  ).flat();
 
-  if (loading) return <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40 }}>読み込み中...</div>;
+  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>読み込み中...</div>;
 
   return (
     <div>
-      {/* 日時ヘッダー */}
-      <div style={{ textAlign: "center", marginBottom: 20, padding: "16px 0" }}>
-        <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>{dateStr}</div>
-        <div style={{ fontSize: 40, fontWeight: 900, color: "var(--text-primary)", letterSpacing: 2, fontVariantNumeric: "tabular-nums" }}>{timeStr}</div>
-      </div>
-
-      {/* 売上サマリー */}
+      {/* サマリー */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-        <div style={{ ...sectionStyle, marginBottom: 0, textAlign: "center" as const }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>本日売上</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "var(--accent)" }}>
-            {todaySales > 0 ? `¥${todaySales.toLocaleString()}` : "—"}
+        {[
+          { label: "本日売上", value: todaySales ? `¥${todaySales.toLocaleString()}` : "—" },
+          { label: "純利益", value: todaySales ? `¥${todayProfit.toLocaleString()}` : "—" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px", textAlign: "center" as const }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: s.value === "—" ? "var(--border)" : "var(--accent)" }}>{s.value}</div>
           </div>
-          {dailySales && (
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-              {dailySales.cash_sales > 0 && `現金 ¥${dailySales.cash_sales.toLocaleString()} `}
-              {dailySales.card_sales > 0 && `カード ¥${dailySales.card_sales.toLocaleString()}`}
-            </div>
-          )}
-        </div>
-        <div style={{ ...sectionStyle, marginBottom: 0, textAlign: "center" as const }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>純利益</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: todayProfit > 0 ? "var(--online)" : todaySales > 0 ? "#ff4444" : "var(--text-muted)" }}>
-            {todaySales > 0 ? `¥${todayProfit.toLocaleString()}` : "—"}
-          </div>
-          {todaySales > 0 && (
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-              人件費 ¥{todayPayroll.toLocaleString()}
-            </div>
-          )}
-        </div>
+        ))}
       </div>
 
-      {/* 伝票入力へのクイックアクセス */}
-      <button
-        onClick={() => setTab("sales")}
-        style={{ ...btnPrimary as React.CSSProperties, marginBottom: 16, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-      >
-        📋 伝票を入力する
+      {/* 伝票入力 */}
+      <button onClick={() => setTab("sales")} style={{ ...btnPrimary, width: "100%", marginBottom: 16, padding: "14px", fontSize: 15 }}>
+        🧾 伝票を入力する
       </button>
 
       {/* 本日の出勤キャスト */}
       <div style={{ ...sectionStyle, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>本日の出勤キャスト</div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            確定シフト {todayShiftCasts.length}名 / 出勤中 {onTodayCasts.length}名
-          </div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>確定シフト {todayShiftCasts.length}名</div>
         </div>
 
         {todayShiftCasts.length === 0 ? (
@@ -142,7 +128,7 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
             本日の確定シフトがありません
             <div style={{ marginTop: 8 }}>
               <button onClick={() => setTab("shift")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "1px solid var(--accent)44", borderRadius: 8, padding: "4px 12px", cursor: "pointer" }}>
-                出勤管理へ →
+                シフト管理へ →
               </button>
             </div>
           </div>
@@ -151,23 +137,14 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
             {todayShiftCasts.map(cast => {
               const pay = calcCastPay(cast);
               const myCastSales = castSales.filter(s => s.cast_id === cast.id);
-              const isOnToday = cast.on_today === true;
+              const isEditing = editingShift === cast.id;
               return (
-                <div key={cast.id} style={{
-                  padding: "10px 14px", borderRadius: 12,
-                  background: isOnToday ? "var(--online-bg)" : "var(--bg-input)",
-                  border: `1px solid ${isOnToday ? "var(--online-border)" : "var(--border)"}`,
-                }}>
+                <div key={cast.id} style={{ padding: "10px 14px", borderRadius: 12, background: "var(--bg-input)", border: "1px solid var(--border)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{cast.name}</span>
-                      {isOnToday && <span style={{ fontSize: 10, color: "var(--online)", background: "var(--online-bg)", border: "1px solid var(--online-border)", borderRadius: 6, padding: "1px 6px" }}>出勤中</span>}
-                    </div>
-                    <span style={{ fontWeight: 700, color: "var(--accent)", fontSize: 15 }}>
-                      ¥{pay.total.toLocaleString()}
-                    </span>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{cast.name}</span>
+                    <span style={{ fontWeight: 700, color: "var(--accent)", fontSize: 15 }}>¥{pay.total.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 10, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap", alignItems: "center" }}>
                     {pay.shift && <span>{fmtTime(pay.shift.start_time)}〜{fmtTime(pay.shift.end_time)}</span>}
                     {pay.base > 0 && <span>基本給 ¥{pay.base.toLocaleString()}</span>}
                     {myCastSales.filter(s => s.sales_type !== "bottle").map(s => {
@@ -175,7 +152,24 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
                       return <span key={s.cast_id + s.sales_type} style={{ color: "var(--accent)" }}>{labels[s.sales_type] || s.sales_type} ¥{s.amount.toLocaleString()}</span>;
                     })}
                     {pay.bottle > 0 && <span style={{ color: "#a855f7" }}>🍾¥{pay.bottle.toLocaleString()}</span>}
+                    <button
+                      onClick={() => { setEditingShift(cast.id); setEditStart(pay.shift?.start_time?.slice(0,5) || ""); setEditEnd(pay.shift?.end_time?.slice(0,5) || ""); }}
+                      style={{ fontSize: 10, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "1px 8px", cursor: "pointer", marginLeft: "auto" }}
+                    >✏️ シフト変更</button>
                   </div>
+                  {isEditing && (
+                    <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <select value={editStart} onChange={e => setEditStart(e.target.value)} style={inputStyle}>
+                        {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <span style={{ color: "var(--text-muted)", fontSize: 12 }}>〜</span>
+                      <select value={editEnd} onChange={e => setEditEnd(e.target.value)} style={inputStyle}>
+                        {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <button onClick={() => saveShiftEdit(cast.id)} style={{ fontSize: 12, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}>保存</button>
+                      <button onClick={() => setEditingShift(null)} style={{ fontSize: 12, background: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}>キャンセル</button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -183,7 +177,7 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
         )}
       </div>
 
-      {/* 今日のキャスト売上 */}
+      {/* キャスト売上 */}
       {castSales.length > 0 && (
         <div style={sectionStyle}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>本日のキャスト売上</div>

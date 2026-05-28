@@ -467,7 +467,7 @@ export default function OwnerDashboard() {
   );
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "today", label: "🏠 今日" },
+    { key: "today", label: "🏠 ホーム" },
     { key: "basic", label: "基本情報" },
     { key: "hours", label: "営業時間" },
     { key: "sns", label: "SNS" },

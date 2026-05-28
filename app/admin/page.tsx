@@ -894,13 +894,9 @@ export default function AdminPage() {
                         <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: castAccount ? 8 : 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              <button onClick={() => toggleOnToday(cast)} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", background: cast.on_today ? "var(--online)" : "var(--border-hover)", position: "relative", transition: "background 0.2s" }}>
-                                <span style={{ position: "absolute", top: 3, left: cast.on_today ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
-                              </button>
                               <div>
                                 <span style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 13 }}>{cast.name}</span>
                                 <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 6 }}>{cast.age}歳</span>
-                                <span style={{ color: cast.on_today ? "var(--online)" : "var(--text-hint)", fontSize: 11, marginLeft: 8 }}>{cast.on_today ? "本日出勤" : "休み"}</span>
                               </div>
                             </div>
                             <div style={{ display: "flex", gap: 6 }}>
