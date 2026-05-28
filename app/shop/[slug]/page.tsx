@@ -331,6 +331,11 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                       <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
                         {cast.age && `${cast.age}歳`}{cast.birthplace && ` / ${cast.birthplace}`}
                       </div>
+                      {(cast.today_start || cast.today_end) && (
+                        <div style={{ fontSize: 11, color: "var(--online)", marginTop: 4 }}>
+                          🕐 {cast.today_start || "?"} 〜 {cast.today_end || "?"}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Link>

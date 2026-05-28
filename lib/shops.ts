@@ -14,6 +14,8 @@ export type Cast = {
   age: number;
   comment: string;
   on_today: boolean | null;
+  today_start?: string | null;
+  today_end?: string | null;
   instagram: string | null;
   x_account: string | null;
   tiktok_account: string | null;

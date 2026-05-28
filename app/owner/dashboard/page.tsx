@@ -48,6 +48,8 @@ type Cast = {
   age: number;
   comment: string;
   on_today: boolean;
+  today_start: string | null;
+  today_end: string | null;
   instagram: string | null;
   x_account: string | null;
   tiktok_account: string | null;
@@ -152,7 +154,7 @@ export default function OwnerDashboard() {
     const lastDate = localStorage.getItem("owner_last_date");
     if (lastDate && lastDate !== today) {
       // 日付が変わった → on_today をリセット
-      supabase.from("casts").update({ on_today: null }).eq("shop_id", parseInt(sid)).then(() => {
+      supabase.from("casts").update({ on_today: null, today_start: null, today_end: null }).eq("shop_id", parseInt(sid)).then(() => {
         fetchCasts(parseInt(sid));
       });
     }
@@ -1245,7 +1247,7 @@ export default function OwnerDashboard() {
               {casts.map((cast) => (
                 <div key={cast.id} style={{ ...sectionStyle, marginBottom: 0, display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
-                  <button
+                    <button
                       onClick={() => handleCastAttendance(cast, "on")}
                       style={{
                         padding: "4px 10px", borderRadius: 8, border: "none", cursor: "pointer",
@@ -1269,11 +1271,43 @@ export default function OwnerDashboard() {
                     <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 8 }}>{cast.age}歳</span>
                     <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>{cast.comment}</div>
                     {cast.hourly_wage && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>時給 ¥{cast.hourly_wage.toLocaleString()}</div>}
-                    {/* アカウント状態 */}
                     {castAccounts[cast.id]
                       ? <div style={{ fontSize: 11, color: "var(--online)", marginTop: 2 }}>🔑 {castAccounts[cast.id]}</div>
                       : <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>🔑 アカウント未発行</div>
                     }
+                    {/* 出勤時間入力（出勤中のみ） */}
+                    {cast.on_today === true && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>出勤時間</span>
+                        <select
+                          value={cast.today_start || ""}
+                          onChange={async (e) => {
+                            await supabase.from("casts").update({ today_start: e.target.value || null }).eq("id", cast.id);
+                            fetchCasts(parseInt(shopId!));
+                          }}
+                          style={{ fontSize: 11, padding: "2px 6px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font)" }}
+                        >
+                          <option value="">開始</option>
+                          {Array.from({ length: 24 }, (_, h) => ["00","15","30","45"].map(m =>
+                            <option key={`${h}:${m}`} value={`${String(h).padStart(2,"0")}:${m}`}>{h}:{m}</option>
+                          ))}
+                        </select>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>〜</span>
+                        <select
+                          value={cast.today_end || ""}
+                          onChange={async (e) => {
+                            await supabase.from("casts").update({ today_end: e.target.value || null }).eq("id", cast.id);
+                            fetchCasts(parseInt(shopId!));
+                          }}
+                          style={{ fontSize: 11, padding: "2px 6px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font)" }}
+                        >
+                          <option value="">終了</option>
+                          {Array.from({ length: 24 }, (_, h) => ["00","15","30","45"].map(m =>
+                            <option key={`${h}:${m}`} value={`${String(h).padStart(2,"0")}:${m}`}>{h}:{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => setEditCast(cast)} style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "4px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>編集</button>
