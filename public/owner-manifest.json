@@ -1,0 +1,20 @@
+{
+  "name": "店舗管理 | NIGHT VISION",
+  "short_name": "NV 店舗管理",
+  "description": "NIGHT VISION 店舗オーナー管理画面",
+  "start_url": "/owner/dashboard",
+  "scope": "/owner/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08080f",
+  "theme_color": "#7c3aed",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "キャスト管理", "url": "/owner/dashboard?tab=cast", "description": "キャスト一覧・売上" },
+    { "name": "売上入力", "url": "/owner/dashboard?tab=sales", "description": "伝票・売上管理" },
+    { "name": "シフト管理", "url": "/owner/dashboard?tab=shift", "description": "シフト確認・変更" }
+  ]
+}

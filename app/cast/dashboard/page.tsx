@@ -3,6 +3,28 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
+function PwaBanner() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = (window.navigator as any).standalone;
+    const dismissed = localStorage.getItem("pwa_banner_dismissed_cast");
+    if (isIOS && !isStandalone && !dismissed) setShow(true);
+  }, []);
+  if (!show) return null;
+  return (
+    <div style={{ background: "linear-gradient(135deg, #db277722, #7c3aed11)", borderBottom: "1px solid #db277733", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ fontSize: 20 }}>📲</span>
+      <div style={{ flex: 1, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+        <strong style={{ color: "var(--text-primary)" }}>ホーム画面に追加できます</strong><br />
+        SafariでSFシェアボタン →「ホーム画面に追加」
+      </div>
+      <button onClick={() => { localStorage.setItem("pwa_banner_dismissed_cast", "1"); setShow(false); }}
+        style={{ fontSize: 18, background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0 4px" }}>×</button>
+    </div>
+  );
+}
+
 type ShiftEntry = {
   date: string;
   start_time: string;
@@ -157,6 +179,7 @@ export default function CastDashboard() {
   return (
     <>
       <Header />
+      <PwaBanner />
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px" }}>
 
         {/* ヘッダー */}
