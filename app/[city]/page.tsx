@@ -1,83 +1,8 @@
-import Header from "@/components/Header";
-import ShopCard from "@/components/ShopCard";
-import Link from "next/link";
-import { getShopsByCity } from "@/lib/shops";
-import { getCity, GENRES } from "@/lib/cities";
-import { notFound } from "next/navigation";
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCity } from "@/lib/cities";
 
-export const dynamic = "force-dynamic";
-
-type Props = { params: { city: string } };
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export default function LegacyCityPage({ params }: { params: { city: string } }) {
   const city = getCity(params.city);
-  if (!city) return {};
-  return {
-    title: `${city.name}のナイトライフ情報｜NIGHT VISION`,
-    description: city.description,
-    alternates: { canonical: `https://www.night-vision.jp/${city.key}` },
-  };
-}
-
-export default async function CityPage({ params }: Props) {
-  const city = getCity(params.city);
-  if (!city) notFound();
-
-  const shops = await getShopsByCity(city.key);
-  const onCount = shops.reduce((a, s) => a + s.casts.filter(c => c.on_today).length, 0);
-
-  return (
-    <>
-      <Header />
-      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 80px" }}>
-        {/* ヒーロー */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 6 }}>
-            {city.prefecture} / NIGHT VISION
-          </div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>
-            {city.name}のナイトライフ
-          </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.7 }}>
-            {city.name}市内 {shops.length}店舗を掲載。現在 {onCount}名が出勤中。
-          </p>
-        </div>
-
-        {/* 業種ナビ */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-          {city.genres.map(g => (
-            <Link key={g.key} href={`/${city.key}/${g.key}`} style={{
-              padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600,
-              background: "var(--bg-card)", border: "1px solid var(--border)",
-              color: "var(--text-secondary)", textDecoration: "none",
-            }}>
-              {g.name}
-            </Link>
-          ))}
-        </div>
-
-        {/* エリアナビ */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
-          {city.areas.map(a => (
-            <Link key={a.key} href={`/${city.key}/area/${a.key}`} style={{
-              padding: "6px 14px", borderRadius: 20, fontSize: 12,
-              background: "var(--bg-input)", border: "1px solid var(--border)",
-              color: "var(--text-muted)", textDecoration: "none",
-            }}>
-              📍 {a.name}エリア
-            </Link>
-          ))}
-        </div>
-
-        {/* 店舗一覧 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {shops.length === 0
-            ? <p style={{ color: "var(--text-hint)", fontSize: 14 }}>現在掲載中の店舗はありません。</p>
-            : shops.map(shop => <ShopCard key={shop.id} shop={shop} />)
-          }
-        </div>
-      </main>
-    </>
-  );
+  if (city) redirect(`/${city.prefectureKey}/${city.key}`);
+  redirect("/");
 }

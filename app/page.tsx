@@ -112,12 +112,12 @@ export default async function HomePage() {
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
             {[
-              { href: "/kushiro/snack", label: "釧路のスナック一覧", desc: "アットホームな雰囲気のスナック" },
-              { href: "/kushiro/girls-bar", label: "釧路のガールズバー一覧", desc: "気軽に入れるガールズバー" },
-              { href: "/kushiro/lounge", label: "釧路のラウンジ・ニュークラ", desc: "上質な時間を過ごせるお店" },
-              { href: "/kushiro/casual-bar", label: "釧路のカジュアルバー一覧", desc: "一人でも入りやすいバー" },
-              { href: "/kushiro/area/suehiro", label: "末広エリアの飲み屋", desc: "釧路最大の繁華街" },
-              { href: "/kushiro/area/aikoku", label: "愛国エリアの飲み屋", desc: "地元に根付いたお店が集まるエリア" },
+              { href: "/hokkaido/kushiro/snack", label: "釧路のスナック一覧", desc: "アットホームな雰囲気のスナック" },
+              { href: "/hokkaido/kushiro/girls-bar", label: "釧路のガールズバー一覧", desc: "気軽に入れるガールズバー" },
+              { href: "/hokkaido/kushiro/lounge", label: "釧路のラウンジ・ニュークラ", desc: "上質な時間を過ごせるお店" },
+              { href: "/hokkaido/kushiro/casual-bar", label: "釧路のカジュアルバー一覧", desc: "一人でも入りやすいバー" },
+              { href: "/hokkaido/kushiro/area/suehiro", label: "末広エリアの飲み屋", desc: "釧路最大の繁華街" },
+              { href: "/hokkaido/kushiro/area/aikoku", label: "愛国エリアの飲み屋", desc: "地元に根付いたお店が集まるエリア" },
             ].map(item => (
               <a key={item.href} href={item.href} style={{
                 display: "block", padding: "12px 14px",
