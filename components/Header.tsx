@@ -14,7 +14,7 @@ export default function Header() {
   };
 
   const menuItems = [
-    { label: "🥂 ラウンジ/ニュークラ", href: "/hokkaido/kushiro/lounge" },
+    { label: "🗾 エリアから探す", href: "/map" },
     { label: "🍹 ガールズバー", href: "/hokkaido/kushiro/girls-bar" },
     { label: "🍶 スナック", href: "/hokkaido/kushiro/snack" },
     { label: "🍸 カジュアルバー", href: "/hokkaido/kushiro/casual-bar" },
