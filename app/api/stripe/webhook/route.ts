@@ -39,26 +39,28 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode !== "subscription") break;
       const shopId = session.metadata?.shop_id;
-      const planType = session.metadata?.plan || "standard";
       if (!shopId) break;
 
+      // トライアルありかどうか確認してtrial_usedをセット
+      const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+      const hasTrial = subscription.trial_end !== null;
+
       await supabase.from("shops").update({
-        plan: planType,
+        plan: "pro", // 常にProプランのみ
         stripe_subscription_id: session.subscription as string,
+        ...(hasTrial ? { trial_used: true } : {}),
       }).eq("id", Number(shopId));
 
       const ownerEmail = await getOwnerEmail(Number(shopId));
       const { data: shop } = await supabase.from("shops").select("name").eq("id", Number(shopId)).single();
-      const planLabels: Record<string,string> = { standard:"スタンダード🌙", premium:"プレミアム💡", pro:"プロ🌃" };
-      const planLabel = planLabels[planType] || planType;
       if (ownerEmail) {
         await resend.emails.send({
           from: "釧路ナイトビジョン <info@night-vision.jp>",
           to: ownerEmail,
-          subject: `【釧路ナイトビジョン】${planLabel}プランへのアップグレード完了`,
+          subject: "【釧路ナイトビジョン】プロプランへのアップグレード完了",
           html: emailHtml({
-            title: `${planLabel}プランへのアップグレード完了`,
-            body: `<p style="margin:0 0 12px;color:#c0bdd8;">${shop?.name || "お店"} ご担当者様</p><p style="margin:0 0 16px;color:#c0bdd8;">1ヶ月間の無料トライアルが開始されました。翌月以降のご請求となります。</p>`,
+            title: "プロプランへのアップグレード完了",
+            body: `<p style="margin:0 0 12px;color:#c0bdd8;">${shop?.name || "お店"} ご担当者様</p><p style="margin:0 0 16px;color:#c0bdd8;">${hasTrial ? "1ヶ月間の無料トライアルが開始されました。翌月以降のご請求となります。" : "プロプランが開始されました。"}</p>`,
             ctaText: "管理画面を開く",
             ctaUrl: "https://www.night-vision.jp/owner/dashboard",
           }),

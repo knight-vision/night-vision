@@ -1452,6 +1452,7 @@ export default function OwnerDashboard() {
                       },
                     ];
 
+                    const trialUsed = (shop as any).trial_used === true;
                     return plans.map(plan => {
                       const isCurrent = plan.key === currentPlan;
                       return (
@@ -1484,7 +1485,7 @@ export default function OwnerDashboard() {
                               </div>
                             ))}
                           </div>
-                          {!isCurrent && (
+                          {!isCurrent && plan.key === "pro" && (
                             <button
                               onClick={async () => {
                                 const btn = document.getElementById(`upgrade-btn-${plan.key}`) as HTMLButtonElement;
@@ -1492,25 +1493,28 @@ export default function OwnerDashboard() {
                                 try {
                                   const res = await fetch("/api/stripe/checkout", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, plan: plan.key }),
+                                    body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, plan: "pro" }),
                                   });
                                   const data = await res.json();
                                   if (data.url && data.url.startsWith("https://checkout.stripe.com")) {
                                     window.location.href = data.url;
                                   } else {
                                     showMsg("エラー: " + (data.error || "決済画面の起動に失敗しました"));
-                                    if (btn) { btn.disabled = false; btn.textContent = `🚀 1ヶ月無料で試す`; }
+                                    if (btn) { btn.disabled = false; btn.textContent = trialUsed ? "プロプランに申し込む" : "1ヶ月無料で試す（初回のみ）"; }
                                   }
                                 } catch(e: any) {
                                   showMsg("通信エラー: " + e.message);
-                                  if (btn) { btn.disabled = false; btn.textContent = `🚀 1ヶ月無料で試す`; }
+                                  if (btn) { btn.disabled = false; btn.textContent = trialUsed ? "プロプランに申し込む" : "1ヶ月無料で試す（初回のみ）"; }
                                 }
                               }}
                               id={`upgrade-btn-${plan.key}`}
                               style={{ width: "100%", padding: "11px", background: `linear-gradient(135deg,${plan.color}44,${plan.color}22)`, border: `1px solid ${plan.color}55`, borderRadius: 12, color: plan.color, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)" }}
                             >
-                              🚀 1ヶ月無料で試す
+                              {trialUsed ? "🚀 プロプランに申し込む" : "🚀 1ヶ月無料で試す（初回のみ）"}
                             </button>
+                          )}
+                          {!isCurrent && plan.key !== "pro" && (
+                            <div style={{ fontSize: 11, color: "var(--text-hint)", textAlign: "center" as const, padding: "8px 0" }}>お問い合わせください</div>
                           )}
                         </div>
                       );
