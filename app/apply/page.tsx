@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Header from "@/components/Header";
+import { detectLocationFromAddress } from "@/lib/japan";
 
 const PLAN_INFO = [
   {
@@ -62,8 +63,27 @@ export default function ApplyPage() {
     plan: "", notes: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [detectedLocation, setDetectedLocation] = useState<{ pref: string; city: string; area: string } | null>(null);
 
   const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleAddressChange = (address: string) => {
+    set("address", address);
+    if (address.length > 3) {
+      const { prefecture, city, area } = detectLocationFromAddress(address);
+      if (prefecture || city) {
+        setDetectedLocation({
+          pref: prefecture?.name || "",
+          city: city?.name || "",
+          area: area || "",
+        });
+        // エリアが判定できたら自動セット
+        if (area) set("area", area);
+      } else {
+        setDetectedLocation(null);
+      }
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.shopName || !form.address || !form.type || !form.area || !form.contactName || !form.contactEmail || !form.contactTel) {
@@ -141,7 +161,12 @@ export default function ApplyPage() {
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>所在地 <span style={{ color: "var(--accent)" }}>*</span></label>
-            <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="例：釧路市末広町4-1-1" style={inputStyle} />
+            <input value={form.address} onChange={(e) => handleAddressChange(e.target.value)} placeholder="例：東京都新宿区歌舞伎町1-1-1" style={inputStyle} />
+            {detectedLocation && (detectedLocation.pref || detectedLocation.city) && (
+              <div style={{ marginTop: 6, padding: "6px 10px", background: "var(--accent)11", border: "1px solid var(--accent)33", borderRadius: 8, fontSize: 11, color: "var(--accent)" }}>
+                📍 {[detectedLocation.pref, detectedLocation.city, detectedLocation.area].filter(Boolean).join(" › ")} を自動判定しました
+              </div>
+            )}
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>店舗電話番号 <span style={{ color: "var(--accent)" }}>*</span></label>
@@ -162,16 +187,16 @@ export default function ApplyPage() {
             )}
           </div>
           <div style={fieldStyle}>
-            <label style={labelStyle}>エリア <span style={{ color: "var(--accent)" }}>*</span></label>
-            <select value={form.area} onChange={(e) => set("area", e.target.value)} style={inputStyle}>
-              <option value="">選択してください</option>
-              <option value="末広">末広エリア</option>
-              <option value="愛国">愛国エリア</option>
-              <option value="other">その他</option>
-            </select>
-            {form.area === "other" && (
-              <input value={form.areaOther} onChange={(e) => set("areaOther", e.target.value)} placeholder="エリアを入力" style={{ ...inputStyle, marginTop: 8 }} />
-            )}
+            <label style={labelStyle}>エリア・繁華街名 <span style={{ color: "var(--accent)" }}>*</span></label>
+            <input
+              value={form.area}
+              onChange={(e) => set("area", e.target.value)}
+              placeholder="例：歌舞伎町 / すすきの / 末広 / 中洲"
+              style={inputStyle}
+            />
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+              最寄りの繁華街・駅名・エリア名を入力してください
+            </div>
           </div>
           <div style={fieldStyle}>
             <label style={labelStyle}>営業時間</label>
