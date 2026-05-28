@@ -8,15 +8,15 @@ export async function POST(req: NextRequest) {
   const { email, password, shopName } = await req.json();
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: email,
-      subject: "【釧路ナイトビジョン】店舗管理画面のご案内",
+      subject: "【NIGHT VISION】店舗管理画面のご案内",
       html: emailHtml({
         preheader: "店舗管理画面のアクセス情報をお送りします",
         title: "🏪 店舗管理画面のご案内",
         body: `
           <p style="margin:0 0 6px;color:#c0bdd8;">${shopName} ご担当者様</p>
-          <p style="margin:0 0 16px;color:#c0bdd8;">この度は釧路ナイトビジョンへのご掲載ありがとうございます。店舗管理専用ページのアクセス情報をお送りします。</p>
+          <p style="margin:0 0 16px;color:#c0bdd8;">この度はNIGHT VISIONへのご掲載ありがとうございます。店舗管理専用ページのアクセス情報をお送りします。</p>
           ${emailInfoTable([
             { label: "ログインURL", value: "night-vision.jp/owner/login" },
             { label: "メールアドレス", value: email },

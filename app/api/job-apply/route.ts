@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!owner?.email) {
     // オーナーメールがなければ管理者に送信
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: "info@night-vision.jp",
       subject: `【求人応募】${shopName}「${job.title}」に応募がありました`,
       html: emailHtml({
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     });
   } else {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: owner.email,
       subject: `【求人応募】「${job.title}」に応募がありました`,
       html: emailHtml({
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   // 応募者に確認メールを送信
   await resend.emails.send({
-    from: "釧路ナイトビジョン <info@night-vision.jp>",
+    from: "NIGHT VISION <info@night-vision.jp>",
     to: email,
     subject: `【応募確認】${shopName}への応募を受け付けました`,
     html: emailHtml({

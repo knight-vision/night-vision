@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     const castName = (account.casts as any)?.name || "キャスト";
     const myShifts = shifts.filter((s: any) => s.cast_id === castId);
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: account.email,
       subject: `【${shopName}】確定シフトのお知らせ`,
       html: emailHtml({

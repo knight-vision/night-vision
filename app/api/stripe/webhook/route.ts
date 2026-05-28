@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
       const { data: shop } = await supabase.from("shops").select("name").eq("id", Number(shopId)).single();
       if (ownerEmail) {
         await resend.emails.send({
-          from: "釧路ナイトビジョン <info@night-vision.jp>",
+          from: "NIGHT VISION <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】プロプランへのアップグレード完了",
+          subject: "【NIGHT VISION】プロプランへのアップグレード完了",
           html: emailHtml({
             title: "プロプランへのアップグレード完了",
             body: `<p style="margin:0 0 12px;color:#c0bdd8;">${shop?.name || "お店"} ご担当者様</p><p style="margin:0 0 16px;color:#c0bdd8;">${hasTrial ? "1ヶ月間の無料トライアルが開始されました。翌月以降のご請求となります。" : "プロプランが開始されました。"}</p>`,
@@ -95,9 +95,9 @@ export async function POST(req: NextRequest) {
       const ownerEmail = await getOwnerEmail(shop.id);
       if (ownerEmail) {
         await resend.emails.send({
-          from: "釧路ナイトビジョン <info@night-vision.jp>",
+          from: "NIGHT VISION <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】お支払いの確認をお願いします",
+          subject: "【NIGHT VISION】お支払いの確認をお願いします",
           html: emailHtml({
             title: "⚠️ お支払いの確認をお願いします",
             body: `
@@ -127,9 +127,9 @@ export async function POST(req: NextRequest) {
       const ownerEmail = await getOwnerEmail(shop.id);
       if (ownerEmail) {
         await resend.emails.send({
-          from: "釧路ナイトビジョン <info@night-vision.jp>",
+          from: "NIGHT VISION <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】ゴールドプランを解約しました",
+          subject: "【NIGHT VISION】ゴールドプランを解約しました",
           html: emailHtml({
             title: "プランをフリーに変更しました",
             body: `

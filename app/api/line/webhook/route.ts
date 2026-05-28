@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     // フォロー時の案内
     if (event.type === "follow") {
       await replyMessage(event.replyToken,
-        "🦉 釧路ナイトビジョンです！\n\nLINE通知を有効にするには、オーナーダッシュボードの「LINE通知」タブから連携してください。"
+        "🦉 NIGHT VISIONです！\n\nLINE通知を有効にするには、オーナーダッシュボードの「LINE通知」タブから連携してください。"
       );
     }
 

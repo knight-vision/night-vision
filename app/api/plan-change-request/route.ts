@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { shopName, currentPlan, newPlan } = await req.json();
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: "kushiro.night.vision@gmail.com",
       subject: `【${newPlan === "close" ? "掲載終了申請" : "プラン変更申請"}】${shopName}`,
       html: `

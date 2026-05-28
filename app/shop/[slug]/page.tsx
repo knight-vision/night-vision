@@ -94,7 +94,7 @@ export async function generateMetadata({
       title: `${shop.name}｜釧路${area}の${shop.type}`,
       description: desc.slice(0, 100),
       url: "https://www.night-vision.jp/shop/" + shop.slug,
-      siteName: "釧路ナイトビジョン",
+      siteName: "NIGHT VISION",
       images: shop.image ? [{ url: shop.image }] : [],
       type: "website",
     },

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const shopName = (ownerData.shops as any)?.name || "お店";
     const castName = castData?.name || "キャスト";
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: ownerData.email,
       subject: `【シフト希望】${castName}から希望シフトが届きました`,
       html: emailHtml({

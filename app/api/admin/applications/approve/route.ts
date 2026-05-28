@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
   // メール通知
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: app.email,
-      subject: "【釧路ナイトビジョン】アカウントが承認されました",
+      subject: "【NIGHT VISION】アカウントが承認されました",
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0a0a0f;color:#e8e0f0;">
           <h2 style="color:#10b981;">✅ アカウントが承認されました</h2>

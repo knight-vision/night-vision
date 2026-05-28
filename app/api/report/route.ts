@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const typeLabel = reportType === "new_shop" ? "未掲載店舗の情報提供" : "閉店済み店舗の報告";
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: process.env.ADMIN_EMAIL || "kushiro.night.vision@gmail.com",
       subject: `【店舗報告】${typeLabel}：${shopName}`,
       html: emailHtml({

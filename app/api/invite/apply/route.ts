@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   // 管理者へ確認依頼メール
   await resend.emails.send({
-    from: "釧路ナイトビジョン <info@night-vision.jp>",
+    from: "NIGHT VISION <info@night-vision.jp>",
     to: process.env.ADMIN_EMAIL || "kushiro.night.vision@gmail.com",
     subject: `【要対応】店舗会員登録申請：${shopName}`,
     html: `

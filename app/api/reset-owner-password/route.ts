@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
   const { email, password, shopName } = await req.json();
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: email,
-      subject: "【釧路ナイトビジョン】パスワード再発行のお知らせ",
+      subject: "【NIGHT VISION】パスワード再発行のお知らせ",
       html: emailHtml({
         preheader: "新しいパスワードをお送りします",
         title: "🔑 パスワード再発行",

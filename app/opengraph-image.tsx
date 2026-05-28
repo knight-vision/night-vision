@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "釧路ナイトビジョン｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報";
+export const alt = "NIGHT VISION｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -30,7 +30,7 @@ export default async function Image() {
           KUSHIRO NIGHT VISION
         </div>
         <div style={{ fontSize: 28, color: "#ffffff88", marginBottom: 32 }}>
-          釧路ナイトビジョン
+          NIGHT VISION
         </div>
         <div style={{ fontSize: 20, color: "#ffffff55" }}>
           釧路の飲み屋・スナック・ガールズバー・ラウンジ情報

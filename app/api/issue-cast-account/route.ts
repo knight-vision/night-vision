@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
   if (dbError) return NextResponse.json({ error: `DB: ${dbError.message}` }, { status: 500 });
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: email,
-      subject: "【釧路ナイトビジョン】キャストポータルのご案内",
+      subject: "【NIGHT VISION】キャストポータルのご案内",
       html: emailHtml({
         preheader: "キャストポータルのアカウントが発行されました",
         title: "💃 キャストポータルへようこそ",

@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const mailResult = await resend.emails.send({
-        from: "釧路ナイトビジョン <info@night-vision.jp>",
+        from: "NIGHT VISION <info@night-vision.jp>",
         to: process.env.ADMIN_EMAIL || "info@night-vision.jp",
         subject: `【写真審査依頼】${castName}（${shopName}）から写真申請が届きました`,
         html: emailHtml({

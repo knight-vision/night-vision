@@ -4,15 +4,15 @@ import { getShops } from "@/lib/shops";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "釧路ナイトビジョン｜釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報",
+  title: "NIGHT VISION｜釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報",
   description: "釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報ならナイトビジョン。末広・愛国エリアの全店舗を掲載。今夜行きたいお店がすぐ見つかる釧路ナイトライフガイド。",
   keywords: ["釧路 飲み屋", "釧路 キャバクラ", "釧路 スナック", "釧路 ガールズバー", "釧路 ラウンジ", "釧路 ニュークラ", "末広 スナック", "釧路 夜遊び", "釧路 ナイトライフ", "釧路 バー"],
   alternates: { canonical: "https://www.night-vision.jp" },
   openGraph: {
-    title: "釧路ナイトビジョン｜釧路の飲み屋・キャバクラ・スナック情報",
+    title: "NIGHT VISION｜釧路の飲み屋・キャバクラ・スナック情報",
     description: "釧路の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ情報。末広・愛国エリア全店舗掲載。",
     url: "https://www.night-vision.jp",
-    siteName: "釧路ナイトビジョン",
+    siteName: "NIGHT VISION",
     locale: "ja_JP",
     type: "website",
   },
@@ -74,7 +74,7 @@ export default async function HomePage() {
             釧路のナイトライフ情報
           </h2>
           <p style={{ color: "var(--text-hint)", fontSize: 12, lineHeight: 2 }}>
-            釧路ナイトビジョンは、北海道釧路市のスナック・ガールズバー・ラウンジ・飲み屋の情報を
+            NIGHT VISIONは、北海道釧路市のスナック・ガールズバー・ラウンジ・飲み屋の情報を
             地域密着でお届けするナイトガイドです。末広・愛国エリアを中心に、
             初めての方でも安心して入れるお店を厳選して掲載しています。
           </p>
@@ -91,7 +91,7 @@ export default async function HomePage() {
             お店を掲載しませんか？
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
-            釧路ナイトビジョンに掲載して集客アップ。<br />
+            NIGHT VISIONに掲載して集客アップ。<br />
             フリープランは無料で始められます。
           </p>
           <a href="/for-owners" style={{
@@ -112,7 +112,7 @@ export default async function HomePage() {
             釧路の飲み屋・キャバクラ・スナック情報ガイド
           </h2>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 2, marginBottom: 16 }}>
-            釧路ナイトビジョンは、北海道釧路市の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ・ニュークラブなど夜のお店情報を一か所にまとめたナイトライフガイドです。末広エリア・愛国エリアを中心に、地元で人気のお店を厳選して掲載しています。
+            NIGHT VISIONは、北海道釧路市の飲み屋・キャバクラ・スナック・ガールズバー・ラウンジ・ニュークラブなど夜のお店情報を一か所にまとめたナイトライフガイドです。末広エリア・愛国エリアを中心に、地元で人気のお店を厳選して掲載しています。
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
             {[
@@ -150,7 +150,7 @@ export default async function HomePage() {
           <a href="/report" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>🚨 店舗情報の報告</a>
           <a href="/contact" style={{ color: "var(--text-muted)", fontSize: 12, textDecoration: "none" }}>お問い合わせ</a>
         </div>
-        <div>© 2025 釧路ナイトビジョン · 掲載情報は公開情報をもとに作成しています</div>
+        <div>© 2025 NIGHT VISION · 掲載情報は公開情報をもとに作成しています</div>
       </footer>
     </>
   );

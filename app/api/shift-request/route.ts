@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     if (owner?.email) {
       const dateList = shifts.map((s: any) => `${s.date}（${s.start_time}〜${s.end_time}）`).join("<br>");
       await resend.emails.send({
-        from: "釧路ナイトビジョン <info@night-vision.jp>",
+        from: "NIGHT VISION <info@night-vision.jp>",
         to: owner.email,
         subject: `【ナイトビジョン】${cast?.name ?? "キャスト"}さんから希望シフトが届きました`,
         html: `<p>${(owner.shops as any)?.name} オーナー様</p><p>${cast?.name ?? "キャスト"}さんから希望シフトが提出されました。</p><br><p><strong>希望シフト：</strong></p><p>${dateList}</p><br><p><a href="https://www.night-vision.jp/owner/dashboard/shifts">シフト管理画面を開く</a></p>`,

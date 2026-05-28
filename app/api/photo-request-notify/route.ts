@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: "kushiro.night.vision@gmail.com",
       subject: `【写真申請】${shopName} - ${typeLabels[photoType] ?? photoType}`,
       html: `

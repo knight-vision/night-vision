@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
             .join("<br>");
 
           await resend.emails.send({
-            from: "釧路ナイトビジョン <info@night-vision.jp>",
+            from: "NIGHT VISION <info@night-vision.jp>",
             to: account.email,
             subject: `【${shop?.name}】シフトが確定しました`,
             html: `
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 <p>${dateList}</p>
 <br>
 <p>ご確認ください。</p>
-<p>【${shop?.name}】<br>釧路ナイトビジョン</p>
+<p>【${shop?.name}】<br>NIGHT VISION</p>
             `,
           });
         }

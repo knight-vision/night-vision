@@ -48,9 +48,9 @@ export async function POST(req: NextRequest) {
 
         if (account?.email) {
           await resend.emails.send({
-            from: "釧路ナイトビジョン <info@night-vision.jp>",
+            from: "NIGHT VISION <info@night-vision.jp>",
             to: account.email,
-            subject: "【釧路ナイトビジョン】写真が承認されました",
+            subject: "【NIGHT VISION】写真が承認されました",
             html: emailHtml({
               title: "📷 写真が承認されました",
               body: `
@@ -85,9 +85,9 @@ export async function POST(req: NextRequest) {
 
       if (ownerEmail) {
         await resend.emails.send({
-          from: "釧路ナイトビジョン <info@night-vision.jp>",
+          from: "NIGHT VISION <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】写真申請が承認されました",
+          subject: "【NIGHT VISION】写真申請が承認されました",
           html: emailHtml({
             title: "✅ 写真申請が承認されました",
             body: `
@@ -115,9 +115,9 @@ export async function POST(req: NextRequest) {
         const castName = (request.casts as any)?.name || "キャスト";
         if (account?.email) {
           await resend.emails.send({
-            from: "釧路ナイトビジョン <info@night-vision.jp>",
+            from: "NIGHT VISION <info@night-vision.jp>",
             to: account.email,
-            subject: "【釧路ナイトビジョン】写真申請について",
+            subject: "【NIGHT VISION】写真申請について",
             html: emailHtml({
               title: "写真申請について",
               body: `
@@ -136,9 +136,9 @@ export async function POST(req: NextRequest) {
       const shopName = (request.shops as any)?.name || "お店";
       if (ownerEmail) {
         await resend.emails.send({
-          from: "釧路ナイトビジョン <info@night-vision.jp>",
+          from: "NIGHT VISION <info@night-vision.jp>",
           to: ownerEmail,
-          subject: "【釧路ナイトビジョン】写真申請について",
+          subject: "【NIGHT VISION】写真申請について",
           html: emailHtml({
             title: "写真申請について",
             body: `

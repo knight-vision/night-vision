@@ -13,8 +13,8 @@ export const metadata: Metadata = {
     title: "ナイトビジョン",
   },
   title: {
-    default: "釧路ナイトビジョン｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
-    template: "%s｜釧路ナイトビジョン",
+    default: "NIGHT VISION｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
+    template: "%s｜NIGHT VISION",
   },
   description: "釧路のスナック・ガールズバー・ラウンジ・飲み屋の最新情報をまとめた地域密着型ナイトガイド。お店の雰囲気・料金・キャスト情報を掲載。",
   keywords: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "釧路市 夜", "釧路市 飲み屋", "北海道釧路 ナイトライフ",
   ],
   alternates: {},
-  openGraph: { type: "website", locale: "ja_JP", siteName: "釧路ナイトビジョン" },
+  openGraph: { type: "website", locale: "ja_JP", siteName: "NIGHT VISION" },
   robots: { index: true, follow: true },
   verification: { google: "PpTaH4pdV66wwM5Syk8TQpIOvKZ3n2pZ2pNVfiEV2LE" },
   icons: {

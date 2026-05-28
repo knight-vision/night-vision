@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       : `${date} ${requested_start_time}〜${requested_end_time} への変更希望`;
 
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: ownerData.email,
       subject: `【シフト${typeLabel}】${castName}からリクエストが届きました`,
       html: emailHtml({

@@ -141,7 +141,7 @@ export default function JoinPage() {
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <Link href="/" style={{ textDecoration: "none" }}>
             <div style={{ fontSize: 13, color: "var(--accent)", letterSpacing: 3, fontWeight: 700 }}>🦉 NIGHT VISION</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>釧路ナイトビジョン</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>NIGHT VISION</div>
           </Link>
         </div>
 

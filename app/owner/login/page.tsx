@@ -99,7 +99,7 @@ export default function OwnerLoginPage() {
               {mode === "login" ? "店舗管理画面" : "パスワード再発行"}
             </h1>
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>
-              釧路ナイトビジョン 掲載店舗専用
+              NIGHT VISION 掲載店舗専用
             </p>
           </div>
 

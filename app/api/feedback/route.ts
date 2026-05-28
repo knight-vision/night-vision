@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await resend.emails.send({
-    from: "釧路ナイトビジョン <info@night-vision.jp>",
+    from: "NIGHT VISION <info@night-vision.jp>",
     to: process.env.ADMIN_EMAIL || "info@night-vision.jp",
     subject: `【ご意見・ご要望】${sender_type === "cast" ? "キャスト" : "オーナー"}から`,
     html: emailHtml({

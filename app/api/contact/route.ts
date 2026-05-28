@@ -9,12 +9,12 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: "kushiro.night.vision@gmail.com",
       replyTo: contactEmail,
       subject: `【お問い合わせ】${type}：${shopName}`,
       html: `
-<h2>【釧路ナイトビジョン】お問い合わせがありました</h2>
+<h2>【NIGHT VISION】お問い合わせがありました</h2>
 <table border="1" cellpadding="6" style="border-collapse:collapse;">
   <tr><td>種別</td><td>${type}</td></tr>
   <tr><td>店舗名</td><td>${shopName}</td></tr>
@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
     });
 
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: contactEmail,
-      subject: "【釧路ナイトビジョン】お問い合わせを受け付けました",
+      subject: "【NIGHT VISION】お問い合わせを受け付けました",
       html: `
 <p>${contactName} 様</p>
 <p>お問い合わせありがとうございます。内容を確認の上、3営業日以内にご連絡いたします。</p>
-<p>釧路ナイトビジョン<br>info@night-vision.jp</p>
+<p>NIGHT VISION<br>info@night-vision.jp</p>
       `,
     });
 

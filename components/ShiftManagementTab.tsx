@@ -338,7 +338,7 @@ ${casts.map(cast=>{
     </tbody></table></div>`;
 }).join("")}
 <div class="summary"><span>合計人件費（${payrollMonth}）</span><span style="font-size:16px;font-weight:700">¥${casts.reduce((s,c)=>s+calcCastMonth(c).total,0).toLocaleString()}</span></div>
-<div style="margin-top:20px;font-size:10px;color:#bbb">出力: ${new Date().toLocaleDateString("ja-JP")}　釧路ナイトビジョン</div>
+<div style="margin-top:20px;font-size:10px;color:#bbb">出力: ${new Date().toLocaleDateString("ja-JP")}　NIGHT VISION</div>
 </body></html>`;
     const w = window.open("","_blank");
     if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500); }

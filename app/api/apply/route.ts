@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   };
 
   const html = `
-<h2>【釧路ナイトビジョン】掲載申し込みがありました</h2>
+<h2>【NIGHT VISION】掲載申し込みがありました</h2>
 
 <h3>■ 店舗情報</h3>
 <table border="1" cellpadding="6" style="border-collapse:collapse;">
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: "kushiro.night.vision@gmail.com",
       replyTo: contactEmail,
       subject: `【掲載申し込み】${shopName}`,
@@ -78,12 +78,12 @@ export async function POST(req: NextRequest) {
 
     // 申し込み者への自動返信
     await resend.emails.send({
-      from: "釧路ナイトビジョン <info@night-vision.jp>",
+      from: "NIGHT VISION <info@night-vision.jp>",
       to: contactEmail,
-      subject: "【釧路ナイトビジョン】掲載申し込みを受け付けました",
+      subject: "【NIGHT VISION】掲載申し込みを受け付けました",
       html: `
 <p>${contactName} 様</p>
-<p>この度は釧路ナイトビジョンへの掲載申し込みありがとうございます。</p>
+<p>この度はNIGHT VISIONへの掲載申し込みありがとうございます。</p>
 <p>内容を確認の上、3営業日以内にご連絡いたします。</p>
 <br>
 <p>申し込み内容：</p>
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   <li>プラン：${planLabels[plan] ?? plan}</li>
 </ul>
 <br>
-<p>釧路ナイトビジョン</p>
+<p>NIGHT VISION</p>
 <p>info@night-vision.jp</p>
       `,
     });

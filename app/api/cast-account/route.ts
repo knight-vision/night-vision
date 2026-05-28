@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
 
   // メール送信
   await resend.emails.send({
-    from: "釧路ナイトビジョン <info@night-vision.jp>",
+    from: "NIGHT VISION <info@night-vision.jp>",
     to: email,
-    subject: "【釧路ナイトビジョン】キャスト専用ページのご案内",
+    subject: "【NIGHT VISION】キャスト専用ページのご案内",
     html: `
 <p>${castName} さん</p>
-<p>釧路ナイトビジョン キャスト専用ページへのアクセス情報をお送りします。</p>
+<p>NIGHT VISION キャスト専用ページへのアクセス情報をお送りします。</p>
 <br>
 <table border="1" cellpadding="8" style="border-collapse:collapse;">
   <tr><td>ログインURL</td><td><a href="https://www.night-vision.jp/cast/login">https://www.night-vision.jp/cast/login</a></td></tr>
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 <br>
 <p>ログイン後、シフト希望を提出できます。</p>
 <p>【${shopName}】</p>
-<p>釧路ナイトビジョン<br>info@night-vision.jp</p>
+<p>NIGHT VISION<br>info@night-vision.jp</p>
     `,
   });
 

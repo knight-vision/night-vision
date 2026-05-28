@@ -56,7 +56,7 @@ export default function CastLoginPage() {
               キャスト専用ページ
             </h1>
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>
-              釧路ナイトビジョン キャスト用
+              NIGHT VISION キャスト用
             </p>
           </div>
 
