@@ -223,7 +223,10 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             {[
               { icon: "🕐", label: "営業時間", value: shop.open_hour },
               { icon: "📅", label: "定休日", value: shop.closed_days
-                ? shop.closed_days.replace(/月/g,"月曜日").replace(/火/g,"火曜日").replace(/水/g,"水曜日").replace(/木/g,"木曜日").replace(/金/g,"金曜日").replace(/土/g,"土曜日").replace(/日/g,"日曜日")
+                ? shop.closed_days.split("・").map((d: string) => {
+                    const map: Record<string, string> = { 月:"月曜日", 火:"火曜日", 水:"水曜日", 木:"木曜日", 金:"金曜日", 土:"土曜日", 日:"日曜日", 祝:"祝日" };
+                    return map[d.trim()] || d;
+                  }).join("・")
                 : null },
               { icon: "💴", label: "予算目安", value: shop.budget },
               { icon: "💺", label: "席数", value: shop.seats ? shop.seats + "席" : null },
