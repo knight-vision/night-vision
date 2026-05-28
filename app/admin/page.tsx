@@ -448,7 +448,7 @@ export default function AdminPage() {
                         if (!confirm(`${a.email} のアカウントを削除しますか？`)) return;
                         const res = await fetch("/api/admin/accounts/delete", {
                           method: "POST", headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: a.id, account_type: a.account_type }),
+                          body: JSON.stringify({ id: a.id, email: a.email, account_type: a.account_type }),
                         });
                         const d = await res.json();
                         if (d.success) { setMsg("削除しました"); await loadAccounts(); }

@@ -8,18 +8,34 @@ const supabase = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  const { id, account_type } = await req.json();
-  if (!id || !account_type) return NextResponse.json({ error: "id・account_typeが必要です" }, { status: 400 });
+  const { id, account_type, email } = await req.json();
+  if ((!id && !email) || !account_type) {
+    return NextResponse.json({ error: "id/emailとaccount_typeが必要です" }, { status: 400 });
+  }
+
   const table = account_type === "owner" ? "shop_owners" : "cast_accounts";
-  
-  // idをNumberに変換（int8型との不一致を防ぐ）
-  const numericId = Number(id);
-  if (isNaN(numericId)) return NextResponse.json({ error: "idが不正です" }, { status: 400 });
-  
-  const { error } = await supabase.from(table).delete().eq("id", numericId);
+
+  // emailで削除（型変換の問題を回避）
+  let query;
+  if (email) {
+    query = supabase.from(table).delete().eq("email", email);
+  } else {
+    // idで試みる（文字列のまま渡す）
+    query = supabase.from(table).delete().eq("id", id);
+  }
+
+  const { error, count } = await query.select();
+
   if (error) {
-    console.error("[accounts/delete] error:", error);
+    console.error(`[delete] table=${table} email=${email} id=${id} error:`, error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ success: true });
+
+  console.log(`[delete] table=${table} email=${email} id=${id} count=${count}`);
+
+  if (count === 0) {
+    return NextResponse.json({ error: "削除対象が見つかりませんでした" }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true, deleted: count });
 }
