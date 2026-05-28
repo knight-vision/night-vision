@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import CastMyRecordTab from "@/components/CastMyRecordTab";
+import CastCustomersTab from "@/components/CastCustomersTab";
+import PwaManifestInjector from "@/components/PwaManifestInjector";
 
 function PwaBanner() {
   const [show, setShow] = useState(false);
@@ -96,7 +98,7 @@ export default function CastDashboard() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [submitMsg, setSubmitMsg] = useState("");
-  const [activeTab, setActiveTab] = useState<"shift" | "record">("shift");
+  const [activeTab, setActiveTab] = useState<"shift"|"record"|"customers">("shift");
 
   useEffect(() => {
     const id = localStorage.getItem("cast_id");
@@ -202,6 +204,7 @@ export default function CastDashboard() {
 
   return (
     <>
+      <PwaManifestInjector manifestUrl="/cast-manifest.json" />
       <Header />
       <PwaBanner />
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px" }}>
@@ -225,27 +228,33 @@ export default function CastDashboard() {
         </div>
 
         {/* タブナビ */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <div style={{ display:"flex", gap:8, marginBottom:20 }}>
           {[
-            { key: "shift", label: "📅 シフト希望" },
-            { key: "record", label: "📋 実績" },
+            { key:"shift",     label:"📅 シフト希望" },
+            { key:"record",    label:"📋 実績" },
+            { key:"customers", label:"👤 顧客管理" },
           ].map(t => (
-            <button key={t.key} onClick={() => setActiveTab(t.key as any)} style={{
-              flex: 1, padding: "10px", borderRadius: 12, border: "none", cursor: "pointer",
-              fontFamily: "var(--font)", fontSize: 13, fontWeight: activeTab === t.key ? 700 : 500,
-              background: activeTab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
-              color: activeTab === t.key ? "#fff" : "var(--text-secondary)",
+            <button key={t.key} onClick={()=>setActiveTab(t.key as any)} style={{
+              flex:1, padding:"10px 4px", borderRadius:12, border:"none", cursor:"pointer",
+              fontFamily:"var(--font)", fontSize:12, fontWeight:activeTab===t.key?700:500,
+              background:activeTab===t.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
+              color:activeTab===t.key?"#fff":"var(--text-secondary)",
             }}>{t.label}</button>
           ))}
         </div>
 
         {/* 実績タブ */}
-        {activeTab === "record" && castId && shopId && (
+        {activeTab==="record" && castId && shopId && (
           <CastMyRecordTab shopId={shopId} castId={castId} castName={castName} />
         )}
 
+        {/* 顧客管理タブ */}
+        {activeTab==="customers" && castId && shopId && (
+          <CastCustomersTab shopId={shopId} castId={castId} />
+        )}
+
         {/* シフト希望タブ */}
-        {activeTab === "shift" && (<>
+        {activeTab==="shift" && (<>
         <div style={{ ...sectionStyle, background: "var(--accent)12", borderColor: "var(--accent)33" }}>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.8, margin: 0 }}>
             出勤したい日をタップして選択し、時間を設定してください。<br />
