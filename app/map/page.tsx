@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Link from "next/link";
-import { PREFECTURES, REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
+import { REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
 import { CITIES } from "@/lib/cities";
 import type { Metadata } from "next";
 
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default function MapPage() {
   const regions = getPrefecturesByRegion();
+  // 実際に店舗データがある都道府県のみ
   const activePrefKeys = new Set(CITIES.map(c => c.prefectureKey));
 
   return (
@@ -24,16 +25,6 @@ export default function MapPage() {
           <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7 }}>
             都道府県を選んでください
           </p>
-          <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 12, color: "var(--text-muted)" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--online)", display: "inline-block" }} />
-              掲載あり
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--border)", display: "inline-block" }} />
-              準備中
-            </span>
-          </div>
         </div>
 
         {REGION_ORDER.map(regionName => {
@@ -47,18 +38,30 @@ export default function MapPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {prefs.map(pref => {
                   const isActive = activePrefKeys.has(pref.key);
+                  if (!isActive) {
+                    return (
+                      <span
+                        key={pref.key}
+                        style={{
+                          padding: "7px 14px", borderRadius: 20, fontSize: 13,
+                          border: "1px solid var(--border)",
+                          background: "var(--bg-input)",
+                          color: "var(--text-hint)",
+                        }}
+                      >
+                        {pref.name}
+                      </span>
+                    );
+                  }
                   return (
                     <Link
                       key={pref.key}
                       href={`/${pref.key}`}
                       style={{
-                        padding: "7px 14px",
-                        borderRadius: 20,
-                        fontSize: 13,
-                        fontWeight: isActive ? 700 : 400,
-                        border: `1px solid ${isActive ? "var(--online)" : "var(--border)"}`,
-                        background: isActive ? "#10b98115" : "var(--bg-input)",
-                        color: isActive ? "var(--online)" : "var(--text-muted)",
+                        padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700,
+                        border: "1px solid var(--online)",
+                        background: "#10b98115",
+                        color: "var(--online)",
                         textDecoration: "none",
                       }}
                     >

@@ -1,10 +1,21 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import { getPrefecture } from "@/lib/japan";
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // /[prefecture] または /[prefecture]/[city]/... の場合に都道府県名を取得
+  const segments = pathname.split("/").filter(Boolean);
+  const prefKey = segments[0];
+  const pref = prefKey ? getPrefecture(prefKey) : null;
+
+  // タイトル表示
+  const titleEn = pref ? `${pref.name.toUpperCase()} NIGHT VISION` : "NIGHT VISION";
+  const titleJa = pref ? `${pref.name}ナイトビジョン` : "ナイトビジョン";
 
   const handleLogoClick = () => {
     router.push("/");
@@ -75,9 +86,9 @@ export default function Header() {
                 fontSize: 18, fontWeight: 900, letterSpacing: "0.05em",
                 background: "linear-gradient(135deg, var(--accent), var(--accent2))",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              }}>KUSHIRO NIGHT VISION</div>
+              }}>{titleEn}</div>
               <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginTop: 1 }}>
-                釧路ナイトビジョン
+                {titleJa}
               </div>
             </div>
           </div>
