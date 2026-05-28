@@ -117,7 +117,7 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
-  const [castSubTab, setCastSubTab] = useState<"list" | "payroll">("list");
+  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "payroll">("list");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
@@ -1117,6 +1117,7 @@ export default function OwnerDashboard() {
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               {[
                 { key: "list", label: "👥 キャスト一覧" },
+                { key: "cast_sales", label: "⭐ キャスト売上" },
                 { key: "payroll", label: "💴 給与管理" },
               ].map(st => (
                 <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{
@@ -1127,6 +1128,11 @@ export default function OwnerDashboard() {
                 }}>{st.label}</button>
               ))}
             </div>
+
+            {/* キャスト売上サブタブ */}
+            {castSubTab === "cast_sales" && shopId && (
+              <SalesTab shopId={shopId} shopPlan={shop.plan || "free"} casts={casts} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} initialView="cast_sales" />
+            )}
 
             {/* キャスト一覧サブタブ */}
             {castSubTab === "list" && (<div>

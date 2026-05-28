@@ -47,7 +47,6 @@ const PLANS = [
       "月次売上グラフ・分析",
       "キャスト別売上・成績管理",
       "給与計算・明細PDF出力",
-      "品名管理プリセット",
       "CSV・PDFエクスポート",
     ],
     disabled: [
@@ -70,7 +69,6 @@ const PLANS = [
       "バナー写真・キャスト写真の掲載",
       "おすすめ優先表示",
       "求人情報の掲載",
-      "LINE通知（シフト・応募）",
     ],
     disabled: [
       "売上・伝票管理",
@@ -96,7 +94,6 @@ const PLANS = [
       "伝票・売上・給与管理",
       "キャスト成績管理・グラフ",
       "CSV・PDFエクスポート",
-      "LINE通知",
       "優先サポート",
     ],
     disabled: [],
@@ -172,7 +169,7 @@ export default function ForOwnersPage() {
               { icon: "⭐", title: "キャスト成績管理", desc: "指名・同伴・売上を可視化・比較", plan: "スタンダード〜" },
               { icon: "🔝", title: "優先表示・バナー", desc: "検索上位・おすすめ枠で目立つ掲載", plan: "プレミアム〜" },
               { icon: "💼", title: "求人掲載", desc: "キャスト・スタッフ募集をサイトに掲載", plan: "プレミアム〜" },
-              { icon: "💬", title: "LINE通知", desc: "シフト確定・求人応募を即時通知", plan: "プレミアム〜" },
+              { icon: "💬", title: "LINE通知", desc: "シフト確定・求人応募を即時通知", plan: "フリー〜" },
             ].map(f => (
               <div key={f.title} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(167,139,250,0.15)", borderRadius: 18, padding: "20px 18px" }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>{f.icon}</div>

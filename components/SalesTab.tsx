@@ -67,10 +67,10 @@ function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Numb
 
 import { canUseSales } from "@/lib/plan";
 
-type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties };
+type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties; initialView?: "slip" | "sales" | "cast_sales" };
 
-export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
-  const [view, setView] = useState<"slip"|"sales"|"cast_sales"|"menu">("slip");
+export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputStyle, labelStyle, btnPrimary, initialView }: Props) {
+  const [view, setView] = useState<"slip"|"sales"|"cast_sales">(initialView || "slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
   const [selectedCastDetail, setSelectedCastDetail] = useState<number|null>(null);
@@ -400,8 +400,8 @@ ${rows.map(({ cast, d, dayRows }) => `
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"cast_sales",label:"⭐ キャスト売上"},{key:"sales",label:"📊 店舗売上"},{key:"menu",label:"🍽 品名管理"}].map(v=>(
-          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales"||v.key==="cast_sales") loadSales(month); }} style={{
+        {[{key:"slip",label:"📋 伝票入力"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
+          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
             border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
@@ -1130,63 +1130,6 @@ ${activeDays.map(date=>{
         </div>
       )}
 
-      {/* ===== 品名管理 ===== */}
-      {view==="menu"&&(
-        <div>
-          {/* 追加フォーム */}
-          <div style={sec}>
-            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:12,letterSpacing:"0.08em"}}>品名を追加</div>
-            <div style={{display:"grid",gridTemplateColumns:"2fr 1fr auto",gap:8,alignItems:"end"}}>
-              <div>
-                <label style={labelStyle}>品名</label>
-                <input value={newMenuName} onChange={e=>setNewMenuName(e.target.value)} placeholder="例: 赤ワイン" style={inp}/>
-              </div>
-              <div>
-                <label style={labelStyle}>単価（¥）</label>
-                <input type="number" value={newMenuPrice} onChange={e=>setNewMenuPrice(e.target.value)} placeholder="0" style={inp}/>
-              </div>
-              <button onClick={async()=>{
-                if(!newMenuName) return;
-                const res = await fetch("/api/shop-menus",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,name:newMenuName,price:Number(newMenuPrice)||0})});
-                if(res.ok){setNewMenuName("");setNewMenuPrice("");await loadMenus();setMsg("追加しました");}
-              }} style={{...btnPrimary as any,width:"auto",padding:"10px 16px",fontSize:13}}>追加</button>
-            </div>
-          </div>
-
-          {/* 品名一覧（DB + デフォルト統合表示） */}
-          <div style={sec}>
-            <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:10,letterSpacing:"0.08em"}}>品名一覧</div>
-            {/* DB品名（デフォルト含む） */}
-            {shopMenus.map(m=>(
-              <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"6px 0"}}>
-                {editingId===m.id ? (
-                  <div style={{display:"grid",gridTemplateColumns:"2fr 1fr auto auto",gap:6,alignItems:"center"}}>
-                    <input value={editName} onChange={e=>setEditName(e.target.value)} style={{...inp,fontSize:12}}/>
-                    <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} style={{...inp,fontSize:12}}/>
-                    <button onClick={async()=>{
-                      await fetch("/api/shop-menus",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id,name:editName,price:Number(editPrice)||0})});
-                      await loadMenus(); setEditingId(null);
-                    }} style={{padding:"6px 10px",background:"var(--online-bg)",border:"1px solid var(--online-border)",borderRadius:6,color:"var(--online)",fontSize:11,cursor:"pointer"}}>保存</button>
-                    <button onClick={()=>setEditingId(null)} style={{padding:"6px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,cursor:"pointer"}}>✕</button>
-                  </div>
-                ) : (
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13}}>
-                    <span style={{color:"var(--text-primary)"}}>{m.name}</span>
-                    <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                      <span style={{color:"var(--text-muted)"}}>¥{m.price.toLocaleString()}</span>
-                      <button onClick={()=>{setEditingId(m.id);setEditName(m.name);setEditPrice(String(m.price));}} style={{background:"none",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",padding:"2px 8px",fontSize:11,cursor:"pointer"}}>編集</button>
-                      <button onClick={async()=>{
-                        await fetch("/api/shop-menus",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id})});
-                        await loadMenus();
-                      }} style={{background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",padding:"2px 8px",borderRadius:6,fontSize:11,cursor:"pointer"}}>削除</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       {/* キャスト売上詳細モーダル */}
       {selectedCastDetail && (()=>{
         const cast = casts.find(c=>c.id===selectedCastDetail);
