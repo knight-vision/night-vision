@@ -23,17 +23,20 @@ export default function CastMyRecordTab({ shopId, castId, castName }: Props) {
   const [slips, setSlips] = useState<Slip[]>([]);
   const [loading, setLoading] = useState(false);
   const [dbgMsg, setDbgMsg] = useState("");
+  const [rawDebug, setRawDebug] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!shopId || !castId) return;
     setLoading(true);
     const [y, m] = month.split("-").map(Number);
-    const [shiftRes, slipRes] = await Promise.all([
+    const [shiftRes, slipRes, debugRes] = await Promise.all([
       fetch(`/api/confirm-shift?shop_id=${shopId}&year=${y}&month=${m}`),
       fetch(`/api/cast-slips?shop_id=${shopId}&cast_id=${castId}&month=${month}`),
+      fetch(`/api/cast-slips?shop_id=${shopId}&month=${month}&debug=1`),
     ]);
     const shiftData = shiftRes.ok ? await shiftRes.json() : {};
     const slipData  = slipRes.ok  ? await slipRes.json()  : [];
+    const debugData = debugRes.ok ? await debugRes.json() : [];
 
     const myShifts = (shiftData.confirmed || []).filter(
       (s: ConfirmedShift) => Number(s.cast_id) === Number(castId)
@@ -42,7 +45,8 @@ export default function CastMyRecordTab({ shopId, castId, castName }: Props) {
 
     setConfirmedShifts(myShifts);
     setSlips(mySlips);
-    setDbgMsg(`出勤:${myShifts.length}日 伝票:${mySlips.length}件`);
+    setRawDebug(Array.isArray(debugData) ? debugData : []);
+    setDbgMsg(`shopId:${shopId} castId:${castId} 出勤:${myShifts.length}日 伝票:${mySlips.length}件 全伝票:${debugData.length}件`);
     setLoading(false);
   }, [shopId, castId, month]);
 
@@ -94,8 +98,18 @@ export default function CastMyRecordTab({ shopId, castId, castName }: Props) {
         ))}
       </div>
 
-      {/* デバッグ（小さく） */}
-      <div style={{ fontSize:10, color:"var(--text-hint)", textAlign:"center" as const, marginBottom:8 }}>{dbgMsg}</div>
+      {/* デバッグパネル（確認後削除） */}
+      <div style={{ fontSize:11, background:"#1a1a2e", border:"1px solid #333", borderRadius:8, padding:10, marginBottom:12, color:"#aaa", wordBreak:"break-all" as const }}>
+        <div style={{ color:"#7c3aed", fontWeight:700, marginBottom:4 }}>🔍 DEBUG</div>
+        <div>{dbgMsg}</div>
+        {rawDebug.slice(0,3).map((s,i) => (
+          <div key={i} style={{ marginTop:6, padding:"4px 6px", background:"#111", borderRadius:4 }}>
+            <span style={{ color:"#888" }}>{s.date}: </span>
+            <span style={{ color:"#ccc" }}>{s.cast_entries_raw}</span>
+          </div>
+        ))}
+        {rawDebug.length === 0 && <div style={{ color:"#f59e0b" }}>⚠ 伝票なし（shop_idを確認）</div>}
+      </div>
 
       {loading ? <div style={{ textAlign:"center" as const, color:"var(--text-muted)", padding:24 }}>読み込み中...</div> : (<>
 
