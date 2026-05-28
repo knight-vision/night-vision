@@ -81,7 +81,7 @@ export default async function CityGenrePage({ params }: Props) {
 
         {shops.length === 0
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
-          : <ShopList shops={shops} areas={areaOptions} defaultType={genre.dbType} />
+          : <ShopList shops={shops} areas={areaOptions} defaultType={genre.dbType} hideTypeFilter={true} />
         }
       </main>
     </>

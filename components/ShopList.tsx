@@ -38,10 +38,11 @@ const AREAS = [
 
 const PER_PAGE = 20;
 
-export default function ShopList({ shops, areas: areasProp, defaultType }: {
+export default function ShopList({ shops, areas: areasProp, defaultType, hideTypeFilter }: {
   shops: Shop[];
   areas?: { label: string; value: string }[];
   defaultType?: string;
+  hideTypeFilter?: boolean;
 }) {
   const [selectedType, setSelectedType] = useState<string>(defaultType || "");
   const [selectedArea, setSelectedArea] = useState<string>("");
@@ -164,6 +165,7 @@ export default function ShopList({ shops, areas: areasProp, defaultType }: {
     <div>
 
       {/* ジャンルフィルター */}
+      {!hideTypeFilter && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           GENRE · ジャンル
@@ -190,6 +192,7 @@ export default function ShopList({ shops, areas: areasProp, defaultType }: {
           })}
         </div>
       </div>
+      )}
 
       {/* エリアフィルター */}
       {(areasProp || AREAS).length > 0 && (
