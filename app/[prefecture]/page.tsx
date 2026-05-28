@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import { getPrefecture } from "@/lib/japan";
-import { getCitiesByPrefecture, getCity } from "@/lib/cities";
+import { getCity } from "@/lib/cities";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -30,9 +30,6 @@ export default function PrefecturePage({ params }: Props) {
   const pref = getPrefecture(params.prefecture);
   if (!pref) notFound();
 
-  const activeCities = getCitiesByPrefecture(params.prefecture);
-  const activeCityKeys = new Set(activeCities.map(c => c.key));
-
   return (
     <>
       <Header />
@@ -43,41 +40,23 @@ export default function PrefecturePage({ params }: Props) {
           <span>{pref.name}</span>
         </div>
 
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>
             {pref.name}のナイトライフ
           </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.7 }}>
-            市区町村を選んでください
-          </p>
+          <p style={{ color: "var(--text-muted)", fontSize: 13 }}>市区町村を選んでください</p>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {pref.cities.map(city => {
-            const isActive = activeCityKeys.has(city.key);
-            return (
-              <Link
-                key={city.key}
-                href={`/${pref.key}/${city.key}`}
-                style={{
-                  padding: "12px 20px",
-                  borderRadius: 14,
-                  border: `1px solid ${isActive ? "var(--accent)66" : "var(--border)"}`,
-                  background: isActive ? "var(--accent)0d" : "var(--bg-input)",
-                  color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-                  textDecoration: "none",
-                  fontWeight: isActive ? 700 : 400,
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                {city.name}
-                {isActive && <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>●</span>}
-              </Link>
-            );
-          })}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {pref.cities.map(city => (
+            <Link key={city.key} href={`/${pref.key}/${city.key}`} style={{
+              padding: "9px 18px", borderRadius: 20, fontSize: 13, fontWeight: 500,
+              border: "1px solid var(--border)", background: "var(--bg-input)",
+              color: "var(--text-secondary)", textDecoration: "none",
+            }}>
+              {city.name}
+            </Link>
+          ))}
         </div>
       </main>
     </>

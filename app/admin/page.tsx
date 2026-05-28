@@ -104,6 +104,8 @@ export default function AdminPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(false);
   const [shopSearch, setShopSearch] = useState("");
+  const [shopPrefFilter, setShopPrefFilter] = useState("");
+  const [shopCityFilter, setShopCityFilter] = useState("");
   const [analytics, setAnalytics] = useState<{ today: number; week: number; month: number; daily: { date: string; count: number }[] } | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -793,19 +795,50 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* 店舗名検索 */}
-            <div style={{ marginBottom: 12 }}>
+            {/* 検索・エリアフィルタ */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
               <input
                 type="text"
                 value={shopSearch}
                 onChange={e => setShopSearch(e.target.value)}
                 placeholder="🔍 店舗名で検索..."
-                style={{ ...inputStyle, maxWidth: 320 }}
+                style={{ ...inputStyle, maxWidth: 200 }}
               />
+              <select value={shopPrefFilter} onChange={e => { setShopPrefFilter(e.target.value); setShopCityFilter(""); }}
+                style={{ ...inputStyle, maxWidth: 140 }}>
+                <option value="">都道府県 すべて</option>
+                {Array.from(new Set(shops.map(s => (s as any).prefecture).filter(Boolean))).sort().map(p => (
+                  <option key={p as string} value={p as string}>{p as string}</option>
+                ))}
+              </select>
+              <select value={shopCityFilter} onChange={e => setShopCityFilter(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 160 }}>
+                <option value="">市区町村 すべて</option>
+                {Array.from(new Set(shops.filter(s => !shopPrefFilter || (s as any).prefecture === shopPrefFilter).map(s => (s as any).city).filter(Boolean))).sort().map(c => (
+                  <option key={c as string} value={c as string}>{c as string}</option>
+                ))}
+              </select>
+              {(shopSearch || shopPrefFilter || shopCityFilter) && (
+                <button onClick={() => { setShopSearch(""); setShopPrefFilter(""); setShopCityFilter(""); }}
+                  style={{ ...inputStyle, maxWidth: 80, cursor: "pointer", color: "var(--text-muted)", fontSize: 12 }}>
+                  リセット
+                </button>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
+              {shops.filter(s =>
+                (!shopSearch || s.name.toLowerCase().includes(shopSearch.toLowerCase())) &&
+                (!shopPrefFilter || (s as any).prefecture === shopPrefFilter) &&
+                (!shopCityFilter || (s as any).city === shopCityFilter)
+              ).length}件表示
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {shops.filter(s => !shopSearch || s.name.toLowerCase().includes(shopSearch.toLowerCase())).map((shop) => (
+              {shops.filter(s =>
+                (!shopSearch || s.name.toLowerCase().includes(shopSearch.toLowerCase())) &&
+                (!shopPrefFilter || (s as any).prefecture === shopPrefFilter) &&
+                (!shopCityFilter || (s as any).city === shopCityFilter)
+              ).map((shop) => (
                 <div key={shop.id} style={{ background: "var(--bg-card)", border: `1px solid ${shop.hidden ? "#f59e0b44" : "var(--border)"}`, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", opacity: shop.hidden ? 0.7 : 1 }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -813,6 +846,7 @@ export default function AdminPage() {
                       {shop.hidden && <span style={{ fontSize: 10, background: "#f59e0b22", color: "#f59e0b", border: "1px solid #f59e0b44", padding: "1px 6px", borderRadius: 8 }}>非表示</span>}
                     </div>
                     <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>
+                      {(shop as any).prefecture && <span style={{ marginRight: 6 }}>📍 {(shop as any).prefecture} {(shop as any).city}</span>}
                       {shop.type} · {shop.area_category} · {shop.plan}
                     </div>
                   </div>
