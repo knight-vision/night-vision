@@ -473,7 +473,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org", "@type": ["BarOrPub", "LocalBusiness"],
           name: shop.name, description: shop.description,
-          address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: "釧路市", addressRegion: "北海道", addressCountry: "JP" },
+          address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: (shop as any).city || "釧路市", addressRegion: (shop as any).prefecture || "北海道", addressCountry: "JP" },
           url: `https://www.night-vision.jp/shop/${shop.slug}`, telephone: shop.tel, openingHours: shop.open_hour, priceRange: shop.budget,
         })}} />
       </main>

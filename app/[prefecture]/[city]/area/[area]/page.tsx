@@ -15,10 +15,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!city) return {};
   const area = getArea(city, params.area);
   if (!area) return {};
+  const title = `${area.name}の飲み屋・ナイトライフ｜${city.name}${area.name}エリア｜NIGHT VISION`;
+  const description = `${city.name}${area.name}エリアの飲み屋・キャバクラ・ガールズバー・スナック情報。${area.description}`;
+  const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/area/${area.key}`;
   return {
-    title: `${area.name}の飲み屋・ナイトライフ｜${city.name}｜NIGHT VISION`,
-    description: area.description,
-    alternates: { canonical: `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/area/${area.key}` },
+    title,
+    description,
+    keywords: [
+      `${area.name} 飲み屋`, `${area.name} キャバクラ`, `${area.name} ガールズバー`,
+      `${area.name} スナック`, `${city.name} ${area.name}`, `${area.name} ナイトライフ`,
+    ],
+    alternates: { canonical: url },
+    openGraph: {
+      title, description, url,
+      siteName: "NIGHT VISION", type: "website",
+      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }],
+    },
+    twitter: { card: "summary", title, description },
   };
 }
 

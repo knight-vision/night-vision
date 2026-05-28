@@ -13,10 +13,27 @@ type Props = { params: { prefecture: string; city: string } };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityByPrefecture(params.prefecture, params.city);
   if (!city) return {};
+  const genres = getGenresForPrefecture(params.prefecture);
+  const genreNames = genres.map(g => g.name).join("・");
+  const title = `${city.name}の${genres[0].name}・ガールズバー・スナック一覧｜NIGHT VISION`;
+  const description = `${city.name}の${genreNames}情報を掲載。${city.description}料金・キャスト情報・出勤情報を毎日更新。`;
+  const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
   return {
-    title: `${city.name}のナイトライフ情報｜NIGHT VISION`,
-    description: city.description,
-    alternates: { canonical: `https://www.night-vision.jp/${city.prefectureKey}/${city.key}` },
+    title,
+    description,
+    keywords: [
+      `${city.name} キャバクラ`, `${city.name} ガールズバー`, `${city.name} スナック`,
+      `${city.name} ラウンジ`, `${city.name} 夜遊び`, `${city.name} ナイトライフ`,
+      `${city.name} キャバ 求人`, `${city.name} 飲み屋`,
+    ],
+    alternates: { canonical: url },
+    openGraph: {
+      title, description, url,
+      siteName: "NIGHT VISION",
+      type: "website",
+      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }],
+    },
+    twitter: { card: "summary", title, description },
   };
 }
 

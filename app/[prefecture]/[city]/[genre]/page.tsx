@@ -14,10 +14,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityByPrefecture(params.prefecture, params.city);
   const genre = getGenre(params.genre);
   if (!city || !genre) return {};
+  const title = `${city.name}の${genre.name}一覧｜料金・出勤情報｜NIGHT VISION`;
+  const description = `${city.name}の${genre.name}を${city.areas.length}エリアで検索。キャスト情報・料金・本日の出勤情報を毎日更新。`;
+  const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/${genre.key}`;
   return {
-    title: `${city.name}の${genre.name}一覧｜NIGHT VISION`,
-    description: `${city.name}の${genre.name}情報を掲載。料金・雰囲気・キャスト情報とともに紹介。`,
-    alternates: { canonical: `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/${genre.key}` },
+    title,
+    description,
+    keywords: [
+      `${city.name} ${genre.name}`, `${city.name} ${genre.name} 求人`,
+      `${city.name} ${genre.name} 料金`, `${city.name} ${genre.name} おすすめ`,
+      `${city.name} ナイトライフ`,
+    ],
+    alternates: { canonical: url },
+    openGraph: {
+      title, description, url,
+      siteName: "NIGHT VISION", type: "website",
+      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }],
+    },
+    twitter: { card: "summary", title, description },
   };
 }
 

@@ -10,10 +10,17 @@ type Props = { params: { prefecture: string } };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pref = getPrefecture(params.prefecture);
   if (!pref) return {};
+  const title = `${pref.name}のキャバクラ・ガールズバー・スナック情報｜NIGHT VISION`;
+  const description = `${pref.name}のナイトライフ情報。${pref.cities.slice(0,5).map(c=>c.name).join("・")}などのキャバクラ・ガールズバー・スナック・ラウンジを掲載。`;
+  const url = `https://www.night-vision.jp/${pref.key}`;
   return {
-    title: `${pref.name}のナイトライフ情報｜NIGHT VISION`,
-    description: `${pref.name}のキャバクラ・ラウンジ・ガールズバー・スナック情報。`,
-    alternates: { canonical: `https://www.night-vision.jp/${pref.key}` },
+    title,
+    description,
+    keywords: [`${pref.name} キャバクラ`, `${pref.name} ガールズバー`, `${pref.name} スナック`, `${pref.name} ナイトライフ`],
+    alternates: { canonical: url },
+    openGraph: { title, description, url, siteName: "NIGHT VISION", type: "website",
+      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }] },
+    twitter: { card: "summary", title, description },
   };
 }
 
