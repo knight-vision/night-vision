@@ -66,7 +66,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "today" | "basic" | "hours" | "sns" | "images" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
+type Tab = "today" | "shop_info" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -468,10 +468,7 @@ export default function OwnerDashboard() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "today", label: "🏠 ホーム" },
-    { key: "basic", label: "基本情報" },
-    { key: "hours", label: "営業時間" },
-    { key: "sns", label: "SNS" },
-    { key: "images", label: "店舗画像" },
+    { key: "shop_info", label: "店舗管理" },
     { key: "cast", label: "キャスト" },
     { key: "shift", label: "シフト管理" },
     { key: "sales", label: "📊 売上管理" },
@@ -517,7 +514,7 @@ export default function OwnerDashboard() {
               color: tab === t.key ? "#fff" : "var(--text-secondary)",
             }}>
               {t.label}
-              {t.key === "images" && pendingPhotos.length > 0 && (
+              {t.key === "shop_info" && pendingPhotos.length > 0 && (
                 <span style={{ marginLeft: 4, background: "#ffd700", color: "#000", borderRadius: "50%", fontSize: 10, padding: "1px 5px" }}>
                   {pendingPhotos.length}
                 </span>
@@ -532,7 +529,7 @@ export default function OwnerDashboard() {
         )}
 
         {/* 基本情報 */}
-        {tab === "basic" && (
+        {tab === "shop_info" && (<>
           <div style={sectionStyle}>
             {[
             { label: "店舗名", key: "name", placeholder: "" },
@@ -682,10 +679,9 @@ export default function OwnerDashboard() {
               {saving ? "保存中..." : "保存する"}
             </button>
           </div>
-        )}
+
 
         {/* 営業時間 */}
-        {tab === "hours" && (
           <div>
             {/* 本日休業 */}
             <div style={{ ...sectionStyle, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -942,10 +938,8 @@ export default function OwnerDashboard() {
               {saving ? "保存中..." : "保存する"}
             </button>
           </div>
-        )}
 
         {/* SNS */}
-        {tab === "sns" && (
           <div style={sectionStyle}>
             {[
               { label: "Instagram", key: "instagram" },
@@ -969,10 +963,8 @@ export default function OwnerDashboard() {
               {saving ? "保存中..." : "保存する"}
             </button>
           </div>
-        )}
 
         {/* 店舗画像 */}
-        {tab === "images" && (
           <div>
             <div style={sectionStyle}>
               <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>画像をアップロード</h3>
@@ -1106,6 +1098,7 @@ export default function OwnerDashboard() {
               </div>
             )}
           </div>
+        </>
         )}
 
         {/* キャスト */}
