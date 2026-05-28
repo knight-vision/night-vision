@@ -146,6 +146,18 @@ export default function OwnerDashboard() {
     fetchShop(parseInt(sid));
     fetchCasts(parseInt(sid));
     fetchPhotoRequests(parseInt(sid));
+
+    // 日付が変わっていたらon_todayをリセット
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem("owner_last_date");
+    if (lastDate && lastDate !== today) {
+      // 日付が変わった → on_today をリセット
+      supabase.from("casts").update({ on_today: null }).eq("shop_id", parseInt(sid)).then(() => {
+        fetchCasts(parseInt(sid));
+      });
+    }
+    localStorage.setItem("owner_last_date", today);
+
     // URLパラメータでタブを自動選択
     const tabParam = new URLSearchParams(window.location.search).get("tab");
     if (tabParam) setTab(tabParam as any);
@@ -702,35 +714,59 @@ export default function OwnerDashboard() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>開店時刻</label>
-                  <select
-                    value={shop.open_time?.slice(0, 5) ?? ""}
-                    onChange={(e) => setShop({ ...shop, open_time: e.target.value ? e.target.value + ":00" : null })}
-                    style={inputStyle}
-                  >
-                    <option value="">選択</option>
-                    {Array.from({ length: 24 * 6 }, (_, i) => {
-                      const h = Math.floor(i / 6);
-                      const m = (i % 6) * 10;
-                      const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-                      return <option key={val} value={val}>{val}</option>;
-                    })}
-                  </select>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <select
+                      value={shop.open_time ? shop.open_time.slice(0, 2) : ""}
+                      onChange={(e) => {
+                        const h = e.target.value;
+                        const m = shop.open_time ? shop.open_time.slice(3, 5) : "00";
+                        setShop({ ...shop, open_time: h ? `${h}:${m}:00` : null });
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">時</option>
+                      {Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i).padStart(2, "0")}>{i}時</option>)}
+                    </select>
+                    <select
+                      value={shop.open_time ? shop.open_time.slice(3, 5) : ""}
+                      onChange={(e) => {
+                        const h = shop.open_time ? shop.open_time.slice(0, 2) : "20";
+                        setShop({ ...shop, open_time: e.target.value !== "" ? `${h}:${e.target.value}:00` : null });
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">分</option>
+                      {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => <option key={m} value={m}>{m}分</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>閉店時刻</label>
-                  <select
-                    value={shop.close_time?.slice(0, 5) ?? ""}
-                    onChange={(e) => setShop({ ...shop, close_time: e.target.value ? e.target.value + ":00" : null })}
-                    style={inputStyle}
-                  >
-                    <option value="">選択</option>
-                    {Array.from({ length: 24 * 6 }, (_, i) => {
-                      const h = Math.floor(i / 6);
-                      const m = (i % 6) * 10;
-                      const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-                      return <option key={val} value={val}>{val}</option>;
-                    })}
-                  </select>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <select
+                      value={shop.close_time ? shop.close_time.slice(0, 2) : ""}
+                      onChange={(e) => {
+                        const h = e.target.value;
+                        const m = shop.close_time ? shop.close_time.slice(3, 5) : "00";
+                        setShop({ ...shop, close_time: h ? `${h}:${m}:00` : null });
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">時</option>
+                      {Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i).padStart(2, "0")}>{i}時</option>)}
+                    </select>
+                    <select
+                      value={shop.close_time ? shop.close_time.slice(3, 5) : ""}
+                      onChange={(e) => {
+                        const h = shop.close_time ? shop.close_time.slice(0, 2) : "02";
+                        setShop({ ...shop, close_time: e.target.value !== "" ? `${h}:${e.target.value}:00` : null });
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    >
+                      <option value="">分</option>
+                      {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => <option key={m} value={m}>{m}分</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -816,41 +852,61 @@ export default function OwnerDashboard() {
 
                       {!isClosed && (
                         <>
-                          <select
-                            value={hours?.open ?? ""}
-                            onChange={(e) => {
-                              const wh = { ...(shop.weekly_hours ?? {}) };
-                              wh[day] = { ...wh[day], open: e.target.value, closed: false };
-                              setShop({ ...shop, weekly_hours: wh });
-                            }}
-                            style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 80 }}
-                          >
-                            <option value="">開店</option>
-                            {Array.from({ length: 24 * 6 }, (_, i) => {
-                              const h = Math.floor(i / 6);
-                              const m = (i % 6) * 10;
-                              const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-                              return <option key={val} value={val}>{val}</option>;
-                            })}
-                          </select>
+                          <div style={{ display: "flex", gap: 4, alignItems: "center", flex: 1 }}>
+                            <select
+                              value={hours?.open ? hours.open.slice(0, 2) : ""}
+                              onChange={(e) => {
+                                const wh = { ...(shop.weekly_hours ?? {}) };
+                                const m = hours?.open ? hours.open.slice(3, 5) : "00";
+                                wh[day] = { ...wh[day], open: e.target.value ? `${e.target.value}:${m}` : "", closed: false };
+                                setShop({ ...shop, weekly_hours: wh });
+                              }}
+                              style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 60 }}
+                            >
+                              <option value="">時</option>
+                              {Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i).padStart(2, "0")}>{i}</option>)}
+                            </select>
+                            <select
+                              value={hours?.open ? hours.open.slice(3, 5) : ""}
+                              onChange={(e) => {
+                                const wh = { ...(shop.weekly_hours ?? {}) };
+                                const h = hours?.open ? hours.open.slice(0, 2) : "20";
+                                wh[day] = { ...wh[day], open: `${h}:${e.target.value}`, closed: false };
+                                setShop({ ...shop, weekly_hours: wh });
+                              }}
+                              style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 55 }}
+                            >
+                              {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                          </div>
                           <span style={{ color: "var(--text-muted)", fontSize: 12 }}>〜</span>
-                          <select
-                            value={hours?.close ?? ""}
-                            onChange={(e) => {
-                              const wh = { ...(shop.weekly_hours ?? {}) };
-                              wh[day] = { ...wh[day], close: e.target.value, closed: false };
-                              setShop({ ...shop, weekly_hours: wh });
-                            }}
-                            style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 80 }}
-                          >
-                            <option value="">閉店</option>
-                            {Array.from({ length: 24 * 6 }, (_, i) => {
-                              const h = Math.floor(i / 6);
-                              const m = (i % 6) * 10;
-                              const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-                              return <option key={val} value={val}>{val}</option>;
-                            })}
-                          </select>
+                          <div style={{ display: "flex", gap: 4, alignItems: "center", flex: 1 }}>
+                            <select
+                              value={hours?.close ? hours.close.slice(0, 2) : ""}
+                              onChange={(e) => {
+                                const wh = { ...(shop.weekly_hours ?? {}) };
+                                const m = hours?.close ? hours.close.slice(3, 5) : "00";
+                                wh[day] = { ...wh[day], close: e.target.value ? `${e.target.value}:${m}` : "", closed: false };
+                                setShop({ ...shop, weekly_hours: wh });
+                              }}
+                              style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 60 }}
+                            >
+                              <option value="">時</option>
+                              {Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i).padStart(2, "0")}>{i}</option>)}
+                            </select>
+                            <select
+                              value={hours?.close ? hours.close.slice(3, 5) : ""}
+                              onChange={(e) => {
+                                const wh = { ...(shop.weekly_hours ?? {}) };
+                                const h = hours?.close ? hours.close.slice(0, 2) : "02";
+                                wh[day] = { ...wh[day], close: `${h}:${e.target.value}`, closed: false };
+                                setShop({ ...shop, weekly_hours: wh });
+                              }}
+                              style={{ ...inputStyle, width: "auto", flex: 1, minWidth: 55 }}
+                            >
+                              {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                          </div>
                           {isSet && !isClosed && (
                             <button
                               onClick={() => {

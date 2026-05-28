@@ -792,6 +792,9 @@ export default function AdminPage() {
                     }} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: shop.hidden ? "#10b98120" : "#f59e0b20", color: shop.hidden ? "#10b981" : "#f59e0b" }}>
                       {shop.hidden ? "👁 表示に戻す" : "🙈 非表示"}
                     </button>
+                    <button onClick={() => window.open(`/shop/${shop.slug}`, "_blank")} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, background: "var(--bg-input)", color: "var(--text-secondary)" }}>
+                      🔗 店舗ページ
+                    </button>
                       <button onClick={async () => {
                         // オーナーアカウントを探してログイン
                         const ownerAccount = accounts.find((a: any) => a.account_type === "owner" && a.shop_id === shop.id);
