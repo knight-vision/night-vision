@@ -8,12 +8,20 @@ import PhotoViewer from "@/components/PhotoViewer";
 
 export const dynamic = "force-dynamic";
 
-// 営業時間の表示文字列を生成（曜日別がある場合は全曜日を列挙）
+// 営業時間の表示文字列を生成（標準＋曜日別を両方表示）
 function getOpenHourDisplay(shop: any): string | null {
+  const parts: string[] = [];
+
+  // 標準営業時間
+  if (shop.open_time && shop.close_time) {
+    parts.push(`${shop.open_time.slice(0,5)}〜${shop.close_time.slice(0,5)}`);
+  } else if (shop.open_hour) {
+    parts.push(shop.open_hour);
+  }
+
+  // 曜日別設定
   const weekly = shop.weekly_hours;
   const dayOrder = ["月", "火", "水", "木", "金", "土", "日"];
-
-  // 曜日別設定がある場合
   if (weekly && Object.keys(weekly).length > 0) {
     const lines = dayOrder
       .filter(d => weekly[d])
@@ -23,15 +31,11 @@ function getOpenHourDisplay(shop: any): string | null {
         if (h.open && h.close) return `${d}曜日：${h.open.slice(0,5)}〜${h.close.slice(0,5)}`;
         return null;
       })
-      .filter(Boolean);
-    if (lines.length > 0) return lines.join("\n");
+      .filter(Boolean) as string[];
+    if (lines.length > 0) parts.push(...lines);
   }
 
-  // 通常営業時間
-  if (shop.open_time && shop.close_time) {
-    return `${shop.open_time.slice(0,5)}〜${shop.close_time.slice(0,5)}`;
-  }
-  return shop.open_hour || null;
+  return parts.length > 0 ? parts.join("\n") : null;
 }
 
 export async function generateStaticParams() {
@@ -127,16 +131,25 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const { data: todayShifts } = await supabase
     .from("confirmed_shifts")
-    .select("cast_id")
+    .select("cast_id, start_time, end_time")
     .eq("shop_id", shop.id)
     .eq("date", todayStr);
-  const onTodayCastIds = new Set((todayShifts || []).map((s: any) => s.cast_id));
-  // 確定シフトがある場合は上書き
+
+  // cast_idをキーにシフト情報をマップ
+  const shiftMap = new Map((todayShifts || []).map((s: any) => [s.cast_id, s]));
+  const onTodayCastIds = new Set(shiftMap.keys());
+
+  // 確定シフトがある場合は上書き（出勤時間も含む）
   if (onTodayCastIds.size > 0) {
-    shop.casts = shop.casts.map((c) => ({
-      ...c,
-      on_today: onTodayCastIds.has(c.id) ? true : (c.on_today === true ? true : null),
-    }));
+    shop.casts = shop.casts.map((c) => {
+      const shift = shiftMap.get(c.id);
+      return {
+        ...c,
+        on_today: onTodayCastIds.has(c.id) ? true : (c.on_today === true ? true : null),
+        today_start: shift?.start_time ? shift.start_time.slice(0, 5) : (c as any).today_start || null,
+        today_end: shift?.end_time ? shift.end_time.slice(0, 5) : (c as any).today_end || null,
+      };
+    });
   }
 
   const tc = TYPE_COLORS[shop.type] ?? { border: "var(--accent)", text: "var(--accent)" };
