@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
+import CastMyRecordTab from "@/components/CastMyRecordTab";
 
 function PwaBanner() {
   const [show, setShow] = useState(false);
@@ -95,6 +96,7 @@ export default function CastDashboard() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [submitMsg, setSubmitMsg] = useState("");
+  const [activeTab, setActiveTab] = useState<"shift" | "record">("shift");
 
   useEffect(() => {
     const id = localStorage.getItem("cast_id");
@@ -222,7 +224,28 @@ export default function CastDashboard() {
           </div>
         </div>
 
-        {/* 説明 */}
+        {/* タブナビ */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+          {[
+            { key: "shift", label: "📅 シフト希望" },
+            { key: "record", label: "📋 実績" },
+          ].map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key as any)} style={{
+              flex: 1, padding: "10px", borderRadius: 12, border: "none", cursor: "pointer",
+              fontFamily: "var(--font)", fontSize: 13, fontWeight: activeTab === t.key ? 700 : 500,
+              background: activeTab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+              color: activeTab === t.key ? "#fff" : "var(--text-secondary)",
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* 実績タブ */}
+        {activeTab === "record" && castId && shopId && (
+          <CastMyRecordTab shopId={shopId} castId={castId} castName={castName} />
+        )}
+
+        {/* シフト希望タブ */}
+        {activeTab === "shift" && (<>
         <div style={{ ...sectionStyle, background: "var(--accent)12", borderColor: "var(--accent)33" }}>
           <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.8, margin: 0 }}>
             出勤したい日をタップして選択し、時間を設定してください。<br />
@@ -369,6 +392,7 @@ export default function CastDashboard() {
             {submitMsg}
           </div>
         )}
+        </>)}
       </main>
     </>
   );
