@@ -8,6 +8,23 @@ import PhotoViewer from "@/components/PhotoViewer";
 
 export const dynamic = "force-dynamic";
 
+// 今日の曜日に合わせた営業時間を返す
+function getOpenHourForToday(shop: any): string | null {
+  const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+  const today = dayNames[new Date().getDay()];
+  const weekly = shop.weekly_hours;
+  if (weekly && weekly[today]) {
+    const h = weekly[today];
+    if (h.closed) return "本日定休日";
+    if (h.open && h.close) return `${h.open.slice(0,5)}〜${h.close.slice(0,5)}`;
+  }
+  // 通常営業時間にフォールバック
+  if (shop.open_time && shop.close_time) {
+    return `${shop.open_time.slice(0,5)}〜${shop.close_time.slice(0,5)}`;
+  }
+  return shop.open_hour || null;
+}
+
 export async function generateStaticParams() {
   const slugs = await getAllSlugs();
   return slugs.map((slug) => ({ slug }));
@@ -221,7 +238,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", marginBottom: 14 }}>SHOP INFO</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[
-              { icon: "🕐", label: "営業時間", value: shop.open_hour },
+              { icon: "🕐", label: "営業時間", value: getOpenHourForToday(shop) },
               { icon: "📅", label: "定休日", value: shop.closed_days
                 ? shop.closed_days.split("・").map((d: string) => {
                     const map: Record<string, string> = { 月:"月曜日", 火:"火曜日", 水:"水曜日", 木:"木曜日", 金:"金曜日", 土:"土曜日", 日:"日曜日", 祝:"祝日" };
@@ -281,9 +298,16 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         {/* 本日出勤キャスト */}
         {(shop.casts ?? []).filter(c => c.on_today === true).length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--online)", letterSpacing: "0.12em", marginBottom: 14 }}>
-              ● 本日出勤 ({(shop.casts ?? []).filter(c => c.on_today === true).length}名)
-            </h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--online)", letterSpacing: "0.12em" }}>
+                ● 本日出勤 ({(shop.casts ?? []).filter(c => c.on_today === true).length}名)
+              </h2>
+              {getOpenHourForToday(shop) && getOpenHourForToday(shop) !== "本日定休日" && (
+                <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-input)", padding: "3px 10px", borderRadius: 20 }}>
+                  🕐 {getOpenHourForToday(shop)}
+                </span>
+              )}
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {(shop.casts ?? []).filter(c => c.on_today === true).map((cast) => (
                 <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
@@ -325,7 +349,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
             <div style={{ background: `linear-gradient(135deg, ${tc.border}18, var(--bg-card))`, border: `1px solid ${tc.border}44`, borderRadius: 20, padding: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: tc.text, letterSpacing: "0.12em", marginBottom: 2 }}>HIRING</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: tc.text, letterSpacing: "0.12em", marginBottom: 2 }}>求人</div>
                   <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)" }}>スタッフ募集中 💼</h2>
                 </div>
                 <Link href={`/shop/${shop.slug}/jobs`} style={{ fontSize: 12, color: tc.text, textDecoration: "none", border: `1px solid ${tc.border}`, padding: "5px 12px", borderRadius: 20, whiteSpace: "nowrap" }}>
