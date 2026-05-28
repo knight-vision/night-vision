@@ -23,12 +23,20 @@ function getOpenHourDisplay(shop: any): string | null {
   const weekly = shop.weekly_hours;
   const dayOrder = ["月", "火", "水", "木", "金", "土", "日"];
   if (weekly && Object.keys(weekly).length > 0) {
+    // 標準時間
+    const stdStart = shop.open_time ? shop.open_time.slice(0,5) : null;
+    const stdEnd = shop.close_time ? shop.close_time.slice(0,5) : null;
+
     const lines = dayOrder
       .filter(d => weekly[d])
       .map(d => {
         const h = weekly[d];
         if (h.closed) return `${d}曜日：定休日`;
-        if (h.open && h.close) return `${d}曜日：${h.open.slice(0,5)}〜${h.close.slice(0,5)}`;
+        if (h.open && h.close) {
+          // 標準と同じなら省略
+          if (h.open.slice(0,5) === stdStart && h.close.slice(0,5) === stdEnd) return null;
+          return `${d}曜日：${h.open.slice(0,5)}〜${h.close.slice(0,5)}`;
+        }
         return null;
       })
       .filter(Boolean) as string[];

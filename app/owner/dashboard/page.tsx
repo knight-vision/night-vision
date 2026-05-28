@@ -473,7 +473,7 @@ export default function OwnerDashboard() {
     { key: "sns", label: "SNS" },
     { key: "images", label: "店舗画像" },
     { key: "cast", label: "キャスト" },
-    { key: "shift", label: "出勤管理" },
+    { key: "shift", label: "シフト管理" },
     { key: "sales", label: "📊 売上管理" },
     { key: "jobs", label: "求人" },
     { key: "tweet", label: "つぶやき" },

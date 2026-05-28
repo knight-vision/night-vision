@@ -413,7 +413,9 @@ ${casts.map(cast=>{
                           {casts.map(cast=>{
                             const selected=hasDraft(date,cast.id);
                             const hasReq=shiftRequests.some(r=>r.cast_id===cast.id&&r.date===date);
+                            const isConfirmed=confirmed.some(s=>s.cast_id===cast.id);
                             const color=getColor(cast.id);
+                            if (isConfirmed) return null; // 確定済みは非表示
                             return <button key={cast.id} onClick={()=>selected?removeCastFromDraft(date,cast.id):addCastToDraft(date,cast.id)} style={{padding:"7px 16px",borderRadius:20,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:selected?800:500,background:selected?color:"var(--bg-input)",border:`2px solid ${selected?color:hasReq?color+"88":"var(--border)"}`,color:selected?"#fff":hasReq?color:"var(--text-secondary)",boxShadow:selected?`0 0 10px ${color}66`:"none"}}>{selected?"✓ ":""}{cast.name}{hasReq&&!selected?" 📩":""}</button>;
                           })}
                         </div>

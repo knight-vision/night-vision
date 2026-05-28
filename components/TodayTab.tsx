@@ -89,10 +89,8 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
   const todayProfit = todaySales - todayCost - todayPayroll;
   const todayShiftCasts = casts.filter(c => shifts.some(s => s.cast_id === c.id));
 
-  const inputStyle: React.CSSProperties = { background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 10px", fontSize: 13, fontFamily: "var(--font)" };
-  const timeOptions = Array.from({ length: 24 }, (_, h) =>
-    ["00","15","30","45"].map(m => `${String(h).padStart(2,"0")}:${m}`)
-  ).flat();
+  const HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, "0"));
+  const MINS = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
   if (loading) return <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>読み込み中...</div>;
 
@@ -158,13 +156,23 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
                     >✏️ シフト変更</button>
                   </div>
                   {isEditing && (
-                    <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      <select value={editStart} onChange={e => setEditStart(e.target.value)} style={inputStyle}>
-                        {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                    <div style={{ marginTop: 10, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <select value={editStart.slice(0,2)} onChange={e => setEditStart(`${e.target.value}:${editStart.slice(3,5)||"00"}`)}
+                        style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 8px", fontSize: 13, fontFamily: "var(--font)" }}>
+                        {HOURS.map(h => <option key={h} value={h}>{h}時</option>)}
+                      </select>
+                      <select value={editStart.slice(3,5)||"00"} onChange={e => setEditStart(`${editStart.slice(0,2)||"20"}:${e.target.value}`)}
+                        style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 8px", fontSize: 13, fontFamily: "var(--font)" }}>
+                        {MINS.map(m => <option key={m} value={m}>{m}分</option>)}
                       </select>
                       <span style={{ color: "var(--text-muted)", fontSize: 12 }}>〜</span>
-                      <select value={editEnd} onChange={e => setEditEnd(e.target.value)} style={inputStyle}>
-                        {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                      <select value={editEnd.slice(0,2)} onChange={e => setEditEnd(`${e.target.value}:${editEnd.slice(3,5)||"00"}`)}
+                        style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 8px", fontSize: 13, fontFamily: "var(--font)" }}>
+                        {HOURS.map(h => <option key={h} value={h}>{h}時</option>)}
+                      </select>
+                      <select value={editEnd.slice(3,5)||"00"} onChange={e => setEditEnd(`${editEnd.slice(0,2)||"02"}:${e.target.value}`)}
+                        style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", padding: "6px 8px", fontSize: 13, fontFamily: "var(--font)" }}>
+                        {MINS.map(m => <option key={m} value={m}>{m}分</option>)}
                       </select>
                       <button onClick={() => saveShiftEdit(cast.id)} style={{ fontSize: 12, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}>保存</button>
                       <button onClick={() => setEditingShift(null)} style={{ fontSize: 12, background: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}>キャンセル</button>
@@ -201,7 +209,7 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 16 }}>
         {[
           { label: "⭐ キャスト売上", tab: "sales" },
-          { label: "📅 出勤管理", tab: "shift" },
+          { label: "📅 シフト管理", tab: "shift" },
           { label: "👥 キャスト", tab: "cast" },
           { label: "📊 月次集計", tab: "sales" },
         ].map(item => (
