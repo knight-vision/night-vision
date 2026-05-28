@@ -94,6 +94,12 @@ export default function ShiftManagementTab({
   const [shopMenuNames, setShopMenuNames] = useState<string[]>([]);
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0,7));
   const [allowanceLoading, setAllowanceLoading] = useState(false);
+  // 手当プリセット管理
+  const [allowancePresets, setAllowancePresets] = useState<{id:string;name:string;amount:number;sign:string}[]>([]);
+  const [showPresetMgr, setShowPresetMgr] = useState(false);
+  const [newPreset, setNewPreset] = useState({name:"",amount:"",sign:"+"});
+  const [editPresetId, setEditPresetId] = useState<string|null>(null);
+  const [editPreset, setEditPreset] = useState({name:"",amount:"",sign:"+"});
   // 新規手当フォーム
   const [newA, setNewA] = useState({ cast_id: initialAllowanceCastId || "", date: getDateStr(new Date()), label:"", sign:"+", amount:"" });
   const [showPresets, setShowPresets] = useState(false);
@@ -107,11 +113,17 @@ export default function ShiftManagementTab({
   useEffect(() => { if (!loaded) { loadAll(); setLoaded(true); } }, []);
   useEffect(() => { if (loaded) { loadAll(); } }, [weekBase]);
   useEffect(() => { loadAllowances(); }, [payrollMonth]);
+  useEffect(() => { loadAllowancePresets(); }, [shopId]);
   useEffect(() => {
     fetch(`/api/shop-menus?shop_id=${shopId}`)
       .then(r=>r.ok?r.json():[])
       .then((data:any[])=>setShopMenuNames(data.map((m:any)=>m.name)));
   }, [shopId]);
+
+  const loadAllowancePresets = async () => {
+    const res = await fetch(`/api/allowance-presets?shop_id=${shopId}`);
+    if (res.ok) setAllowancePresets(await res.json());
+  };
 
   const loadAll = async () => {
     setShiftLoading(true);
@@ -635,7 +647,17 @@ ${casts.map(cast=>{
                   {showPresets&&(
                     <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:20,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:10,padding:4,boxShadow:"0 4px 16px #00000044"}}>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,padding:4}}>
-                        {ALLOWANCE_PRESETS.filter(p=>!newA.label||p.includes(newA.label)).map(p=>(
+                        {/* DBプリセット（金額付き） */}
+                        {allowancePresets.filter(p=>!newA.label||p.name.includes(newA.label)).map(p=>(
+                          <button key={p.id} onClick={()=>{
+                            setNewA(prev=>({...prev, label:p.name, amount:String(p.amount), sign:p.sign}));
+                            setShowPresets(false);
+                          }} style={{padding:"5px 10px",background:"var(--accent)18",border:"1px solid var(--accent)44",borderRadius:6,color:"var(--accent)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>
+                            {p.name} {p.amount>0?`¥${p.amount.toLocaleString()}`:""}
+                          </button>
+                        ))}
+                        {/* デフォルトプリセット（金額なし） */}
+                        {ALLOWANCE_PRESETS.filter(p=>!allowancePresets.some(ap=>ap.name===p)&&(!newA.label||p.includes(newA.label))).map(p=>(
                           <button key={p} onClick={()=>{setNewA(prev=>({...prev,label:p}));setShowPresets(false);}} style={{padding:"5px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>{p}</button>
                         ))}
                       </div>
@@ -657,6 +679,60 @@ ${casts.map(cast=>{
                   </div>
                 </div>
                 <button onClick={addAllowance} disabled={!newA.cast_id||!newA.date||!newA.label||!newA.amount} style={{width:"100%",padding:"10px",borderRadius:10,background:"linear-gradient(135deg,var(--accent),var(--accent2))",border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",opacity:(!newA.cast_id||!newA.date||!newA.label||!newA.amount)?0.4:1,fontFamily:"var(--font)"}}>追加する</button>
+
+                {/* プリセット管理 */}
+                <div style={{marginTop:16,borderTop:"1px solid var(--border)",paddingTop:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"var(--text-muted)"}}>⚙️ 手当・控除プリセット管理</span>
+                    <button onClick={()=>setShowPresetMgr(v=>!v)} style={{fontSize:11,padding:"2px 10px",borderRadius:6,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer"}}>{showPresetMgr?"閉じる":"編集"}</button>
+                  </div>
+                  {showPresetMgr&&(
+                    <div>
+                      {/* 既存プリセット一覧 */}
+                      {allowancePresets.map(p=>(
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,padding:"6px 10px",background:"var(--bg-input)",borderRadius:8}}>
+                          {editPresetId===p.id ? (
+                            <>
+                              <input value={editPreset.name} onChange={e=>setEditPreset(v=>({...v,name:e.target.value}))} style={{...smInput,flex:1}} placeholder="項目名"/>
+                              <select value={editPreset.sign} onChange={e=>setEditPreset(v=>({...v,sign:e.target.value}))} style={{...smInput,width:70}}>
+                                <option value="+">＋手当</option>
+                                <option value="-">－控除</option>
+                              </select>
+                              <input type="number" value={editPreset.amount} onChange={e=>setEditPreset(v=>({...v,amount:e.target.value}))} style={{...smInput,width:80}} placeholder="金額"/>
+                              <button onClick={async()=>{
+                                await fetch("/api/allowance-presets",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:p.id,name:editPreset.name,amount:Number(editPreset.amount),sign:editPreset.sign})});
+                                setEditPresetId(null); loadAllowancePresets();
+                              }} style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:"var(--accent)",border:"none",color:"#fff",cursor:"pointer"}}>保存</button>
+                              <button onClick={()=>setEditPresetId(null)} style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:"var(--bg-card)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer"}}>ｷｬﾝｾﾙ</button>
+                            </>
+                          ):(
+                            <>
+                              <span style={{fontSize:12,color:"var(--text-primary)",flex:1}}>{p.sign==="+"?"＋":"－"} {p.name}</span>
+                              <span style={{fontSize:12,color:"var(--accent)",minWidth:60,textAlign:"right" as const}}>¥{p.amount.toLocaleString()}</span>
+                              <button onClick={()=>{setEditPresetId(p.id);setEditPreset({name:p.name,amount:String(p.amount),sign:p.sign});}} style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:"var(--bg-card)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer"}}>編集</button>
+                              <button onClick={async()=>{await fetch("/api/allowance-presets",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:p.id})});loadAllowancePresets();}} style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",cursor:"pointer"}}>削除</button>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                      {/* 新規追加 */}
+                      <div style={{display:"flex",gap:6,alignItems:"center",marginTop:8,padding:"8px 10px",background:"var(--bg-card)",borderRadius:8,border:"1px dashed var(--border)"}}>
+                        <input value={newPreset.name} onChange={e=>setNewPreset(v=>({...v,name:e.target.value}))} style={{...smInput,flex:1}} placeholder="項目名（例：指名料）"/>
+                        <select value={newPreset.sign} onChange={e=>setNewPreset(v=>({...v,sign:e.target.value}))} style={{...smInput,width:70}}>
+                          <option value="+">＋手当</option>
+                          <option value="-">－控除</option>
+                        </select>
+                        <input type="number" value={newPreset.amount} onChange={e=>setNewPreset(v=>({...v,amount:e.target.value}))} style={{...smInput,width:80}} placeholder="金額"/>
+                        <button onClick={async()=>{
+                          if(!newPreset.name) return;
+                          await fetch("/api/allowance-presets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,name:newPreset.name,amount:Number(newPreset.amount)||0,sign:newPreset.sign})});
+                          setNewPreset({name:"",amount:"",sign:"+"});
+                          loadAllowancePresets();
+                        }} disabled={!newPreset.name} style={{fontSize:11,padding:"4px 12px",borderRadius:6,background:"var(--accent)",border:"none",color:"#fff",cursor:"pointer",opacity:!newPreset.name?0.4:1}}>追加</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
