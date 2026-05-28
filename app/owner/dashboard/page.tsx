@@ -18,22 +18,43 @@ import CastRecordTab from "@/components/CastRecordTab";
 // iOSでホーム画面追加を案内するバナー
 function PwaBanner() {
   const [show, setShow] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   useEffect(() => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone = (window.navigator as any).standalone;
+    setIsIOS(ios);
     const dismissed = localStorage.getItem("pwa_banner_dismissed_owner");
-    if (isIOS && !isStandalone && !dismissed) setShow(true);
+    if (ios && !isStandalone && !dismissed) setShow(true);
   }, []);
-  if (!show) return null;
-  return (
-    <div style={{ background: "linear-gradient(135deg, var(--accent)22, var(--accent2)11)", borderBottom: "1px solid var(--accent)33", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 20 }}>📲</span>
-      <div style={{ flex: 1, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-        <strong style={{ color: "var(--text-primary)" }}>ホーム画面に追加できます</strong><br />
-        SafariでSFシェアボタン →「ホーム画面に追加」
+
+  // ホーム画面に追加ボタン（常時表示、iOSのみ）
+  if (!isIOS || (window.navigator as any).standalone) return null;
+
+  if (!show) {
+    return (
+      <div style={{ padding: "6px 16px", display: "flex", justifyContent: "flex-end" }}>
+        <button onClick={() => setShow(true)} style={{ fontSize: 11, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 10px", cursor: "pointer" }}>
+          📲 ホーム画面に追加
+        </button>
       </div>
-      <button onClick={() => { localStorage.setItem("pwa_banner_dismissed_owner", "1"); setShow(false); }}
-        style={{ fontSize: 18, background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0 4px" }}>×</button>
+    );
+  }
+
+  return (
+    <div style={{ background: "var(--accent)15", borderBottom: "1px solid var(--accent)33", padding: "12px 16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <span style={{ fontSize: 24 }}>📲</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>ホーム画面に追加する方法</div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+            1. 画面下の <strong>□↑ 共有ボタン</strong> をタップ<br />
+            2. <strong>「ホーム画面に追加」</strong> をタップ<br />
+            3. 右上の「追加」をタップ
+          </div>
+        </div>
+        <button onClick={() => { localStorage.setItem("pwa_banner_dismissed_owner", "1"); setShow(false); }}
+          style={{ fontSize: 20, background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>×</button>
+      </div>
     </div>
   );
 }

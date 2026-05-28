@@ -50,7 +50,20 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
     ]);
     const sData = sRes.ok ? await sRes.json() : [];
     const cData = cRes.ok ? await cRes.json() : [];
-    setSlips(Array.isArray(sData) ? sData : []);
+    // cast_idなし（フリー）でも同じshopの全伝票から手動でフィルタ
+    if (Array.isArray(sData) && sData.length === 0) {
+      // cast_idフィルタで引っかからない場合、全伝票から再検索
+      const allRes = await fetch(`/api/slips?shop_id=${shopId}&month=${month}`);
+      const allData = allRes.ok ? await allRes.json() : [];
+      const filtered = allData.filter((s: any) =>
+        Array.isArray(s.cast_entries) && s.cast_entries.some((e: any) =>
+          String(e.cast_id) === String(selectedCastId)
+        )
+      );
+      setSlips(filtered);
+    } else {
+      setSlips(Array.isArray(sData) ? sData : []);
+    }
     setCustomers(Array.isArray(cData) ? cData : []);
     setLoading(false);
   }, [shopId, selectedCastId, month]);

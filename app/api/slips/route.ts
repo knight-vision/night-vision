@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
   // cast_idフィルタはJSONBなのでクライアント側で絞る
   if (castId && data) {
     return NextResponse.json(data.filter((s: any) =>
-      Array.isArray(s.cast_entries) && s.cast_entries.some((e: any) => String(e.cast_id) === castId)
+      Array.isArray(s.cast_entries) && s.cast_entries.some((e: any) =>
+        e.cast_id !== undefined && e.cast_id !== null && e.cast_id !== "" &&
+        String(e.cast_id) === String(castId)
+      )
     ));
   }
   return NextResponse.json(data || []);
