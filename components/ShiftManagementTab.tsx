@@ -69,6 +69,8 @@ type Props = {
   shopName: string; shopClosedWeekDays: string[];
   sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties;
   labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties;
+  initialAllowanceCastId?: string; // 手当追加で指定済みキャスト
+  initialView?: "calendar" | "payroll"; // 初期表示ビュー
 };
 
 export default function ShiftManagementTab({
@@ -79,8 +81,9 @@ export default function ShiftManagementTab({
   issuingAccount, setIssuingAccount,
   shopName, shopClosedWeekDays,
   sectionStyle, inputStyle, labelStyle, btnPrimary,
+  initialAllowanceCastId, initialView,
 }: Props) {
-  const [view, setView] = useState<"calendar"|"payroll">("calendar");
+  const [view, setView] = useState<"calendar"|"payroll">(initialView || "calendar");
   const [closedDates, setClosedDates] = useState<ClosedDate[]>([]);
   const [draft, setDraft] = useState<Record<string,DraftEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<string|null>(null);
@@ -92,7 +95,7 @@ export default function ShiftManagementTab({
   const [payrollMonth, setPayrollMonth] = useState(new Date().toISOString().slice(0,7));
   const [allowanceLoading, setAllowanceLoading] = useState(false);
   // 新規手当フォーム
-  const [newA, setNewA] = useState({ cast_id:"", date: getDateStr(new Date()), label:"", sign:"+", amount:"" });
+  const [newA, setNewA] = useState({ cast_id: initialAllowanceCastId || "", date: getDateStr(new Date()), label:"", sign:"+", amount:"" });
   const [showPresets, setShowPresets] = useState(false);
   const [paySelectedDate, setPaySelectedDate] = useState<string|null>(null);
   const [paySelectedCast, setPaySelectedCast] = useState<number|null>(null);

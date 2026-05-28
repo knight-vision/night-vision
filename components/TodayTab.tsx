@@ -25,9 +25,10 @@ type Props = {
   btnPrimary: React.CSSProperties;
   setTab: (tab: string) => void;
   showMsg: (msg: string) => void;
+  onAllowanceClick: (castId: string) => void;
 };
 
-export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setTab, showMsg }: Props) {
+export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setTab, showMsg, onAllowanceClick }: Props) {
   const today = getToday();
   const [dailySales, setDailySales] = useState<DailySales | null>(null);
   const [castSales, setCastSales] = useState<CastSale[]>([]);
@@ -152,7 +153,7 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
                     {pay.bottle > 0 && <span style={{ color: "#a855f7" }}>🍾¥{pay.bottle.toLocaleString()}</span>}
                     <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
                       <button
-                        onClick={() => setTab("shift")}
+                        onClick={() => onAllowanceClick(String(cast.id))}
                         style={{ fontSize: 10, color: "#10b981", background: "#10b98118", border: "1px solid #10b98144", borderRadius: 6, padding: "1px 8px", cursor: "pointer" }}
                       >＋ 手当・控除</button>
                       <button

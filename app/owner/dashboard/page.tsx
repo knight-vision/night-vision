@@ -117,6 +117,12 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
+  const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
+
+  const handleSetTab = (t: Tab) => {
+    if (t !== "shift") setAllowanceJumpCastId("");
+    setTab(t);
+  };
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [editCast, setEditCast] = useState<Partial<Cast> | null>(null);
@@ -505,7 +511,7 @@ export default function OwnerDashboard() {
         {/* タブ */}
         <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
           {TABS.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{
+            <button key={t.key} onClick={() => handleSetTab(t.key)} style={{
               flex: 1, minWidth: 80, padding: "8px 6px", borderRadius: 10,
               fontWeight: tab === t.key ? 700 : 500, fontSize: 12,
               fontFamily: "var(--font)", cursor: "pointer",
@@ -525,7 +531,8 @@ export default function OwnerDashboard() {
 
         {/* 今日 */}
         {tab === "today" && shopId && (
-          <TodayTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} btnPrimary={btnPrimary} setTab={(t: any) => setTab(t)} showMsg={showMsg} />
+          <TodayTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} btnPrimary={btnPrimary} setTab={(t: any) => setTab(t)} showMsg={showMsg}
+            onAllowanceClick={(castId) => { setAllowanceJumpCastId(castId); setTab("shift"); }} />
         )}
 
         {/* 基本情報 */}
@@ -1292,6 +1299,8 @@ export default function OwnerDashboard() {
             inputStyle={inputStyle}
             labelStyle={labelStyle}
             btnPrimary={btnPrimary}
+            initialAllowanceCastId={allowanceJumpCastId}
+            initialView={allowanceJumpCastId ? "payroll" : "calendar"}
           />
         )}
 
