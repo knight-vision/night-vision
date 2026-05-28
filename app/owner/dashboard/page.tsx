@@ -66,7 +66,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "today" | "shop_info" | "cast" | "payroll" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
+type Tab = "today" | "shop_info" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -117,10 +117,12 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
+  const [castSubTab, setCastSubTab] = useState<"list" | "payroll">("list");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
-    if (t !== "payroll") setAllowanceJumpCastId("");
+    if (t !== "cast") { setAllowanceJumpCastId(""); }
+    if (t !== "cast") setCastSubTab("list");
     setTab(t);
   };
   const [saving, setSaving] = useState(false);
@@ -476,7 +478,6 @@ export default function OwnerDashboard() {
     { key: "today", label: "🏠 ホーム" },
     { key: "shop_info", label: "店舗管理" },
     { key: "cast", label: "キャスト管理" },
-    { key: "payroll", label: "💴 給与管理" },
     { key: "shift", label: "シフト管理" },
     { key: "sales", label: "📊 売上管理" },
     { key: "jobs", label: "求人" },
@@ -533,7 +534,7 @@ export default function OwnerDashboard() {
         {/* 今日 */}
         {tab === "today" && shopId && (
           <TodayTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} btnPrimary={btnPrimary} setTab={(t: any) => setTab(t)} showMsg={showMsg}
-            onAllowanceClick={(castId) => { setAllowanceJumpCastId(castId); setTab("payroll"); }} />
+            onAllowanceClick={(castId) => { setAllowanceJumpCastId(castId); setCastSubTab("payroll"); setTab("cast"); }} />
         )}
 
         {/* 基本情報 */}
@@ -1112,6 +1113,23 @@ export default function OwnerDashboard() {
         {/* キャスト */}
         {tab === "cast" && (
           <div>
+            {/* サブタブ */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {[
+                { key: "list", label: "👥 キャスト一覧" },
+                { key: "payroll", label: "💴 給与管理" },
+              ].map(st => (
+                <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{
+                  padding: "8px 18px", borderRadius: 20, border: "none", cursor: "pointer",
+                  fontFamily: "var(--font)", fontSize: 13, fontWeight: castSubTab === st.key ? 700 : 500,
+                  background: castSubTab === st.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+                  color: castSubTab === st.key ? "#fff" : "var(--text-secondary)",
+                }}>{st.label}</button>
+              ))}
+            </div>
+
+            {/* キャスト一覧サブタブ */}
+            {castSubTab === "list" && (<div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
               <button
                 onClick={() => setEditCast({ shop_id: parseInt(shopId!), name: "", age: 20, comment: "", on_today: false, instagram: "", x_account: "", tiktok_account: "", birthplace: "" })}
@@ -1273,38 +1291,39 @@ export default function OwnerDashboard() {
                 <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>キャストが登録されていません</div>
               )}
             </div>
+            </div>)}
+
+            {/* 給与管理サブタブ */}
+            {castSubTab === "payroll" && shopId && (
+              <ShiftManagementTab
+                shopId={shopId!}
+                casts={casts}
+                shiftRequests={shiftRequests}
+                setShiftRequests={setShiftRequests}
+                confirmedShifts={confirmedShifts}
+                setConfirmedShifts={setConfirmedShifts}
+                shiftLoading={shiftLoading}
+                setShiftLoading={setShiftLoading}
+                shiftMsg={shiftMsg}
+                setShiftMsg={setShiftMsg}
+                castAccountEmail={castAccountEmail}
+                setCastAccountEmail={setCastAccountEmail}
+                issuingAccount={issuingAccount}
+                setIssuingAccount={setIssuingAccount}
+                shopName={shop.name}
+                shopClosedWeekDays={shop.closed_week_days ?? []}
+                sectionStyle={sectionStyle}
+                inputStyle={inputStyle}
+                labelStyle={labelStyle}
+                btnPrimary={btnPrimary}
+                initialAllowanceCastId={allowanceJumpCastId}
+                initialView="payroll"
+                payrollOnly={true}
+              />
+            )}
           </div>
         )}
 
-
-        {/* 給与管理 */}
-        {tab === "payroll" && shopId && (
-          <ShiftManagementTab
-            shopId={shopId!}
-            casts={casts}
-            shiftRequests={shiftRequests}
-            setShiftRequests={setShiftRequests}
-            confirmedShifts={confirmedShifts}
-            setConfirmedShifts={setConfirmedShifts}
-            shiftLoading={shiftLoading}
-            setShiftLoading={setShiftLoading}
-            shiftMsg={shiftMsg}
-            setShiftMsg={setShiftMsg}
-            castAccountEmail={castAccountEmail}
-            setCastAccountEmail={setCastAccountEmail}
-            issuingAccount={issuingAccount}
-            setIssuingAccount={setIssuingAccount}
-            shopName={shop.name}
-            shopClosedWeekDays={shop.closed_week_days ?? []}
-            sectionStyle={sectionStyle}
-            inputStyle={inputStyle}
-            labelStyle={labelStyle}
-            btnPrimary={btnPrimary}
-            initialAllowanceCastId={allowanceJumpCastId}
-            initialView="payroll"
-            payrollOnly={true}
-          />
-        )}
 
         {/* シフト管理 */}
         {tab === "shift" && (
