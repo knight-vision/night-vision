@@ -75,7 +75,7 @@ export default function CastLoginPage() {
               type="password" value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              placeholder="お店から発行されたパスワード" style={inputStyle}
+              placeholder="パスワードを入力" style={inputStyle}
             />
           </div>
 

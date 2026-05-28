@@ -68,7 +68,7 @@ export default function CastLoginPage() {
             <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6, display: "block" }}>パスワード</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              placeholder="発行されたパスワードを入力" style={inputStyle} />
+              placeholder="パスワードを入力" style={inputStyle} />
           </div>
 
           {error && (

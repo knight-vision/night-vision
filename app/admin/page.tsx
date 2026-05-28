@@ -68,13 +68,34 @@ export default function AdminPage() {
 
   const handleAdminLogin = async (pw: string) => {
     setLoginLoading(true);
+    // レートリミットチェック（クライアント側でカウント）
+    const key = "admin_login_attempts";
+    const raw = sessionStorage.getItem(key);
+    const attempts: number[] = raw ? JSON.parse(raw) : [];
+    const now = Date.now();
+    const recent = attempts.filter(t => now - t < 5 * 60 * 1000);
+    if (recent.length >= 5) {
+      const oldest = Math.min(...recent);
+      const sec = Math.ceil((oldest + 5 * 60 * 1000 - now) / 1000);
+      const min = Math.ceil(sec / 60);
+      alert(`ログイン試行が多すぎます。約${min}分後に再試行してください。`);
+      setLoginLoading(false);
+      return;
+    }
     const res = await fetch("/api/admin/password");
     const { password: correctPw } = await res.json();
     if (pw === correctPw) {
       sessionStorage.setItem("admin_authed", "1");
+      sessionStorage.removeItem(key);
       setAuthed(true);
     } else {
-      alert("パスワードが違います");
+      recent.push(now);
+      sessionStorage.setItem(key, JSON.stringify(recent));
+      if (recent.length >= 5) {
+        alert("5回連続で失敗しました。5分後に再試行してください。");
+      } else {
+        alert(`パスワードが違います（${recent.length}/5回）`);
+      }
     }
     setLoginLoading(false);
   };
