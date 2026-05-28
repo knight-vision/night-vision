@@ -135,17 +135,17 @@ export default async function ShopPage({ params }: { params: { slug: string } })
     .eq("shop_id", shop.id)
     .eq("date", todayStr);
 
-  // cast_idをキーにシフト情報をマップ
-  const shiftMap = new Map((todayShifts || []).map((s: any) => [s.cast_id, s]));
+  // cast_idをキーにシフト情報をマップ（型を統一）
+  const shiftMap = new Map((todayShifts || []).map((s: any) => [Number(s.cast_id), s]));
   const onTodayCastIds = new Set(shiftMap.keys());
 
   // 確定シフトがある場合は上書き（出勤時間も含む）
   if (onTodayCastIds.size > 0) {
     shop.casts = shop.casts.map((c) => {
-      const shift = shiftMap.get(c.id);
+      const shift = shiftMap.get(Number(c.id));
       return {
         ...c,
-        on_today: onTodayCastIds.has(c.id) ? true : (c.on_today === true ? true : null),
+        on_today: onTodayCastIds.has(Number(c.id)) ? true : (c.on_today === true ? true : null),
         today_start: shift?.start_time ? shift.start_time.slice(0, 5) : (c as any).today_start || null,
         today_end: shift?.end_time ? shift.end_time.slice(0, 5) : (c as any).today_end || null,
       };
@@ -337,7 +337,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                       {(cast as any).icon_photo
                         ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
-                      <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>出勤中</div>
+                      <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>本日出勤</div>
                     </div>
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{cast.name}</div>
@@ -430,7 +430,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                         ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
                       {cast.on_today === true && (
-                        <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>出勤中</div>
+                        <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>本日出勤</div>
                       )}
                     </div>
                     <div style={{ padding: "10px 12px" }}>
