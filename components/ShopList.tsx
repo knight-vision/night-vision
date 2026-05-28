@@ -195,13 +195,13 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
       )}
 
       {/* エリアフィルター */}
-      {(areasProp || AREAS).length > 0 && (
+      {areasProp && areasProp.length > 0 && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           AREA · エリア
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {(areasProp || AREAS).map((area) => {
+          {areasProp.map((area) => {
             const active = selectedArea === area.value;
             const color = isLight ? "#007ab8" : "#00d4ff";
             return (

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/shops";
+import { PREFECTURES, REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
 
 
 
@@ -742,6 +743,42 @@ export default function AdminPage() {
                     )}
                   </div>
                   <div>
+                    <label style={labelStyle}>都道府県 *</label>
+                    <select
+                      value={(editShop as any).prefecture ?? ""}
+                      onChange={e => setEditShop({ ...editShop, prefecture: e.target.value, city: "" } as any)}
+                      style={inputStyle}
+                    >
+                      <option value="">選択してください</option>
+                      {REGION_ORDER.map(region => {
+                        const prefs = getPrefecturesByRegion()[region];
+                        if (!prefs) return null;
+                        return (
+                          <optgroup key={region} label={region}>
+                            {prefs.map(p => <option key={p.key} value={p.name}>{p.name}</option>)}
+                          </optgroup>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>市区町村 *</label>
+                    <select
+                      value={(editShop as any).city ?? ""}
+                      onChange={e => setEditShop({ ...editShop, city: e.target.value } as any)}
+                      style={inputStyle}
+                    >
+                      <option value="">選択してください</option>
+                      {(() => {
+                        const prefName = (editShop as any).prefecture;
+                        const pref = PREFECTURES.find(p => p.name === prefName);
+                        return (pref?.cities || []).map(c => (
+                          <option key={c.key} value={c.key}>{c.name}</option>
+                        ));
+                      })()}
+                    </select>
+                  </div>
+                  <div>
                     <label style={labelStyle}>業種 *</label>
                     <select value={editShop.type ?? "スナック"} onChange={(e) => setEditShop({ ...editShop, type: e.target.value })} style={inputStyle}>
                       <option>ラウンジ</option>
@@ -752,19 +789,13 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>エリア区分 *</label>
-                    <select value={editShop.area_category ?? "末広"} onChange={(e) => setEditShop({ ...editShop, area_category: e.target.value })} style={inputStyle}>
-                      <option>末広</option>
-                      <option>愛国</option>
-                      <option>その他</option>
-                    </select>
-                  </div>
-                  <div>
                     <label style={labelStyle}>プラン *</label>
                     <select value={editShop.plan ?? "free"} onChange={(e) => setEditShop({ ...editShop, plan: e.target.value })} style={inputStyle}>
                       <option value="free">フリー</option>
-                      <option value="standard">ゴールド</option>
+                      <option value="light">ライト</option>
+                      <option value="standard">スタンダード</option>
                       <option value="premium">プレミアム</option>
+                      <option value="pro">プロ</option>
                     </select>
                   </div>
                   <div>

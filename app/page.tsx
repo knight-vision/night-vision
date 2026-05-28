@@ -62,7 +62,11 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <ShopList shops={shops} />
+        <ShopList shops={shops} areas={[
+          { label: "📍 末広", value: "末広" },
+          { label: "📍 愛国", value: "愛国" },
+          { label: "📍 その他", value: "その他" },
+        ]} />
 
         <section style={{ textAlign: "center", padding: "32px 0 28px", position: "relative" }}>
           <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 300, height: 200, background: "radial-gradient(ellipse, #ff6b9d12 0%, transparent 70%)", pointerEvents: "none" }} />
