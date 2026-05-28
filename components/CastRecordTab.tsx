@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 type SlipItem = { name: string; qty: number; price: number };
 type SlipCast = { cast_id: string; type: string };
 type Slip = { id: string; date: string; payment: string; subtotal: number; tax: number; total: number; items: SlipItem[]; cast_entries: SlipCast[]; memo: string | null };
-type Note = { id: string; slip_id: string | null; date: string; note: string; visit_count: number; created_at: string };
+type Note = { id: string; slip_id: string | null; visit_date: string; name: string; memo: string; visit_count: number; last_visited: string; created_at: string };
 type Cast = { id: number; name: string };
 
 type Props = {
@@ -33,6 +33,7 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
 
   // メモ入力
   const [noteSlipId, setNoteSlipId] = useState<string | null>(null);
+  const [noteName, setNoteName] = useState("");
   const [noteText, setNoteText] = useState("");
   const [noteVisit, setNoteVisit] = useState("1");
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
     setLoading(true);
     const [s, n] = await Promise.all([
       fetch(`/api/slips?shop_id=${shopId}&month=${month}&cast_id=${selectedCastId}`).then(r => r.json()),
-      fetch(`/api/customer-notes?shop_id=${shopId}&cast_id=${selectedCastId}&month=${month}`).then(r => r.json()),
+      fetch(`/api/customers?shop_id=${shopId}&cast_id=${selectedCastId}&month=${month}`).then(r => r.json()),
     ]);
     setSlips(Array.isArray(s) ? s : []);
     setNotes(Array.isArray(n) ? n : []);
@@ -67,28 +68,28 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
   const slipsByDate: Record<string, Slip[]> = {};
   const notesByDate: Record<string, Note[]> = {};
   for (const s of slips) { if (!slipsByDate[s.date]) slipsByDate[s.date] = []; slipsByDate[s.date].push(s); }
-  for (const n of notes) { if (!notesByDate[n.date]) notesByDate[n.date] = []; notesByDate[n.date].push(n); }
+  for (const n of notes) { const k = n.visit_date || n.created_at?.slice(0,10) || ""; if (!notesByDate[k]) notesByDate[k] = []; notesByDate[k].push(n); }
 
   const daySlips = selectedDate ? (slipsByDate[selectedDate] || []) : [];
   const dayNotes = selectedDate ? (notesByDate[selectedDate] || []) : [];
 
   const addNote = async () => {
     if (!selectedCastId || !selectedDate || !noteText.trim()) return;
-    await fetch("/api/customer-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(selectedCastId), slip_id: noteSlipId, date: selectedDate, note: noteText.trim(), visit_count: Number(noteVisit) || 1 }) });
-    setNoteText(""); setNoteSlipId(null);
+    await fetch("/api/customers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(selectedCastId), slip_id: noteSlipId, visit_date: selectedDate, name: noteName.trim() || '名前なし', memo: noteText.trim(), visit_count: Number(noteVisit) || 1 }) });
+    setNoteText(""); setNoteSlipId(null); setNoteName("");
     setMsg("✅ メモを保存しました"); setTimeout(() => setMsg(""), 2000);
     load();
   };
 
   const saveEdit = async () => {
     if (!editNoteId || !editText.trim()) return;
-    await fetch("/api/customer-notes", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editNoteId, note: editText.trim() }) });
+    await fetch("/api/customers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editNoteId, memo: editText.trim() }) });
     setEditNoteId(null); setEditText("");
     load();
   };
 
   const deleteNote = async (id: string) => {
-    await fetch("/api/customer-notes", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    await fetch("/api/customers", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     load();
   };
 
@@ -209,17 +210,16 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
                     </div>
                   ) : (
                     <div>
-                      <div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.7, marginBottom: 6, whiteSpace: "pre-wrap" as const }}>{note.note}</div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                          来店{note.visit_count}回目
-                          {note.slip_id && <span style={{ marginLeft: 6, color: "var(--accent)" }}>📋 伝票紐付き</span>}
-                        </span>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button onClick={() => { setEditNoteId(note.id); setEditText(note.note); }} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer" }}>編集</button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{note.name && note.name !== "名前なし" ? note.name : "名前なし"}</span>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>来店{note.visit_count}回目</span>
+                        {note.slip_id && <span style={{ fontSize: 11, color: "var(--accent)" }}>📋 伝票紐付き</span>}
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.7, marginBottom: 6, whiteSpace: "pre-wrap" as const }}>{note.memo}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                          <button onClick={() => { setEditNoteId(note.id); setEditText(note.memo); }} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer" }}>編集</button>
                           <button onClick={() => deleteNote(note.id)} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "#ff444418", border: "1px solid #ff444444", color: "#ff4444", cursor: "pointer" }}>削除</button>
                         </div>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -230,7 +230,7 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
           {/* メモ追加フォーム */}
           <div style={sectionStyle}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>
-              {noteSlipId ? "📋 伝票に紐づけてメモを追加" : "メモを追加"}
+              {noteSlipId ? "📋 伝票に紐づけてメモを追加" : "顧客メモを追加"}
             </div>
             {noteSlipId && (
               <div style={{ fontSize: 11, color: "var(--accent)", marginBottom: 8, padding: "4px 10px", background: "var(--accent)11", borderRadius: 6 }}>
@@ -238,10 +238,14 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
                 <button onClick={() => setNoteSlipId(null)} style={{ marginLeft: 8, fontSize: 10, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}>× 解除</button>
               </div>
             )}
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+              <div>
+                <label style={labelStyle}>お客様名（任意）</label>
+                <input type="text" value={noteName} onChange={e => setNoteName(e.target.value)} placeholder="例：田中様" style={inputStyle} />
+              </div>
+              <div>
                 <label style={labelStyle}>来店回数</label>
-                <input type="number" value={noteVisit} onChange={e => setNoteVisit(e.target.value)} min={1} style={{ ...inputStyle, maxWidth: 80 }} />
+                <input type="number" value={noteVisit} onChange={e => setNoteVisit(e.target.value)} min={1} style={inputStyle} />
               </div>
             </div>
             <textarea
