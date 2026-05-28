@@ -217,9 +217,8 @@ export default function JoinPage() {
             <div style={{ fontSize: 48, marginBottom: 16 }}>📨</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)", marginBottom: 12 }}>申請を受け付けました</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.9, marginBottom: 24 }}>
-              担当者より <strong style={{ color: "var(--text-primary)" }}>{tel}</strong> へ<br />
-              確認のお電話をいたします。<br />
-              確認完了後にアカウントが有効化されます。
+              登録申請を受け付けました。<br />
+              確認が完了次第、アカウントが有効化されます。
             </div>
             <Link href="/" style={{ display: "block", padding: "12px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 14, color: "var(--text-secondary)", textDecoration: "none" }}>
               トップページへ戻る
