@@ -6,11 +6,18 @@ export async function GET(req: NextRequest) {
   const shopId = req.nextUrl.searchParams.get("shop_id");
   const month = req.nextUrl.searchParams.get("month");
   const date = req.nextUrl.searchParams.get("date");
+  const castId = req.nextUrl.searchParams.get("cast_id");
   if (!shopId) return NextResponse.json([]);
-  let query = supabase.from("slips").select("*").eq("shop_id", Number(shopId)).order("created_at", { ascending: false });
+  let query = supabase.from("slips").select("*").eq("shop_id", Number(shopId)).order("date", { ascending: false }).order("created_at", { ascending: false });
   if (date) query = query.eq("date", date);
   else if (month) query = query.gte("date", `${month}-01`).lte("date", `${month}-31`);
   const { data } = await query;
+  // cast_idフィルタはJSONBなのでクライアント側で絞る
+  if (castId && data) {
+    return NextResponse.json(data.filter((s: any) =>
+      Array.isArray(s.cast_entries) && s.cast_entries.some((e: any) => String(e.cast_id) === castId)
+    ));
+  }
   return NextResponse.json(data || []);
 }
 
