@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/shops";
 
-const ADMIN_PASSWORD = "nightvision2025";
+
 
 const inputStyle = {
   width: "100%", padding: "10px 14px",
@@ -57,6 +57,7 @@ const EMPTY_SHOP: Partial<Shop> = {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // ページ読み込み時にセッション確認
   useEffect(() => {
@@ -64,6 +65,19 @@ export default function AdminPage() {
       setAuthed(true);
     }
   }, []);
+
+  const handleAdminLogin = async (pw: string) => {
+    setLoginLoading(true);
+    const res = await fetch("/api/admin/password");
+    const { password: correctPw } = await res.json();
+    if (pw === correctPw) {
+      sessionStorage.setItem("admin_authed", "1");
+      setAuthed(true);
+    } else {
+      alert("パスワードが違います");
+    }
+    setLoginLoading(false);
+  };
   const [pw, setPw] = useState("");
   const [tab, setTab] = useState<"shops" | "casts" | "analytics" | "applications" | "accounts">("applications");
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -74,6 +88,7 @@ export default function AdminPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [appsError, setAppsError] = useState("");
   const [casts, setCasts] = useState<Cast[]>([]);
   const [editShop, setEditShop] = useState<Partial<Shop> | null>(null);
   const [editCast, setEditCast] = useState<Partial<Cast> | null>(null);
@@ -126,12 +141,13 @@ export default function AdminPage() {
 
   async function loadApplications() {
     setAppsLoading(true);
+    setAppsError("");
     try {
       const res = await fetch("/api/admin/applications");
       const data = await res.json();
       if (res.ok) setApplications(data);
-      else setMsg("申請取得エラー: " + (data.error || res.status));
-    } catch(e: any) { setMsg("通信エラー: " + e.message); }
+      else setAppsError("エラー: " + (data.error || res.status));
+    } catch(e: any) { setAppsError("通信エラー: " + e.message); }
     setAppsLoading(false);
   }
 
@@ -284,14 +300,15 @@ export default function AdminPage() {
             type="password"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && pw === ADMIN_PASSWORD && (sessionStorage.setItem("admin_authed","1"), setAuthed(true))}
+            onKeyDown={(e) => e.key === "Enter" && handleAdminLogin(pw)}
             placeholder="パスワード"
             style={{ ...inputStyle, marginBottom: 12, textAlign: "center" }}
           />
           <button
-            onClick={() => pw === ADMIN_PASSWORD ? (sessionStorage.setItem("admin_authed","1"), setAuthed(true)) : alert("パスワードが違います")}
+            onClick={() => handleAdminLogin(pw)}
+            disabled={loginLoading}
             style={{ ...btnStyle, width: "100%" }}
-          >ログイン</button>
+          >{loginLoading ? "確認中..." : "ログイン"}</button>
         </div>
       </div>
     );
@@ -309,10 +326,18 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {msg && <span style={{ fontSize: 12, color: "var(--online)" }}>✓ {msg}</span>}
-            <button onClick={() => {
-              const newPw = prompt("新しい管理者パスワード:");
+            <button onClick={async () => {
+              const current = prompt("現在のパスワードを入力:");
+              if (!current) return;
+              const newPw = prompt("新しいパスワード（6文字以上）:");
               if (!newPw || newPw.length < 6) { alert("6文字以上で入力してください"); return; }
-              alert(`新しいパスワード: ${newPw}\n\nこのパスワードをコードに反映させるため、Claudeに「adminパスワードを${newPw}に変更して」と伝えてください。`);
+              const res = await fetch("/api/admin/password", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ current, newPassword: newPw }),
+              });
+              const d = await res.json();
+              if (d.success) { alert("パスワードを変更しました"); }
+              else { alert("エラー: " + (d.error || "変更失敗")); }
             }} style={{ fontSize: 12, color: "var(--text-muted)", border: "1px solid var(--border)", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
               🔑 PW変更
             </button>
@@ -449,6 +474,14 @@ export default function AdminPage() {
             </div>
             {appsLoading ? (
               <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>読み込み中...</div>
+            ) : appsError ? (
+              <div style={{ background: "#ff444418", border: "1px solid #ff444444", borderRadius: 12, padding: 16, color: "#ff4444", fontSize: 13 }}>
+                ⚠️ {appsError}<br/>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, display: "block" }}>
+                  Supabaseで以下を実行してください：<br/>
+                  <code>CREATE TABLE IF NOT EXISTS owner_applications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), shop_id INTEGER NOT NULL, email TEXT NOT NULL, password_hash TEXT NOT NULL, tel TEXT NOT NULL, status TEXT DEFAULT 'pending', created_at TIMESTAMPTZ DEFAULT NOW()); ALTER TABLE owner_applications DISABLE ROW LEVEL SECURITY;</code>
+                </span>
+              </div>
             ) : applications.length === 0 ? (
               <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>申請はありません</div>
             ) : (
