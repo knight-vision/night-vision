@@ -11,12 +11,15 @@ export async function POST(req: NextRequest) {
   const { id, account_type } = await req.json();
   if (!id || !account_type) return NextResponse.json({ error: "id・account_typeが必要です" }, { status: 400 });
   const table = account_type === "owner" ? "shop_owners" : "cast_accounts";
-  console.log(`[accounts/delete] table=${table} id=${id}`);
-  const { error, count } = await supabase.from(table).delete().eq("id", id).select();
+  
+  // idをNumberに変換（int8型との不一致を防ぐ）
+  const numericId = Number(id);
+  if (isNaN(numericId)) return NextResponse.json({ error: "idが不正です" }, { status: 400 });
+  
+  const { error } = await supabase.from(table).delete().eq("id", numericId);
   if (error) {
     console.error("[accounts/delete] error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  console.log(`[accounts/delete] deleted count=${count}`);
   return NextResponse.json({ success: true });
 }
