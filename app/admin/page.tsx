@@ -156,8 +156,12 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/accounts", { cache: "no-store" });
       const data = await res.json();
-      if (res.ok) setAccounts(data);
-      else setMsg("アカウント取得エラー: " + (data.error || res.status));
+      if (res.ok) {
+        // result配列とdebug情報が返ってくる
+        const list = Array.isArray(data) ? data : (data.result || []);
+        setAccounts(list);
+        if (data.debug) console.log("[accounts debug]", data.debug);
+      } else setMsg("アカウント取得エラー: " + (data.error || res.status));
     } catch(e: any) { setMsg("通信エラー: " + e.message); }
     setAccountsLoading(false);
   }
