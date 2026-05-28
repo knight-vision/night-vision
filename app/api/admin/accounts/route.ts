@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -8,7 +11,6 @@ const supabase = createClient(
 );
 
 export async function GET() {
-  // オーナーアカウント
   const { data: owners, error: ownerError } = await supabase
     .from("shop_owners")
     .select("id, email, shop_id, password_hash, shops(name)")
@@ -16,7 +18,6 @@ export async function GET() {
 
   if (ownerError) console.error("[accounts] owner error:", ownerError);
 
-  // キャストアカウント
   const { data: casts, error: castError } = await supabase
     .from("cast_accounts")
     .select("id, email, shop_id, cast_id, password_hash, shops(name), casts(name)")

@@ -143,7 +143,7 @@ export default function AdminPage() {
     setAppsLoading(true);
     setAppsError("");
     try {
-      const res = await fetch("/api/admin/applications");
+      const res = await fetch("/api/admin/applications", { cache: "no-store" });
       const data = await res.json();
       if (res.ok) setApplications(data);
       else setAppsError("エラー: " + (data.error || res.status));
@@ -154,7 +154,7 @@ export default function AdminPage() {
   async function loadAccounts() {
     setAccountsLoading(true);
     try {
-      const res = await fetch("/api/admin/accounts");
+      const res = await fetch("/api/admin/accounts", { cache: "no-store" });
       const data = await res.json();
       if (res.ok) setAccounts(data);
       else setMsg("アカウント取得エラー: " + (data.error || res.status));
@@ -169,7 +169,10 @@ export default function AdminPage() {
       body: JSON.stringify({ id }),
     });
     const data = await res.json();
-    if (data.success) { setMsg("承認しました！アカウントが作成されました。"); await loadApplications(); }
+    if (data.success) {
+      setMsg("承認しました！アカウントが作成されました。");
+      await Promise.all([loadApplications(), loadAccounts()]);
+    }
     else setMsg("エラー: " + (data.error || "失敗しました"));
     setTimeout(() => setMsg(""), 3000);
   }
