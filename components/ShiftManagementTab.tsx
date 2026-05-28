@@ -337,17 +337,7 @@ ${casts.map(cast=>{
       {/* サブナビ（payrollOnlyのときは非表示） */}
       {!payrollOnly && (
         <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-          {[
-            {key:"calendar",label:"📅 出勤表（シフトカレンダー）"},
-            {key:"payroll",label:"💰 給与管理"},
-          ].map(v=>(
-            <button key={v.key} onClick={()=>setView(v.key as any)} style={{
-              padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
-              background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
-              border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
-              color:view===v.key?"#fff":"var(--text-secondary)",
-            }}>{v.label}</button>
-          ))}
+          <span style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>📅 シフトカレンダー</span>
           <button onClick={loadAll} style={{marginLeft:"auto",padding:"8px 14px",borderRadius:10,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",fontSize:12,cursor:"pointer"}}>🔄 更新</button>
         </div>
       )}
@@ -356,7 +346,7 @@ ${casts.map(cast=>{
       {shiftLoading&&<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>}
 
       {/* ===== 出勤表（シフトカレンダー） ===== */}
-      {view==="calendar"&&!shiftLoading&&!payrollOnly&&(
+      {!shiftLoading&&!payrollOnly&&(
         <div>
           {/* 週ナビ */}
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
@@ -488,7 +478,7 @@ ${casts.map(cast=>{
       )}
 
       {/* ===== 給与管理 ===== */}
-      {view==="payroll"&&(
+      {(view==="payroll"||payrollOnly)&&(
         <div>
           {/* 月切り替え＋出力 */}
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>

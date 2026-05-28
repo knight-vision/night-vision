@@ -1328,8 +1328,6 @@ export default function OwnerDashboard() {
             inputStyle={inputStyle}
             labelStyle={labelStyle}
             btnPrimary={btnPrimary}
-            initialAllowanceCastId={allowanceJumpCastId}
-            initialView={allowanceJumpCastId ? "payroll" : "calendar"}
           />
         )}
 
