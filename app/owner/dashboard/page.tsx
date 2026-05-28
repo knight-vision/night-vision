@@ -1272,6 +1272,35 @@ export default function OwnerDashboard() {
                 <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>キャストが登録されていません</div>
               )}
             </div>
+
+            {/* 給与管理 */}
+            {shopId && (
+              <ShiftManagementTab
+                shopId={shopId!}
+                casts={casts}
+                shiftRequests={shiftRequests}
+                setShiftRequests={setShiftRequests}
+                confirmedShifts={confirmedShifts}
+                setConfirmedShifts={setConfirmedShifts}
+                shiftLoading={shiftLoading}
+                setShiftLoading={setShiftLoading}
+                shiftMsg={shiftMsg}
+                setShiftMsg={setShiftMsg}
+                castAccountEmail={castAccountEmail}
+                setCastAccountEmail={setCastAccountEmail}
+                issuingAccount={issuingAccount}
+                setIssuingAccount={setIssuingAccount}
+                shopName={shop.name}
+                shopClosedWeekDays={shop.closed_week_days ?? []}
+                sectionStyle={sectionStyle}
+                inputStyle={inputStyle}
+                labelStyle={labelStyle}
+                btnPrimary={btnPrimary}
+                initialAllowanceCastId={allowanceJumpCastId}
+                initialView="payroll"
+                payrollOnly={true}
+              />
+            )}
           </div>
         )}
 

@@ -71,6 +71,7 @@ type Props = {
   labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties;
   initialAllowanceCastId?: string; // 手当追加で指定済みキャスト
   initialView?: "calendar" | "payroll"; // 初期表示ビュー
+  payrollOnly?: boolean; // trueならカレンダーを非表示（キャストタブ埋め込み用）
 };
 
 export default function ShiftManagementTab({
@@ -81,7 +82,7 @@ export default function ShiftManagementTab({
   issuingAccount, setIssuingAccount,
   shopName, shopClosedWeekDays,
   sectionStyle, inputStyle, labelStyle, btnPrimary,
-  initialAllowanceCastId, initialView,
+  initialAllowanceCastId, initialView, payrollOnly,
 }: Props) {
   const [view, setView] = useState<"calendar"|"payroll">(initialView || "calendar");
   const [closedDates, setClosedDates] = useState<ClosedDate[]>([]);
@@ -333,27 +334,29 @@ ${casts.map(cast=>{
 
   return (
     <div>
-      {/* サブナビ */}
-      <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
-        {[
-          {key:"calendar",label:"📅 出勤表（シフトカレンダー）"},
-          {key:"payroll",label:"💰 給与管理"},
-        ].map(v=>(
-          <button key={v.key} onClick={()=>setView(v.key as any)} style={{
-            padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
-            background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
-            border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
-            color:view===v.key?"#fff":"var(--text-secondary)",
-          }}>{v.label}</button>
-        ))}
-        <button onClick={loadAll} style={{marginLeft:"auto",padding:"8px 14px",borderRadius:10,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",fontSize:12,cursor:"pointer"}}>🔄 更新</button>
-      </div>
+      {/* サブナビ（payrollOnlyのときは非表示） */}
+      {!payrollOnly && (
+        <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
+          {[
+            {key:"calendar",label:"📅 出勤表（シフトカレンダー）"},
+            {key:"payroll",label:"💰 給与管理"},
+          ].map(v=>(
+            <button key={v.key} onClick={()=>setView(v.key as any)} style={{
+              padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
+              background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
+              border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
+              color:view===v.key?"#fff":"var(--text-secondary)",
+            }}>{v.label}</button>
+          ))}
+          <button onClick={loadAll} style={{marginLeft:"auto",padding:"8px 14px",borderRadius:10,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-muted)",fontSize:12,cursor:"pointer"}}>🔄 更新</button>
+        </div>
+      )}
 
       {shiftMsg&&<div style={{background:shiftMsg.includes("失敗")?"#ff444418":"var(--online-bg)",border:`1px solid ${shiftMsg.includes("失敗")?"#ff444444":"var(--online-border)"}`,borderRadius:10,padding:"10px 16px",color:shiftMsg.includes("失敗")?"#ff4444":"var(--online)",fontSize:13,marginBottom:16}}>{shiftMsg}</div>}
       {shiftLoading&&<div style={{textAlign:"center",color:"var(--text-muted)",padding:20}}>読み込み中...</div>}
 
       {/* ===== 出勤表（シフトカレンダー） ===== */}
-      {view==="calendar"&&!shiftLoading&&(
+      {view==="calendar"&&!shiftLoading&&!payrollOnly&&(
         <div>
           {/* 週ナビ */}
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
@@ -721,14 +724,15 @@ ${casts.map(cast=>{
                         </div>
                       )}
 
-                      {/* デフォルトプリセット（DBに未登録のもの） */}
+                      {/* デフォルトプリセット（DBに未登録のもの）→ タップで登録 */}
                       {ALLOWANCE_PRESETS.filter(name=>!allowancePresets.some(p=>p.name===name)).length > 0 && (
                         <div style={{marginBottom:10}}>
-                          <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:4}}>デフォルト項目（タップで金額を設定して追加）</div>
+                          <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:4}}>未登録のデフォルト項目（タップで追加）</div>
                           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                             {ALLOWANCE_PRESETS.filter(name=>!allowancePresets.some(p=>p.name===name)).map(name=>(
-                              <button key={name} onClick={()=>{
-                                setNewPreset({name, amount:"", sign:"+"});
+                              <button key={name} onClick={async()=>{
+                                await fetch("/api/allowance-presets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,name,amount:0,sign:"+"})});
+                                loadAllowancePresets();
                               }} style={{padding:"4px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>
                                 ＋ {name}
                               </button>
