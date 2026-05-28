@@ -348,6 +348,21 @@ export default function AdminPage() {
             }} style={{ fontSize: 12, color: "var(--text-muted)", border: "1px solid var(--border)", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
               🔑 PW変更
             </button>
+            <button onClick={async () => {
+              const currentRes = await fetch("/api/admin/demo-password");
+              const { password: currentPw } = await currentRes.json();
+              const newPw = prompt(`営業マン用デモパスワードを設定:\n現在: ${currentPw}`);
+              if (!newPw || newPw.length < 4) return;
+              const res = await fetch("/api/admin/demo-password", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: newPw }),
+              });
+              const d = await res.json();
+              if (d.success) alert(`デモパスワードを「${newPw}」に変更しました\n営業マンに共有してください`);
+              else alert("エラー: " + d.error);
+            }} style={{ fontSize: 12, color: "#a78bfa", border: "1px solid #a78bfa44", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
+              🔗 デモPW変更
+            </button>
             <button onClick={() => { sessionStorage.removeItem("admin_authed"); window.location.reload(); }} style={{ fontSize: 12, color: "#ff4444", border: "1px solid #ff444444", padding: "5px 12px", borderRadius: 20, background: "none", cursor: "pointer" }}>
               ログアウト
             </button>

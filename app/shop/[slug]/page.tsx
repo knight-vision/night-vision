@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import FavoriteButton from "@/components/FavoriteButton";
 import PhotoViewer from "@/components/PhotoViewer";
+import DemoGate from "@/components/DemoGate";
 
 export const dynamic = "force-dynamic";
 
@@ -185,10 +186,13 @@ export default async function ShopPage({ params }: { params: { slug: string } })
     <div style={{ background: "var(--bg)", minHeight: "100vh" }}>
       <Header />
 
-      {/* 非表示バナー（管理者プレビュー時のみ） */}
+      {/* 非表示店舗はデモ認証ゲート */}
+      {(shop as any).hidden && <DemoGate slug={shop.slug} />}
+
+      {/* 非表示バナー（認証済みプレビュー時のみ） */}
       {(shop as any).hidden && (
         <div style={{ background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "10px 16px", textAlign: "center", fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>
-          🙈 この店舗は現在非表示設定中です（管理者プレビュー）
+          🙈 この店舗は現在非表示設定中です（プレビューモード）
         </div>
       )}
 
