@@ -4,6 +4,7 @@ import CastPhotosPanel from "@/components/CastPhotosPanel";
 import CastChangeRequestPanel from "@/components/CastChangeRequestPanel";
 import CastFeedbackPanel from "@/components/CastFeedbackPanel";
 import CastPayrollPanel from "@/components/CastPayrollPanel";
+import CastSlipHistoryPanel from "@/components/CastSlipHistoryPanel";
 import CastLinePanel from "@/components/CastLinePanel";
 import CastPerformancePanel from "@/components/CastPerformancePanel";
 import CastHomePanel from "@/components/CastHomePanel";
@@ -126,6 +127,7 @@ export default function CastPortalPage() {
 
   const [portalView, setPortalView] = useState<"home"|"shift"|"payroll"|"photos"|"settings">("home");
   const [shiftSubView, setShiftSubView] = useState<"request"|"change">("request");
+  const [payrollSubView, setPayrollSubView] = useState<"payroll"|"slips">("payroll");
   const [castAccountId, setCastAccountId] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
@@ -386,10 +388,33 @@ export default function CastPortalPage() {
       {/* 給与・実績 */}
       {portalView === "payroll" && castId && (
         <div>
-          <CastPayrollPanel castId={castId} castName={castName} />
-          <div style={{marginTop:16}}>
-            <CastPerformancePanel castId={castId} shopId={shopId||""} castName={castName} />
+          {/* サブタブ */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {([
+              { key: "payroll", label: "💴 給与" },
+              { key: "slips",   label: "📋 実績" },
+            ] as const).map(v => (
+              <button key={v.key} onClick={() => setPayrollSubView(v.key)}
+                style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13,
+                  fontFamily: "var(--font)", fontWeight: payrollSubView === v.key ? 700 : 500,
+                  background: payrollSubView === v.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+                  color: payrollSubView === v.key ? "#fff" : "var(--text-secondary)",
+                }}>
+                {v.label}
+              </button>
+            ))}
           </div>
+          {payrollSubView === "payroll" && (
+            <CastPayrollPanel castId={castId} castName={castName} />
+          )}
+          {payrollSubView === "slips" && shopId && (
+            <CastSlipHistoryPanel castId={castId} shopId={shopId} />
+          )}
+          {payrollSubView === "slips" && !shopId && (
+            <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 32, fontSize: 13 }}>
+              店舗情報が取得できませんでした
+            </div>
+          )}
         </div>
       )}
 
