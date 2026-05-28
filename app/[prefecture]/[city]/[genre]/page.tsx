@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import ShopCard from "@/components/ShopCard";
 import Link from "next/link";
 import { getShopsByCityAndType } from "@/lib/shops";
-import { getCityByPrefecture, getGenre, PREFECTURE_NAMES } from "@/lib/cities";
+import { getCityByPrefecture, getGenre, PREFECTURE_NAMES, getGenresForPrefecture } from "@/lib/cities";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -28,6 +28,7 @@ export default async function CityGenrePage({ params }: Props) {
 
   const shops = await getShopsByCityAndType(city.key, genre.dbType);
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
+  const genres = getGenresForPrefecture(params.prefecture);
 
   return (
     <>
@@ -52,7 +53,7 @@ export default async function CityGenrePage({ params }: Props) {
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-          {city.genres.filter(g => g.key !== genre.key).map(g => (
+          {genres.filter(g => g.key !== genre.key).map(g => (
             <Link key={g.key} href={`/${city.prefectureKey}/${city.key}/${g.key}`} style={{
               padding: "6px 14px", borderRadius: 20, fontSize: 12,
               background: "var(--bg-input)", border: "1px solid var(--border)",

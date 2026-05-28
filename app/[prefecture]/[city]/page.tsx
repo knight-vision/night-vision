@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import ShopCard from "@/components/ShopCard";
 import Link from "next/link";
 import { getShopsByCity } from "@/lib/shops";
-import { getCityByPrefecture, PREFECTURE_NAMES } from "@/lib/cities";
+import { getCityByPrefecture, PREFECTURE_NAMES, getGenresForPrefecture } from "@/lib/cities";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -27,6 +27,7 @@ export default async function CityPage({ params }: Props) {
   const shops = await getShopsByCity(city.key);
   const onCount = shops.reduce((a, s) => a + s.casts.filter(c => c.on_today).length, 0);
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
+  const genres = getGenresForPrefecture(params.prefecture);
 
   return (
     <>
@@ -55,7 +56,7 @@ export default async function CityPage({ params }: Props) {
 
         {/* 業種ナビ */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-          {city.genres.map(g => (
+          {genres.map(g => (
             <Link key={g.key} href={`/${city.prefectureKey}/${city.key}/${g.key}`} style={{
               padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600,
               background: "var(--bg-card)", border: "1px solid var(--border)",

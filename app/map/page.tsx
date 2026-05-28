@@ -38,30 +38,16 @@ export default function MapPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {prefs.map(pref => {
                   const isActive = activePrefKeys.has(pref.key);
-                  if (!isActive) {
-                    return (
-                      <span
-                        key={pref.key}
-                        style={{
-                          padding: "7px 14px", borderRadius: 20, fontSize: 13,
-                          border: "1px solid var(--border)",
-                          background: "var(--bg-input)",
-                          color: "var(--text-hint)",
-                        }}
-                      >
-                        {pref.name}
-                      </span>
-                    );
-                  }
                   return (
                     <Link
                       key={pref.key}
                       href={`/${pref.key}`}
                       style={{
-                        padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700,
-                        border: "1px solid var(--online)",
-                        background: "#10b98115",
-                        color: "var(--online)",
+                        padding: "7px 14px", borderRadius: 20, fontSize: 13,
+                        fontWeight: isActive ? 700 : 400,
+                        border: `1px solid ${isActive ? "var(--online)" : "var(--border)"}`,
+                        background: isActive ? "#10b98115" : "var(--bg-input)",
+                        color: isActive ? "var(--online)" : "var(--text-muted)",
                         textDecoration: "none",
                       }}
                     >

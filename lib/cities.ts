@@ -31,6 +31,18 @@ export const GENRES: GenreConfig[] = [
   { key: "casual-bar",  name: "カジュアルバー",       dbType: "カジュアルバー", englishLabel: "CASUAL BAR" },
 ];
 
+// 北海道以外はキャバクラ/ラウンジ表記
+export const GENRES_MAINLAND: GenreConfig[] = [
+  { key: "lounge",      name: "キャバクラ/ラウンジ", dbType: "ラウンジ",       englishLabel: "CABARET/LOUNGE" },
+  { key: "girls-bar",   name: "ガールズバー",         dbType: "ガールズバー",   englishLabel: "GIRLS BAR" },
+  { key: "snack",       name: "スナック",             dbType: "スナック",       englishLabel: "SNACK" },
+  { key: "casual-bar",  name: "カジュアルバー",       dbType: "カジュアルバー", englishLabel: "CASUAL BAR" },
+];
+
+export function getGenresForPrefecture(prefectureKey: string): GenreConfig[] {
+  return prefectureKey === "hokkaido" ? GENRES : GENRES_MAINLAND;
+}
+
 export const CITIES: CityConfig[] = [
   {
     key: "kushiro",
@@ -83,7 +95,7 @@ export const CITIES: CityConfig[] = [
       { key: "shibasaki",  name: "柴崎町", description: "立川駅南口方面の飲み屋エリア。" },
       { key: "other",      name: "その他", description: "立川市内その他のエリア。" },
     ],
-    genres: GENRES,
+    genres: GENRES_MAINLAND,
   },
   {
     key: "shinjuku",
@@ -97,7 +109,7 @@ export const CITIES: CityConfig[] = [
       { key: "nishishinjuku", name: "西新宿",     description: "西新宿のオフィス街に隣接した飲み屋エリア。" },
       { key: "other",         name: "その他",     description: "新宿区内その他のエリア。" },
     ],
-    genres: GENRES,
+    genres: GENRES_MAINLAND,
   },
   {
     key: "roppongi",
@@ -111,7 +123,7 @@ export const CITIES: CityConfig[] = [
       { key: "azabu",      name: "麻布十番",         description: "麻布十番駅周辺の飲み屋エリア。" },
       { key: "other",      name: "その他",           description: "港区六本木周辺その他のエリア。" },
     ],
-    genres: GENRES,
+    genres: GENRES_MAINLAND,
   },
   {
     key: "ueno",
@@ -124,7 +136,7 @@ export const CITIES: CityConfig[] = [
       { key: "okachimachi",  name: "御徒町",     description: "御徒町駅周辺の飲み屋エリア。アメ横に隣接した活気あるエリア。" },
       { key: "other",        name: "その他",     description: "台東区上野周辺その他のエリア。" },
     ],
-    genres: GENRES,
+    genres: GENRES_MAINLAND,
   },
 ];
 export function getCity(key: string): CityConfig | undefined {

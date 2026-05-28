@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "釧路ナイトビジョン｜店舗向けサービス - 無料から始める集客・店舗管理",
-  description: "釧路の飲み屋・スナック・ガールズバー・ラウンジオーナー向け。掲載・集客・シフト管理・売上管理まで。全プラン1ヶ月無料。",
+  title: "NIGHT VISION｜店舗向けサービス - 無料から始める集客・店舗管理",
+  description: "全国の飲み屋・スナック・ガールズバー・ラウンジオーナー向け。掲載・集客・シフト管理・売上管理まで。プロプラン初回1ヶ月無料。",
   alternates: { canonical: "https://www.night-vision.jp/for-owners" },
 };
 
@@ -135,14 +135,14 @@ export default function ForOwnersPage() {
             店舗オーナー様へ
           </div>
           <h1 style={{ fontSize: "clamp(36px,9vw,64px)", fontWeight: 900, lineHeight: 1.2, letterSpacing: "-0.03em", marginBottom: 24, color: "#fff" }}>
-            釧路の夜を、<br />
+            夜のお店を、<br />
             <span style={{ background: "linear-gradient(135deg,#a78bfa,#f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>もっと集客できる</span>
             <br />サービス
           </h1>
           <p style={{ fontSize: "clamp(15px,3.5vw,18px)", color: "rgba(200,190,220,0.75)", lineHeight: 1.9, marginBottom: 40 }}>
             掲載・集客から、シフト管理・売上管理・<br />
-            給与計算まで。釧路特化の店舗管理サービス。<br />
-            <strong style={{ color: "#e8e0f0" }}>全プラン、1ヶ月無料から。</strong>
+            給与計算まで。全国対応の店舗管理サービス。<br />
+            <strong style={{ color: "#e8e0f0" }}>プロプラン、初回1ヶ月無料。</strong>
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <a href="#plans" style={{ background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", padding: "14px 32px", borderRadius: 30, fontSize: 15, fontWeight: 800, textDecoration: "none", boxShadow: "0 8px 28px rgba(124,58,237,0.4)" }}>
@@ -278,7 +278,7 @@ export default function ForOwnersPage() {
         <div style={{ fontSize: 44, marginBottom: 20 }}>🦉</div>
         <h2 style={{ fontSize: "clamp(24px,5vw,34px)", fontWeight: 900, marginBottom: 14, lineHeight: 1.4 }}>今夜から始めませんか</h2>
         <p style={{ fontSize: 14, color: "rgba(200,190,220,0.65)", lineHeight: 1.9, marginBottom: 36 }}>
-          釧路で一番使われる店舗情報サービスを目指しています。<br />
+          全国の夜のお店をサポートするサービスを目指しています。<br />
           まずは無料のライトプランから。
         </p>
         <Link href="/join" style={{ display: "block", maxWidth: 340, margin: "0 auto 14px", background: "linear-gradient(135deg,#7c3aed,#db2777)", color: "#fff", padding: "17px", borderRadius: 30, fontSize: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 8px 36px rgba(124,58,237,0.38)" }}>
@@ -291,7 +291,7 @@ export default function ForOwnersPage() {
 
       <footer style={{ borderTop: "1px solid rgba(124,58,237,0.12)", padding: "20px 24px", textAlign: "center", fontSize: 12, color: "rgba(150,140,170,0.4)" }}>
         <Link href="/" style={{ color: "rgba(167,139,250,0.5)", textDecoration: "none", marginRight: 20 }}>← サイトトップ</Link>
-        © 2025 釧路ナイトビジョン
+        © 2025 NIGHT VISION
       </footer>
     </div>
   );
