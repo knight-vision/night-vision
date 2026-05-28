@@ -1485,7 +1485,7 @@ export default function OwnerDashboard() {
                               </div>
                             ))}
                           </div>
-                          {!isCurrent && plan.key === "pro" && (
+                          {!isCurrent && (
                             <button
                               onClick={async () => {
                                 const btn = document.getElementById(`upgrade-btn-${plan.key}`) as HTMLButtonElement;
@@ -1493,7 +1493,7 @@ export default function OwnerDashboard() {
                                 try {
                                   const res = await fetch("/api/stripe/checkout", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, plan: "pro" }),
+                                    body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, plan: plan.key }),
                                   });
                                   const data = await res.json();
                                   if (data.url && data.url.startsWith("https://checkout.stripe.com")) {
@@ -1510,11 +1510,10 @@ export default function OwnerDashboard() {
                               id={`upgrade-btn-${plan.key}`}
                               style={{ width: "100%", padding: "11px", background: `linear-gradient(135deg,${plan.color}44,${plan.color}22)`, border: `1px solid ${plan.color}55`, borderRadius: 12, color: plan.color, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)" }}
                             >
-                              {trialUsed ? "🚀 プロプランに申し込む" : "🚀 1ヶ月無料で試す（初回のみ）"}
+                              {plan.key === "pro"
+                                ? (trialUsed ? "🚀 プロプランに申し込む" : "🚀 1ヶ月無料で試す（初回のみ）")
+                                : `🚀 ${plan.name}プランに申し込む`}
                             </button>
-                          )}
-                          {!isCurrent && plan.key !== "pro" && (
-                            <div style={{ fontSize: 11, color: "var(--text-hint)", textAlign: "center" as const, padding: "8px 0" }}>お問い合わせください</div>
                           )}
                         </div>
                       );

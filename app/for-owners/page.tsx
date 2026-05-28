@@ -53,7 +53,7 @@ const PLANS = [
       "バナー写真掲載",
       "おすすめ優先表示",
     ],
-    cta: "1ヶ月無料で試す",
+    cta: "申し込む",
     href: "/join?plan=standard",
   },
   {
@@ -75,7 +75,7 @@ const PLANS = [
       "給与計算・明細出力",
       "キャスト成績管理",
     ],
-    cta: "1ヶ月無料で試す",
+    cta: "申し込む",
     href: "/join?plan=premium",
   },
   {

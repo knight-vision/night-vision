@@ -15,9 +15,14 @@ export async function POST(req: NextRequest) {
     if (!shop_id || !owner_id) return NextResponse.json({ error: "パラメータ不足" }, { status: 400 });
     if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "STRIPE_SECRET_KEY未設定" }, { status: 500 });
 
-    // Proプランのみ受け付ける（トライアルはProのみ）
-    const priceId = process.env.STRIPE_PRO_PRICE_ID;
-    if (!priceId) return NextResponse.json({ error: "STRIPE_PRO_PRICE_IDが未設定です" }, { status: 500 });
+    // プランに応じたprice_idを選択
+    const priceMap: Record<string, string | undefined> = {
+      standard: process.env.STRIPE_STANDARD_PRICE_ID,
+      premium:  process.env.STRIPE_PREMIUM_PRICE_ID,
+      pro:      process.env.STRIPE_PRO_PRICE_ID,
+    };
+    const priceId = priceMap[plan];
+    if (!priceId) return NextResponse.json({ error: `${plan}プランのPrice IDが未設定です` }, { status: 500 });
     if (!priceId.startsWith("price_")) return NextResponse.json({ error: `Price IDの形式が不正: ${priceId.slice(0,10)}` }, { status: 500 });
 
     const { data: shop } = await supabase
@@ -29,8 +34,9 @@ export async function POST(req: NextRequest) {
 
     const { data: owner } = await supabase.from("shop_owners").select("email").eq("id", owner_id).single();
 
-    // トライアル使用済みチェック（DBで管理）
+    // トライアルはProプランかつ初回のみ
     const trialUsed = shop.trial_used === true;
+    const applyTrial = plan === "pro" && !trialUsed;
 
     let customerId = shop.stripe_customer_id;
     if (customerId && !customerId.startsWith("cus_")) {
@@ -47,11 +53,11 @@ export async function POST(req: NextRequest) {
     }
 
     const subscriptionData: Stripe.Checkout.SessionCreateParams["subscription_data"] = {
-      metadata: { shop_id: String(shop_id), plan: "pro" },
+      metadata: { shop_id: String(shop_id), plan },
     };
 
-    // 初回のみ1ヶ月トライアルを付与
-    if (!trialUsed) {
+    // Proプラン初回のみトライアル
+    if (applyTrial) {
       subscriptionData.trial_period_days = 30;
     }
 
@@ -61,13 +67,13 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       subscription_data: subscriptionData,
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=pro`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/owner/dashboard?tab=plan&success=${plan}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.night-vision.jp"}/for-owners#plans`,
-      metadata: { shop_id: String(shop_id), plan: "pro" },
+      metadata: { shop_id: String(shop_id), plan },
       locale: "ja",
     });
 
-    return NextResponse.json({ url: session.url, trial: !trialUsed });
+    return NextResponse.json({ url: session.url, trial: applyTrial });
   } catch(e: any) {
     return NextResponse.json({ error: e.message || "Stripeエラー" }, { status: 500 });
   }
