@@ -470,7 +470,16 @@ export default function AdminPage() {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h2 style={{ color: "var(--text-primary)", fontSize: 18, fontWeight: 800 }}>店舗会員登録 申請一覧</h2>
-              <button onClick={loadApplications} style={{ ...btnStyle, fontSize: 12, padding: "8px 14px" }}>🔄 更新</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={async () => {
+                  const res = await fetch("/api/admin/applications/fix", { method: "POST" });
+                  const d = await res.json();
+                  setMsg(d.message || "修正完了");
+                  await loadApplications();
+                  setTimeout(() => setMsg(""), 3000);
+                }} style={{ ...btnStyle, fontSize: 11, padding: "6px 12px", background: "#10b98120", color: "#10b981" }}>🔧 不整合を修正</button>
+                <button onClick={loadApplications} style={{ ...btnStyle, fontSize: 12, padding: "8px 14px" }}>🔄 更新</button>
+              </div>
             </div>
             {appsLoading ? (
               <div style={{ color: "var(--text-muted)", textAlign: "center", padding: 24 }}>読み込み中...</div>
