@@ -20,8 +20,8 @@ export async function GET() {
 
   const { data: casts, error: castError } = await supabase
     .from("cast_accounts")
-    .select("id, email, shop_id, cast_id, password_hash, shops(name), casts(name)")
-    .order("shop_id");
+    .select("id, email, cast_id, password_hash, casts(id, name, shop_id, shops(name))")
+    .order("cast_id");
 
   if (castError) console.error("[accounts] cast error:", castError.message, castError.code);
 
@@ -33,10 +33,15 @@ export async function GET() {
       shop_name: o.shops?.name || `Shop ID:${o.shop_id}`, account_type: "owner",
     })),
     ...(casts||[]).map((c: any) => ({
-      id: String(c.id), email: c.email, shop_id: c.shop_id, cast_id: String(c.cast_id), password_hash: c.password_hash,
-      shop_name: c.shops?.name || "", cast_name: c.casts?.name || "", account_type: "cast",
+      id: String(c.id), email: c.email,
+      shop_id: c.casts?.shop_id,
+      cast_id: String(c.cast_id),
+      password_hash: c.password_hash,
+      shop_name: c.casts?.shops?.name || "",
+      cast_name: c.casts?.name || "",
+      account_type: "cast",
     })),
-  ].sort((a,b) => a.shop_name.localeCompare(b.shop_name));
+  ].sort((a,b) => (a.shop_name||"").localeCompare(b.shop_name||""));
 
   return NextResponse.json({ result, debug: { owners: owners?.length || 0, casts: casts?.length || 0, castError: castError?.message || null } });
 }
