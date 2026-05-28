@@ -46,11 +46,12 @@ const SHIMEI_TYPES = ["フリー", "場内指名", "本指名", "同伴", "ア�
 
 // 指名種別 → sales_type マッピング
 const SHIMEI_TO_SALES_TYPE: Record<string, string> = {
-  "本指名": "honshimei",
+  "フリー":   "free",
+  "本指名":   "honshimei",
   "場内指名": "baai",
-  "同伴": "douhan",
+  "同伴":     "douhan",
   "アフター": "after",
-  "出張": "trip",
+  "出張":     "trip",
 };
 const PAYMENT_TYPES = ["現金", "カード"];
 const TAX_RATE = 0.1;
@@ -232,7 +233,9 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
           const salesType = SHIMEI_TO_SALES_TYPE[c.type] || null;
           if (salesType) {
             const fee = slipItems.find(i => i.name.includes("指名") || i.name.includes("同伴") || i.name.includes("アフター") || i.name.includes("出張"));
-            const amount = fee ? fee.qty * fee.price : (salesType === "honshimei" ? 16000 : salesType === "douhan" ? 5000 : salesType === "after" ? 3000 : 1000);
+            const amount = salesType === "free" ? 0
+              : fee ? fee.qty * fee.price
+              : (salesType === "honshimei" ? 16000 : salesType === "douhan" ? 5000 : salesType === "after" ? 3000 : 1000);
             await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: salesType, amount, count: 1, memo: "" }) });
           }
           // ボトルバック（品目にボトル系があればキャストにバック）

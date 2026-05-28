@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { shop_id, cast_id, date, sales_type, amount, count, memo } = await req.json();
-  if (!shop_id || !cast_id || !date || !amount) {
+  if (!shop_id || !cast_id || !date || amount === undefined || amount === null) {
     return NextResponse.json({ error: "必須パラメータ不足" }, { status: 400 });
   }
   const { error } = await supabase.from("cast_sales").insert({

@@ -7,6 +7,7 @@ type WageOverride = { id: string; cast_id: number; date: string; hourly_wage: nu
 type Shift = { cast_id: number; date: string; start_time: string; end_time: string };
 
 const SALES_LABELS: Record<string, { label: string; icon: string; countLabel: string }> = {
+  free:      { label: "フリー",    icon: "🆓", countLabel: "本" },
   honshimei: { label: "本指名",   icon: "⭐", countLabel: "本" },
   baai:      { label: "場内指名", icon: "🎯", countLabel: "本" },
   douhan:    { label: "同伴",     icon: "🚗", countLabel: "本" },
