@@ -821,13 +821,14 @@ ${rows.map(({ cast, d, dayRows }) => `
               <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:16,padding:16,marginBottom:12}}>
                 <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:12}}>経費を追加</div>
                 <input type="date" value={expenseDate} onChange={e=>setExpenseDate(e.target.value)}
-                  style={{width:"100%",padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)",marginBottom:8,boxSizing:"border-box" as const}} />
-                <div style={{display:"flex",gap:8,marginBottom:8}}>
-                  <input type="text" value={expenseName} onChange={e=>setExpenseName(e.target.value)}
-                    placeholder="項目名（例：ドリンク仕入れ）"
-                    style={{flex:2,padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)"}} />
-                  <input type="number" value={expenseAmount} onChange={e=>setExpenseAmount(e.target.value)} placeholder="金額"
-                    style={{flex:1,padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)"}} />
+                  style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:14,fontFamily:"var(--font)",marginBottom:8,boxSizing:"border-box" as const}} />
+                <input type="text" value={expenseName} onChange={e=>setExpenseName(e.target.value)}
+                  placeholder="項目名（例：ドリンク仕入れ・消耗品）"
+                  style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:14,fontFamily:"var(--font)",marginBottom:8,boxSizing:"border-box" as const}} />
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                  <input type="number" value={expenseAmount} onChange={e=>setExpenseAmount(e.target.value)} placeholder="0"
+                    style={{flex:1,padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:14,fontFamily:"var(--font)",minWidth:0}} />
+                  <span style={{fontSize:13,color:"var(--text-muted)",flexShrink:0}}>円</span>
                 </div>
                 <button onClick={async()=>{
                   if(!expenseName||!expenseAmount||!expenseDate) return;

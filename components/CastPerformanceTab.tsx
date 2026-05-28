@@ -223,55 +223,6 @@ export default function CastPerformanceTab({ shopId, casts, sectionStyle, inputS
         </div>
         <button onClick={addManualSale} disabled={!manualCastId || !manualAmount} style={{ ...btnPrimary, width: "100%", opacity: !manualCastId || !manualAmount ? 0.5 : 1 }}>＋ 売上を追加</button>
       </div>
-
-      {/* 時給上書き設定 */}
-      <div style={sec}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12 }}>特定日の時給を上書き設定</div>
-        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>年末年始や特別イベント時など、特定の日だけ時給を変更できます。</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-          <div>
-            <label style={labelStyle}>キャスト</label>
-            <select value={wageEditCastId} onChange={e => setWageEditCastId(e.target.value)} style={inputStyle}>
-              <option value="">選択...</option>
-              {casts.map(c => <option key={c.id} value={c.id}>{c.name}（通常 ¥{c.hourly_wage?.toLocaleString()}/h）</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>対象日</label>
-            <input type="date" value={wageEditDate} onChange={e => setWageEditDate(e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>時給（円）</label>
-            <input type="number" value={wageEditAmount} onChange={e => setWageEditAmount(e.target.value)} placeholder="例：1500" style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>メモ（任意）</label>
-            <input type="text" value={wageEditMemo} onChange={e => setWageEditMemo(e.target.value)} placeholder="例：年末特別時給" style={inputStyle} />
-          </div>
-        </div>
-        <button onClick={addWageOverride} disabled={!wageEditCastId || !wageEditAmount} style={{ ...btnPrimary, width: "100%", opacity: !wageEditCastId || !wageEditAmount ? 0.5 : 1 }}>設定する</button>
-
-        {/* 設定済み一覧 */}
-        {wageOverrides.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>今月の時給上書き設定</div>
-            {wageOverrides.map(w => {
-              const cast = casts.find(c => c.id === w.cast_id);
-              return (
-                <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
-                  <div>
-                    <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{cast?.name}</span>
-                    <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>{w.date}</span>
-                    <span style={{ color: "var(--accent)", marginLeft: 8, fontWeight: 700 }}>¥{w.hourly_wage.toLocaleString()}/h</span>
-                    {w.memo && <span style={{ color: "var(--text-muted)", marginLeft: 6 }}>({w.memo})</span>}
-                  </div>
-                  <button onClick={async () => { await fetch("/api/cast-wage-overrides", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: w.id }) }); load(); }} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "#ff444418", border: "1px solid #ff444444", color: "#ff4444", cursor: "pointer" }}>削除</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
