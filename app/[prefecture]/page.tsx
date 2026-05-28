@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import { getPrefecture } from "@/lib/japan";
-import { getCitiesByPrefecture } from "@/lib/cities";
-import { notFound } from "next/navigation";
+import { getCitiesByPrefecture, getCity } from "@/lib/cities";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 type Props = { params: { prefecture: string } };
@@ -18,6 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function PrefecturePage({ params }: Props) {
+  // /kushiro のように都市キーが来た場合は /hokkaido/kushiro にリダイレクト
+  const cityMatch = getCity(params.prefecture);
+  if (cityMatch) redirect(`/${cityMatch.prefectureKey}/${cityMatch.key}`);
+
   const pref = getPrefecture(params.prefecture);
   if (!pref) notFound();
 
