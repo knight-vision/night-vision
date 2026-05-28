@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { canUseJobs } from "@/lib/plan";
 
 type Job = { id: string; title: string; description: string | null; hourly_wage_min: number | null; hourly_wage_max: number | null; work_days: string | null; requirements: string | null; benefits: string | null; is_active: boolean; created_at: string };
 
@@ -21,7 +22,7 @@ export default function JobsTab({ shopId, shopPlan, shopSlug, sectionStyle, inpu
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [editJob, setEditJob] = useState<Partial<Job> | null>(null);
-  const isGold = shopPlan === "gold" || shopPlan === "standard" || shopPlan === "premium";
+  const isGold = canUseJobs(shopPlan); // プレミアム・プロ・ゴールドのみ
 
   useEffect(() => { load(); }, []);
 

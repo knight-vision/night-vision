@@ -66,7 +66,7 @@ type PhotoRequest = {
   created_at: string;
 };
 
-type Tab = "today" | "shop_info" | "cast" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
+type Tab = "today" | "shop_info" | "cast" | "payroll" | "shift" | "sales" | "jobs" | "tweet" | "feedback" | "line" | "plan" | "password";
 
 type ShiftRequest = {
   id: string;
@@ -120,7 +120,7 @@ export default function OwnerDashboard() {
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
-    if (t !== "shift") setAllowanceJumpCastId("");
+    if (t !== "payroll") setAllowanceJumpCastId("");
     setTab(t);
   };
   const [saving, setSaving] = useState(false);
@@ -475,7 +475,8 @@ export default function OwnerDashboard() {
   const TABS: { key: Tab; label: string }[] = [
     { key: "today", label: "🏠 ホーム" },
     { key: "shop_info", label: "店舗管理" },
-    { key: "cast", label: "キャスト" },
+    { key: "cast", label: "キャスト管理" },
+    { key: "payroll", label: "💴 給与管理" },
     { key: "shift", label: "シフト管理" },
     { key: "sales", label: "📊 売上管理" },
     { key: "jobs", label: "求人" },
@@ -532,7 +533,7 @@ export default function OwnerDashboard() {
         {/* 今日 */}
         {tab === "today" && shopId && (
           <TodayTab shopId={shopId} casts={casts} sectionStyle={sectionStyle} btnPrimary={btnPrimary} setTab={(t: any) => setTab(t)} showMsg={showMsg}
-            onAllowanceClick={(castId) => { setAllowanceJumpCastId(castId); setTab("shift"); }} />
+            onAllowanceClick={(castId) => { setAllowanceJumpCastId(castId); setTab("payroll"); }} />
         )}
 
         {/* 基本情報 */}
@@ -1272,40 +1273,40 @@ export default function OwnerDashboard() {
                 <div style={{ textAlign: "center", color: "var(--text-muted)", padding: 40, fontSize: 14 }}>キャストが登録されていません</div>
               )}
             </div>
-
-            {/* 給与管理 */}
-            {shopId && (
-              <ShiftManagementTab
-                shopId={shopId!}
-                casts={casts}
-                shiftRequests={shiftRequests}
-                setShiftRequests={setShiftRequests}
-                confirmedShifts={confirmedShifts}
-                setConfirmedShifts={setConfirmedShifts}
-                shiftLoading={shiftLoading}
-                setShiftLoading={setShiftLoading}
-                shiftMsg={shiftMsg}
-                setShiftMsg={setShiftMsg}
-                castAccountEmail={castAccountEmail}
-                setCastAccountEmail={setCastAccountEmail}
-                issuingAccount={issuingAccount}
-                setIssuingAccount={setIssuingAccount}
-                shopName={shop.name}
-                shopClosedWeekDays={shop.closed_week_days ?? []}
-                sectionStyle={sectionStyle}
-                inputStyle={inputStyle}
-                labelStyle={labelStyle}
-                btnPrimary={btnPrimary}
-                initialAllowanceCastId={allowanceJumpCastId}
-                initialView="payroll"
-                payrollOnly={true}
-              />
-            )}
           </div>
         )}
 
 
-        {/* 出勤管理 */}
+        {/* 給与管理 */}
+        {tab === "payroll" && shopId && (
+          <ShiftManagementTab
+            shopId={shopId!}
+            casts={casts}
+            shiftRequests={shiftRequests}
+            setShiftRequests={setShiftRequests}
+            confirmedShifts={confirmedShifts}
+            setConfirmedShifts={setConfirmedShifts}
+            shiftLoading={shiftLoading}
+            setShiftLoading={setShiftLoading}
+            shiftMsg={shiftMsg}
+            setShiftMsg={setShiftMsg}
+            castAccountEmail={castAccountEmail}
+            setCastAccountEmail={setCastAccountEmail}
+            issuingAccount={issuingAccount}
+            setIssuingAccount={setIssuingAccount}
+            shopName={shop.name}
+            shopClosedWeekDays={shop.closed_week_days ?? []}
+            sectionStyle={sectionStyle}
+            inputStyle={inputStyle}
+            labelStyle={labelStyle}
+            btnPrimary={btnPrimary}
+            initialAllowanceCastId={allowanceJumpCastId}
+            initialView="payroll"
+            payrollOnly={true}
+          />
+        )}
+
+        {/* シフト管理 */}
         {tab === "shift" && (
           <ShiftManagementTab
             shopId={shopId!}
