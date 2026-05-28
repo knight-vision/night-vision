@@ -1400,11 +1400,11 @@ export default function OwnerDashboard() {
                 standard: { label: "スタンダードプラン", icon: "🌙", price: "¥3,000/月", color: "#a78bfa" },
                 premium:  { label: "プレミアムプラン", icon: "💡", price: "¥5,000/月", color: "#f472b6" },
                 pro:      { label: "プロプラン", icon: "🌃", price: "¥8,000/月", color: "#fbbf24" },
-                gold:     { label: "スタンダードプラン", icon: "🌙", price: "¥3,000/月", color: "#a78bfa" },
               };
-              const currentPlan = shop.plan || "free";
+              const rawPlan = shop.plan || "free";
+              const currentPlan = rawPlan === "gold" ? "standard" : rawPlan; // gold→standard正規化
               const current = planInfo[currentPlan] || planInfo.free;
-              const isPaid = ["standard","premium","pro","gold"].includes(currentPlan);
+              const isPaid = ["standard","premium","pro"].includes(currentPlan);
 
               return (
                 <>
@@ -1447,8 +1447,7 @@ export default function OwnerDashboard() {
                     ];
 
                     return plans.map(plan => {
-                      const isCurrent = plan.key === currentPlan ||
-                        (plan.key === "standard" && currentPlan === "gold");
+                      const isCurrent = plan.key === currentPlan;
                       return (
                         <div key={plan.key} style={{
                           background: plan.badge ? `${plan.color}12` : "var(--bg-input)",

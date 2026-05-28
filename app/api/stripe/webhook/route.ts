@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
       const ownerEmail = await getOwnerEmail(Number(shopId));
       const { data: shop } = await supabase.from("shops").select("name").eq("id", Number(shopId)).single();
-      const planLabels: Record<string,string> = { standard:"スタンダード🌙", premium:"プレミアム💡", pro:"プロ🌃", gold:"ゴールド💎" };
+      const planLabels: Record<string,string> = { standard:"スタンダード🌙", premium:"プレミアム💡", pro:"プロ🌃" };
       const planLabel = planLabels[planType] || planType;
       if (ownerEmail) {
         await resend.emails.send({
@@ -74,8 +74,10 @@ export async function POST(req: NextRequest) {
       const shop = await getShopByCustomer(customerId);
       if (shop) {
         const { data: shopData } = await supabase.from("shops").select("plan").eq("id", shop.id).single();
-        if (!shopData?.plan || (shopData.plan !== "gold" && shopData.plan !== "premium")) {
-          await supabase.from("shops").update({ plan: "gold" }).eq("id", shop.id);
+        // goldは廃止 → standardとして扱う。プランが未設定の場合のみstandardをセット
+        const currentPlan = shopData?.plan;
+        if (!currentPlan || currentPlan === "gold" || currentPlan === "free" || currentPlan === "light") {
+          await supabase.from("shops").update({ plan: "standard" }).eq("id", shop.id);
         }
       }
       break;
