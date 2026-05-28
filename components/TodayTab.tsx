@@ -150,10 +150,16 @@ export default function TodayTab({ shopId, casts, sectionStyle, btnPrimary, setT
                       return <span key={s.cast_id + s.sales_type} style={{ color: "var(--accent)" }}>{labels[s.sales_type] || s.sales_type} ¥{s.amount.toLocaleString()}</span>;
                     })}
                     {pay.bottle > 0 && <span style={{ color: "#a855f7" }}>🍾¥{pay.bottle.toLocaleString()}</span>}
-                    <button
-                      onClick={() => { setEditingShift(cast.id); setEditStart(pay.shift?.start_time?.slice(0,5) || ""); setEditEnd(pay.shift?.end_time?.slice(0,5) || ""); }}
-                      style={{ fontSize: 10, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "1px 8px", cursor: "pointer", marginLeft: "auto" }}
-                    >✏️ シフト変更</button>
+                    <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+                      <button
+                        onClick={() => setTab("shift")}
+                        style={{ fontSize: 10, color: "#10b981", background: "#10b98118", border: "1px solid #10b98144", borderRadius: 6, padding: "1px 8px", cursor: "pointer" }}
+                      >＋ 手当・控除</button>
+                      <button
+                        onClick={() => { setEditingShift(cast.id); setEditStart(pay.shift?.start_time?.slice(0,5) || ""); setEditEnd(pay.shift?.end_time?.slice(0,5) || ""); }}
+                        style={{ fontSize: 10, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 6, padding: "1px 8px", cursor: "pointer" }}
+                      >✏️ シフト変更</button>
+                    </div>
                   </div>
                   {isEditing && (
                     <div style={{ marginTop: 10, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
