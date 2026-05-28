@@ -878,7 +878,11 @@ export default function AdminPage() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {shopCasts.map((cast) => {
-                      const castAccount = accounts.find((a: any) => a.account_type === "cast" && Number(a.cast_id) === Number(cast.id));
+                      const castAccount = accounts.find((a: any) => {
+                        if (a.account_type !== "cast") return false;
+                        return Number(a.cast_id) === Number(cast.id) || String(a.cast_id) === String(cast.id);
+                      });
+                      const castAccounts = accounts.filter((a: any) => a.account_type === "cast");
                       return (
                         <div key={cast.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: castAccount ? 8 : 0 }}>
@@ -904,7 +908,9 @@ export default function AdminPage() {
                                 : <span style={{ color: "#10b981" }}>{castAccount.password_hash}</span>}
                             </div>
                           ) : (
-                            <div style={{ fontSize: 10, color: "var(--text-hint)" }}>アカウント未発行</div>
+                            <div style={{ fontSize: 10, color: "var(--text-hint)" }}>
+                              アカウント未発行（cast.id={cast.id} / 発行済み={castAccounts.map((a:any)=>a.cast_id).join(",")||"なし"}）
+                            </div>
                           )}
                         </div>
                       );
