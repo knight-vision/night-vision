@@ -81,6 +81,13 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   // データ
   const [shopMenus, setShopMenus] = useState<ShopMenu[]>([]);
   const [allDailySales, setAllDailySales] = useState<DailySales[]>([]);
+  const [editingDailyDate, setEditingDailyDate] = useState<string|null>(null);
+  const [editDailyValues, setEditDailyValues] = useState<Record<string,any>>({});
+  const [salesSubView, setSalesSubView] = useState<"detail"|"expense">("detail");
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0,10));
+  const [expenseName, setExpenseName] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenses, setExpenses] = useState<{id:string;date:string;name:string;amount:number}[]>([]);
   const [allCastSales, setAllCastSales] = useState<CastSale[]>([]);
   const [allShifts, setAllShifts] = useState<ConfirmedShift[]>([]);
   const [allAllowances, setAllAllowances] = useState<Allowance[]>([]);
@@ -135,6 +142,11 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     }
   }, [shopId]);
 
+  const loadExpenses = async (m: string) => {
+    const res = await fetch(`/api/expenses?shop_id=${shopId}&month=${m}`);
+    if (res.ok) setExpenses(await res.json());
+  };
+
   const loadSales = useCallback(async (m: string) => {
     setLoading(true);
     const [y, mo] = m.split("-").map(Number);
@@ -161,7 +173,8 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   useEffect(() => {
     if (initialView === "cast_sales") loadSales(month);
   }, [initialView]);
-  useEffect(() => { if (view==="sales") loadSales(month); }, [view, month, loadSales]);
+  useEffect(() => { if (view==="sales") { loadSales(month); loadExpenses(month); } }, [view, month, loadSales]);
+  useEffect(() => { if (initialView === "cast_sales") loadSales(month); }, [initialView]);
 
   // 伝票保存
   const saveSlip = async () => {
@@ -771,6 +784,86 @@ ${rows.map(({ cast, d, dayRows }) => `
           <PlanGate planName="スタンダード" />
         ) :
         <div>
+          {/* サブナビ */}
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            {(["detail","expense"] as const).map(v=>(
+              <button key={v} onClick={()=>setSalesSubView(v)} style={{
+                padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,
+                fontWeight:salesSubView===v?700:500,
+                background:salesSubView===v?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
+                border:`1px solid ${salesSubView===v?"transparent":"var(--border)"}`,
+                color:salesSubView===v?"#fff":"var(--text-secondary)",
+              }}>{v==="detail"?"📊 売上詳細":"💸 経費入力"}</button>
+            ))}
+          </div>
+
+          {/* 経費入力サブビュー */}
+          {salesSubView==="expense"&&(
+            <div>
+              <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:16,padding:16,marginBottom:12}}>
+                <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:12}}>経費を追加</div>
+                <input type="date" value={expenseDate} onChange={e=>setExpenseDate(e.target.value)}
+                  style={{width:"100%",padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)",marginBottom:8,boxSizing:"border-box" as const}} />
+                <div style={{display:"flex",gap:8,marginBottom:8}}>
+                  <input type="text" value={expenseName} onChange={e=>setExpenseName(e.target.value)}
+                    placeholder="項目名（例：ドリンク仕入れ）"
+                    style={{flex:2,padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)"}} />
+                  <input type="number" value={expenseAmount} onChange={e=>setExpenseAmount(e.target.value)} placeholder="金額"
+                    style={{flex:1,padding:"8px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-primary)",fontSize:13,fontFamily:"var(--font)"}} />
+                </div>
+                <button onClick={async()=>{
+                  if(!expenseName||!expenseAmount||!expenseDate) return;
+                  const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${month}`);
+                  const existing = dsRes.ok ? (await dsRes.json()).find((d:any)=>d.date===expenseDate) : null;
+                  await fetch("/api/daily-sales",{method:"POST",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({shop_id:shopId,date:expenseDate,
+                      cash_sales:existing?.cash_sales||0,card_sales:existing?.card_sales||0,
+                      cost:(existing?.cost||0)+Number(expenseAmount),
+                      memo:existing?.memo||"",opening_cash:0,invoice_sales:0})});
+                  await fetch("/api/expenses",{method:"POST",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({shop_id:shopId,date:expenseDate,name:expenseName,amount:Number(expenseAmount)})});
+                  setExpenseName(""); setExpenseAmount("");
+                  await loadSales(month); await loadExpenses(month);
+                  setMsg("✅ 経費を追加しました");
+                }} disabled={!expenseName||!expenseAmount}
+                style={{width:"100%",padding:"10px",borderRadius:10,background:"linear-gradient(135deg,var(--accent),var(--accent2))",border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)",opacity:!expenseName||!expenseAmount?0.5:1}}>
+                  ＋ 経費を追加
+                </button>
+              </div>
+              <div style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:16,padding:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>今月の経費一覧</div>
+                  <div style={{fontSize:12,color:"var(--accent)",fontWeight:700}}>合計 ¥{expenses.reduce((s,e)=>s+e.amount,0).toLocaleString()}</div>
+                </div>
+                {expenses.length===0
+                  ? <div style={{textAlign:"center",color:"var(--text-muted)",padding:"12px 0",fontSize:13}}>経費の記録はありません</div>
+                  : expenses.map(e=>(
+                    <div key={e.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid var(--border)",fontSize:13}}>
+                      <div>
+                        <div style={{color:"var(--text-primary)",fontWeight:600}}>{e.name}</div>
+                        <div style={{fontSize:11,color:"var(--text-muted)"}}>{e.date}</div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <span style={{color:"#f59e0b",fontWeight:700}}>¥{e.amount.toLocaleString()}</span>
+                        <button onClick={async()=>{
+                          const dsRes = await fetch(`/api/daily-sales?shop_id=${shopId}&month=${month}`);
+                          const ex = dsRes.ok ? (await dsRes.json()).find((d:any)=>d.date===e.date) : null;
+                          if(ex) await fetch("/api/daily-sales",{method:"POST",headers:{"Content-Type":"application/json"},
+                            body:JSON.stringify({...ex,cost:Math.max(0,(ex.cost||0)-e.amount),shop_id:shopId})});
+                          await fetch("/api/expenses",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:e.id})});
+                          await loadSales(month); await loadExpenses(month);
+                          setMsg("削除しました");
+                        }} style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:"#ff444418",border:"1px solid #ff444444",color:"#ff4444",cursor:"pointer"}}>削除</button>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          )}
+
+          {/* 売上詳細サブビュー */}
+          {salesSubView==="detail"&&(<>
           {/* 月ナビ + 日次/月次切替 + エクスポート */}
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
             <button onClick={()=>{const d=new Date(month+"-01");d.setMonth(d.getMonth()-1);setMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>←</button>
@@ -1131,6 +1224,8 @@ ${activeDays.map(date=>{
               )}
             </>
           )}
+
+          </>)}
         </div>
       )}
 
