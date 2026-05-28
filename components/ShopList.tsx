@@ -38,8 +38,12 @@ const AREAS = [
 
 const PER_PAGE = 20;
 
-export default function ShopList({ shops }: { shops: Shop[] }) {
-  const [selectedType, setSelectedType] = useState<string>("");
+export default function ShopList({ shops, areas: areasProp, defaultType }: {
+  shops: Shop[];
+  areas?: { label: string; value: string }[];
+  defaultType?: string;
+}) {
+  const [selectedType, setSelectedType] = useState<string>(defaultType || "");
   const [selectedArea, setSelectedArea] = useState<string>("");
   const [favOnly, setFavOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
@@ -188,14 +192,15 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
       </div>
 
       {/* エリアフィルター */}
+      {(areasProp || AREAS).length > 0 && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
           AREA · エリア
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {AREAS.map((area) => {
+          {(areasProp || AREAS).map((area) => {
             const active = selectedArea === area.value;
-            const color = isLight ? area.light : area.dark;
+            const color = isLight ? "#007ab8" : "#00d4ff";
             return (
               <button
                 key={area.value}
@@ -214,6 +219,7 @@ export default function ShopList({ shops }: { shops: Shop[] }) {
           })}
         </div>
       </div>
+      )}
 
 {/* お気に入り・営業中フィルター・並び替え */}
 <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

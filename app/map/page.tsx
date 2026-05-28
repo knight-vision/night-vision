@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import { REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
-import { CITIES } from "@/lib/cities";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,8 +10,6 @@ export const metadata: Metadata = {
 
 export default function MapPage() {
   const regions = getPrefecturesByRegion();
-  // 実際に店舗データがある都道府県のみ
-  const activePrefKeys = new Set(CITIES.map(c => c.prefectureKey));
 
   return (
     <>
@@ -32,29 +29,26 @@ export default function MapPage() {
           if (!prefs) return null;
           return (
             <div key={regionName} style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 10 }}>
                 {regionName}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {prefs.map(pref => {
-                  const isActive = activePrefKeys.has(pref.key);
-                  return (
-                    <Link
-                      key={pref.key}
-                      href={`/${pref.key}`}
-                      style={{
-                        padding: "7px 14px", borderRadius: 20, fontSize: 13,
-                        fontWeight: isActive ? 700 : 400,
-                        border: `1px solid ${isActive ? "var(--online)" : "var(--border)"}`,
-                        background: isActive ? "#10b98115" : "var(--bg-input)",
-                        color: isActive ? "var(--online)" : "var(--text-muted)",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {pref.name}
-                    </Link>
-                  );
-                })}
+                {prefs.map(pref => (
+                  <Link
+                    key={pref.key}
+                    href={`/${pref.key}`}
+                    style={{
+                      padding: "9px 16px", borderRadius: 20, fontSize: 13, fontWeight: 500,
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-input)",
+                      color: "var(--text-secondary)",
+                      textDecoration: "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {pref.name}
+                  </Link>
+                ))}
               </div>
             </div>
           );

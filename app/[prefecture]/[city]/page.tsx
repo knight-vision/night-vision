@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import ShopCard from "@/components/ShopCard";
+import ShopList from "@/components/ShopList";
 import Link from "next/link";
 import { getShopsByCity } from "@/lib/shops";
 import { getCityByPrefecture, PREFECTURE_NAMES, getGenresForPrefecture } from "@/lib/cities";
@@ -14,25 +14,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityByPrefecture(params.prefecture, params.city);
   if (!city) return {};
   const genres = getGenresForPrefecture(params.prefecture);
-  const genreNames = genres.map(g => g.name).join("・");
   const title = `${city.name}の${genres[0].name}・ガールズバー・スナック一覧｜NIGHT VISION`;
-  const description = `${city.name}の${genreNames}情報を掲載。${city.description}料金・キャスト情報・出勤情報を毎日更新。`;
+  const description = `${city.name}の${genres.map(g=>g.name).join("・")}情報を掲載。${city.description}`;
   const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
   return {
-    title,
-    description,
-    keywords: [
-      `${city.name} キャバクラ`, `${city.name} ガールズバー`, `${city.name} スナック`,
-      `${city.name} ラウンジ`, `${city.name} 夜遊び`, `${city.name} ナイトライフ`,
-      `${city.name} キャバ 求人`, `${city.name} 飲み屋`,
-    ],
+    title, description,
+    keywords: [`${city.name} キャバクラ`, `${city.name} ガールズバー`, `${city.name} スナック`, `${city.name} ラウンジ`, `${city.name} 夜遊び`],
     alternates: { canonical: url },
-    openGraph: {
-      title, description, url,
-      siteName: "NIGHT VISION",
-      type: "website",
-      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }],
-    },
+    openGraph: { title, description, url, siteName: "NIGHT VISION", type: "website",
+      images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }] },
     twitter: { card: "summary", title, description },
   };
 }
@@ -46,30 +36,49 @@ export default async function CityPage({ params }: Props) {
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
   const genres = getGenresForPrefecture(params.prefecture);
 
+  // ShopList用のエリア一覧を動的に生成
+  const areaOptions = city.areas.map(a => ({ label: `📍 ${a.name}`, value: a.name }));
+
   return (
     <>
       <Header />
-      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 80px" }}>
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         {/* パンくず */}
-        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, display: "flex", gap: 6, alignItems: "center" }}>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none" }}>TOP</Link>
           <span>›</span>
-          <span>{prefName}</span>
+          <Link href={`/${params.prefecture}`} style={{ color: "var(--text-muted)", textDecoration: "none" }}>{prefName}</Link>
           <span>›</span>
           <span>{city.name}</span>
         </div>
 
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 6 }}>
-            {prefName} / NIGHT VISION
-          </div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>
-            {city.name}のナイトライフ
+        {/* ヒーロー */}
+        <section style={{ textAlign: "center", padding: "24px 0 28px" }}>
+          <h1 style={{
+            fontSize: 26, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1.3,
+            background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 10,
+          }}>
+            {city.name}の夜、今日どこ行く？
           </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.7 }}>
-            {city.name} {shops.length}店舗掲載中。{onCount > 0 && `現在 ${onCount}名が出勤中。`}
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.8 }}>
+            {city.description}
           </p>
-        </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+            {[
+              { label: "掲載店舗", value: shops.length, unit: "件" },
+              { label: "エリア", value: city.areas.length, unit: "区域" },
+              { label: "出勤中", value: onCount, unit: "名" },
+            ].map(s => (
+              <div key={s.label} style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 16px", textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--text-primary)" }}>
+                  {s.value}<span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 2 }}>{s.unit}</span>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* 業種ナビ */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -83,7 +92,7 @@ export default async function CityPage({ params }: Props) {
         </div>
 
         {/* エリアナビ */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
           {city.areas.map(a => (
             <Link key={a.key} href={`/${city.prefectureKey}/${city.key}/area/${a.key}`} style={{
               padding: "6px 14px", borderRadius: 20, fontSize: 12,
@@ -93,12 +102,11 @@ export default async function CityPage({ params }: Props) {
           ))}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {shops.length === 0
-            ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
-            : shops.map(shop => <ShopCard key={shop.id} shop={shop} />)
-          }
-        </div>
+        {/* 店舗一覧（検索・並び替え付き） */}
+        {shops.length === 0
+          ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
+          : <ShopList shops={shops} areas={areaOptions} />
+        }
       </main>
     </>
   );

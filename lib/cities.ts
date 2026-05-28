@@ -169,13 +169,19 @@ export function getGenre(key: string): GenreConfig | undefined {
   return GENRES.find(g => g.key === key);
 }
 
-// DBのarea_categoryからエリアキーに変換
+// DBのarea_categoryからエリアキーに変換（釧路専用）
 export function areaNameToKey(name: string): string {
   const map: Record<string, string> = { 末広: "suehiro", 愛国: "aikoku", その他: "other" };
   return map[name] || "other";
 }
 
-export function areaKeyToName(key: string): string {
+// エリアキーからエリア名に変換（都市のエリア情報があれば使う、なければキーをそのまま返す）
+export function areaKeyToName(key: string, city?: CityConfig): string {
+  if (city) {
+    const area = city.areas.find(a => a.key === key);
+    if (area) return area.name;
+  }
+  // 釧路のデフォルトマッピング（後方互換）
   const map: Record<string, string> = { suehiro: "末広", aikoku: "愛国", other: "その他" };
-  return map[key] || "その他";
+  return map[key] || key;
 }
