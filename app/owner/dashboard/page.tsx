@@ -19,16 +19,20 @@ import CastRecordTab from "@/components/CastRecordTab";
 function PwaBanner() {
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   useEffect(() => {
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = (window.navigator as any).standalone;
+    const standalone = (window.navigator as any).standalone === true;
     setIsIOS(ios);
-    const dismissed = localStorage.getItem("pwa_banner_dismissed_owner");
-    if (ios && !isStandalone && !dismissed) setShow(true);
+    setIsStandalone(standalone);
+    if (ios && !standalone) {
+      const dismissed = localStorage.getItem("pwa_banner_dismissed_owner");
+      if (!dismissed) setShow(true);
+    }
   }, []);
 
-  // ホーム画面に追加ボタン（常時表示、iOSのみ）
-  if (!isIOS || (window.navigator as any).standalone) return null;
+  if (!isIOS || isStandalone) return null;
 
   if (!show) {
     return (

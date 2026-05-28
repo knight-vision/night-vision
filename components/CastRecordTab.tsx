@@ -144,6 +144,11 @@ export default function CastRecordTab({ shopId, casts, sectionStyle, inputStyle,
 
       {msg && <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, fontSize: 13, background: "var(--online-bg)", border: "1px solid var(--online-border)", color: "var(--online)" }}>{msg}</div>}
 
+      {/* デバッグ情報（一時表示） */}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-input)", borderRadius: 8, padding: "6px 10px", marginBottom: 12 }}>
+        shopId: {shopId} / castId: {selectedCastId} / month: {month} / 伝票数: {slips.length} / 顧客メモ数: {customers.length}
+      </div>
+
       {loading ? <div style={{ textAlign: "center" as const, color: "var(--text-muted)", padding: 24 }}>読み込み中...</div> : (<>
 
         {/* カレンダー */}

@@ -6,14 +6,21 @@ import Header from "@/components/Header";
 function PwaBanner() {
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   useEffect(() => {
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = (window.navigator as any).standalone;
+    const standalone = (window.navigator as any).standalone === true;
     setIsIOS(ios);
-    const dismissed = localStorage.getItem("pwa_banner_dismissed_cast");
-    if (ios && !isStandalone && !dismissed) setShow(true);
+    setIsStandalone(standalone);
+    if (ios && !standalone) {
+      const dismissed = localStorage.getItem("pwa_banner_dismissed_cast");
+      if (!dismissed) setShow(true);
+    }
   }, []);
-  if (!isIOS || (window as any).navigator.standalone) return null;
+
+  if (!isIOS || isStandalone) return null;
+
   if (!show) return (
     <div style={{ padding: "6px 16px", display: "flex", justifyContent: "flex-end" }}>
       <button onClick={() => setShow(true)} style={{ fontSize: 11, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 10px", cursor: "pointer" }}>
