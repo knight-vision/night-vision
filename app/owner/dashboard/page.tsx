@@ -13,7 +13,7 @@ import LineTab from "@/components/LineTab";
 import SalesTab from "@/components/SalesTab";
 import TodayTab from "@/components/TodayTab";
 import CastPerformanceTab from "@/components/CastPerformanceTab";
-import CastSlipsTab from "@/components/CastSlipsTab";
+import CastRecordTab from "@/components/CastRecordTab";
 
 type Shop = {
   id: number;
@@ -121,7 +121,7 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
-  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "performance" | "slips" | "payroll">("list");
+  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "performance" | "record" | "payroll">("list");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
@@ -1123,7 +1123,7 @@ export default function OwnerDashboard() {
                 { key: "list", label: "👥 キャスト一覧" },
                 { key: "cast_sales", label: "⭐ キャスト売上" },
                 { key: "performance", label: "📈 パフォーマンス" },
-                { key: "slips", label: "📋 伝票" },
+                { key: "record", label: "📅 実績" },
                 { key: "payroll", label: "💴 給与管理" },
               ].map(st => (
                 <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{
@@ -1147,9 +1147,9 @@ export default function OwnerDashboard() {
               />
             )}
 
-            {/* 伝票サブタブ */}
-            {castSubTab === "slips" && shopId && (
-              <CastSlipsTab
+            {/* 実績サブタブ */}
+            {castSubTab === "record" && shopId && (
+              <CastRecordTab
                 shopId={shopId}
                 casts={casts}
                 sectionStyle={sectionStyle}
