@@ -244,6 +244,31 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               </div>
             ))}
           </div>
+
+          {/* SNSリンク */}
+          {(shop.instagram || shop.x_account || shop.tiktok_account) && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
+              {shop.instagram && (
+                <a href={"https://instagram.com/" + shop.instagram} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)", color: "#fff", padding: "8px 16px", borderRadius: 20, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                  📷 Instagram
+                </a>
+              )}
+              {shop.x_account && (
+                <a href={"https://x.com/" + shop.x_account} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "8px 16px", borderRadius: 20, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                  𝕏 X
+                </a>
+              )}
+              {shop.tiktok_account && (
+                <a href={"https://tiktok.com/@" + shop.tiktok_account} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "8px 16px", borderRadius: 20, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                  🎵 TikTok
+                </a>
+              )}
+            </div>
+          )}
+
           {(shop.tags ?? []).length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border)" }}>
               {(shop.tags ?? []).map((t: string) => (
@@ -253,24 +278,16 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           )}
         </div>
 
-        {/* システム */}
-        {shop.system && (
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", marginBottom: 12 }}>💰 システム</h2>
-            <div style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 2, whiteSpace: "pre-wrap" }}>{shop.system}</div>
-          </div>
-        )}
-
-        {/* キャスト */}
-        {(shop.casts ?? []).length > 0 && (
+        {/* 本日出勤キャスト */}
+        {(shop.casts ?? []).filter(c => c.on_today === true).length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", marginBottom: 14 }}>
-              CAST ({(shop.casts ?? []).length}名)
+            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--online)", letterSpacing: "0.12em", marginBottom: 14 }}>
+              ● 本日出勤 ({(shop.casts ?? []).filter(c => c.on_today === true).length}名)
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {(shop.casts ?? []).map((cast) => (
+              {(shop.casts ?? []).filter(c => c.on_today === true).map((cast) => (
                 <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
-                  <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ background: "var(--bg-card)", border: "1px solid var(--online)44", borderRadius: 16, overflow: "hidden" }}>
                     <div style={{
                       width: "100%", aspectRatio: "1", overflow: "hidden",
                       background: `linear-gradient(135deg, ${tc.border}33, var(--bg-input))`,
@@ -279,32 +296,26 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                       {(cast as any).icon_photo
                         ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
-                      {cast.on_today === true && (
-                        <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>出勤中</div>
-                      )}
+                      <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>出勤中</div>
                     </div>
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{cast.name}</div>
                       <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
                         {cast.age && `${cast.age}歳`}{cast.birthplace && ` / ${cast.birthplace}`}
                       </div>
-                      {cast.comment && (
-                        <div style={{ color: "var(--text-secondary)", fontSize: 11, marginTop: 4, lineHeight: 1.5,
-                          display: "-webkit-box" as any, WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any, overflow: "hidden" }}>
-                          {cast.comment}
-                        </div>
-                      )}
-                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--border)" }} />
-                        <span style={{ fontSize: 10, color: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--text-hint)" }}>
-                          {cast.on_today === true ? "本日出勤" : cast.on_today === false ? "本日休み" : "未定"}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* システム */}
+        {shop.system && (
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 20, padding: 20, marginBottom: 20 }}>
+            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", marginBottom: 12 }}>💰 システム</h2>
+            <div style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 2, whiteSpace: "pre-wrap" }}>{shop.system}</div>
           </div>
         )}
 
@@ -341,23 +352,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         )}
 
-        {/* SNS */}
-        {(shop.instagram || shop.x_account || shop.tiktok_account) && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-            {shop.instagram && (
-              <a href={"https://instagram.com/" + shop.instagram} target="_blank" rel="noopener noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045)", color: "#fff", padding: "10px 20px", borderRadius: 25, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                Instagram · @{shop.instagram}
-              </a>
-            )}
-            {shop.x_account && (
-              <a href={"https://x.com/" + shop.x_account} target="_blank" rel="noopener noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "10px 20px", borderRadius: 25, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                X · @{shop.x_account}
-              </a>
-            )}
-          </div>
-        )}
+        {/* SNS（削除済み - SHOP INFOに移動） */}
 
         {/* Google Map */}
         {mapAddress && (
@@ -367,6 +362,53 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               width="100%" height="280" style={{ border: "none", display: "block" }}
               allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
             />
+          </div>
+        )}
+
+        {/* キャスト一覧 */}
+        {(shop.casts ?? []).length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.12em", marginBottom: 14 }}>
+              CAST ({(shop.casts ?? []).length}名)
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {(shop.casts ?? []).map((cast) => (
+                <Link key={cast.id} href={"/cast/" + cast.id} style={{ textDecoration: "none" }}>
+                  <div style={{ background: "var(--bg-card)", border: `1px solid ${cast.on_today === true ? "var(--online)44" : "var(--border)"}`, borderRadius: 16, overflow: "hidden" }}>
+                    <div style={{
+                      width: "100%", aspectRatio: "1", overflow: "hidden",
+                      background: `linear-gradient(135deg, ${tc.border}33, var(--bg-input))`,
+                      display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
+                    }}>
+                      {(cast as any).icon_photo
+                        ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
+                      {cast.on_today === true && (
+                        <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>出勤中</div>
+                      )}
+                    </div>
+                    <div style={{ padding: "10px 12px" }}>
+                      <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{cast.name}</div>
+                      <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
+                        {cast.age && `${cast.age}歳`}{cast.birthplace && ` / ${cast.birthplace}`}
+                      </div>
+                      {cast.comment && (
+                        <div style={{ color: "var(--text-secondary)", fontSize: 11, marginTop: 4, lineHeight: 1.5,
+                          display: "-webkit-box" as any, WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any, overflow: "hidden" }}>
+                          {cast.comment}
+                        </div>
+                      )}
+                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--border)" }} />
+                        <span style={{ fontSize: 10, color: cast.on_today === true ? "var(--online)" : cast.on_today === false ? "#ff4444" : "var(--text-hint)" }}>
+                          {cast.on_today === true ? "本日出勤" : cast.on_today === false ? "本日休み" : "未定"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
