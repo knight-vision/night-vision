@@ -12,6 +12,7 @@ import FeedbackTab from "@/components/FeedbackTab";
 import LineTab from "@/components/LineTab";
 import SalesTab from "@/components/SalesTab";
 import TodayTab from "@/components/TodayTab";
+import CastPerformanceTab from "@/components/CastPerformanceTab";
 
 type Shop = {
   id: number;
@@ -55,6 +56,8 @@ type Cast = {
   tiktok_account: string | null;
   birthplace: string | null;
   hourly_wage: number | null;
+  icon_photo?: string | null;
+  page_views?: number;
 };
 
 type PhotoRequest = {
@@ -117,7 +120,7 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
-  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "payroll">("list");
+  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "performance" | "payroll">("list");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
@@ -1114,10 +1117,11 @@ export default function OwnerDashboard() {
         {tab === "cast" && (
           <div>
             {/* サブタブ */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {[
                 { key: "list", label: "👥 キャスト一覧" },
                 { key: "cast_sales", label: "⭐ キャスト売上" },
+                { key: "performance", label: "📈 パフォーマンス" },
                 { key: "payroll", label: "💴 給与管理" },
               ].map(st => (
                 <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{
@@ -1128,6 +1132,18 @@ export default function OwnerDashboard() {
                 }}>{st.label}</button>
               ))}
             </div>
+
+            {/* パフォーマンスサブタブ */}
+            {castSubTab === "performance" && shopId && (
+              <CastPerformanceTab
+                shopId={shopId}
+                casts={casts as any}
+                sectionStyle={sectionStyle}
+                inputStyle={inputStyle}
+                labelStyle={labelStyle}
+                btnPrimary={btnPrimary}
+              />
+            )}
 
             {/* キャスト売上サブタブ */}
             {castSubTab === "cast_sales" && shopId && (

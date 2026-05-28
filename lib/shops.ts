@@ -21,6 +21,8 @@ export type Cast = {
   tiktok_account: string | null;
   birthplace: string | null;
   page_views: number;
+  hourly_wage?: number | null;
+  icon_photo?: string | null;
 };
 
 export type Shop = {

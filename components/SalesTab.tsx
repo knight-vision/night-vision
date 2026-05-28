@@ -42,7 +42,16 @@ const DEFAULT_PRESETS: ShopMenu[] = [
   { id: "p7", name: "同伴料", price: 2000 },
   { id: "p8", name: "延長料", price: 3000 },
 ];
-const SHIMEI_TYPES = ["フリー", "場内指名", "本指名"];
+const SHIMEI_TYPES = ["フリー", "場内指名", "本指名", "同伴", "アフター", "出張"];
+
+// 指名種別 → sales_type マッピング
+const SHIMEI_TO_SALES_TYPE: Record<string, string> = {
+  "本指名": "honshimei",
+  "場内指名": "baai",
+  "同伴": "douhan",
+  "アフター": "after",
+  "出張": "trip",
+};
 const PAYMENT_TYPES = ["現金", "カード"];
 const TAX_RATE = 0.1;
 const SALES_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
@@ -220,15 +229,21 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
         // キャスト売上反映
         for (const c of slipCasts) {
           if (!c.cast_id) continue;
-          const salesType = c.type==="本指名"?"honshimei":c.type==="場内指名"?"baai":null;
+          const salesType = SHIMEI_TO_SALES_TYPE[c.type] || null;
           if (salesType) {
-            const fee = slipItems.find(i=>i.name.includes("指名"));
-            await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:salesType,amount:fee?fee.qty*fee.price:(salesType==="honshimei"?16000:1000),count:1,memo:""})});
+            const fee = slipItems.find(i => i.name.includes("指名") || i.name.includes("同伴") || i.name.includes("アフター") || i.name.includes("出張"));
+            const amount = fee ? fee.qty * fee.price : (salesType === "honshimei" ? 16000 : salesType === "douhan" ? 5000 : salesType === "after" ? 3000 : 1000);
+            await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: salesType, amount, count: 1, memo: "" }) });
           }
-          const douhan = slipItems.find(i=>i.name.includes("同伴"));
-          if (douhan) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"douhan",amount:douhan.qty*douhan.price,count:1,memo:""})});
-          const bottle = slipItems.find(i=>i.name.includes("モエ")||i.name.includes("ドンペリ")||i.name.includes("シャンパン")||i.name.includes("シャン"));
-          if (bottle) await fetch("/api/cast-sales",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:shopId,cast_id:Number(c.cast_id),date:slipDate,sales_type:"bottle",amount:Math.floor(bottle.qty*bottle.price*0.1),count:1,memo:`${bottle.name}(10%バック)`})});
+          // ボトルバック（品目にボトル系があればキャストにバック）
+          const bottle = slipItems.find(i => i.name.includes("モエ") || i.name.includes("ドンペリ") || i.name.includes("シャンパン") || i.name.includes("シャン") || i.name.includes("ボトル"));
+          if (bottle) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "bottle", amount: Math.floor(bottle.qty * bottle.price * 0.1), count: 1, memo: `${bottle.name}(10%バック)` }) });
+          // ドリンクバック
+          const drink = slipItems.find(i => i.name.includes("ドリンク") || i.name.includes("乾杯"));
+          if (drink) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "drink", amount: Math.floor(drink.qty * drink.price * 0.1), count: drink.qty, memo: `${drink.name}(10%バック)` }) });
+          // ショットバック
+          const shot = slipItems.find(i => i.name.includes("ショット") || i.name.includes("テキーラ"));
+          if (shot) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "shot", amount: Math.floor(shot.qty * shot.price * 0.1), count: shot.qty, memo: `${shot.name}(10%バック)` }) });
         }
         setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
       }

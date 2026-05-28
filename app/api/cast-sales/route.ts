@@ -37,3 +37,11 @@ export async function DELETE(req: NextRequest) {
   await supabase.from("cast_sales").delete().eq("id", id);
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(req: NextRequest) {
+  const { id, amount, count, memo } = await req.json();
+  if (!id) return NextResponse.json({ error: "id必須" }, { status: 400 });
+  const { error } = await supabase.from("cast_sales").update({ amount: Number(amount), count: Number(count)||1, memo: memo||null }).eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}
