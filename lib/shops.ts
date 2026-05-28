@@ -30,6 +30,8 @@ export type Shop = {
   type: "スナック" | "ガールズバー" | "ラウンジ" | "カジュアルバー";
   area: string;
   area_category: "末広" | "愛国" | "その他";
+  city: string;
+  prefecture: string;
   budget: string;
   open_hour: string;
   tel: string;
@@ -100,6 +102,50 @@ export async function getShopsByType(type: string): Promise<Shop[]> {
     .order("id");
   if (error) throw error;
   return (shops as Shop[]).filter((s: any) => !s.hidden);
+}
+
+// 都市別・業種別取得
+export async function getShopsByCityAndType(city: string, dbType: string): Promise<Shop[]> {
+  const { data: shops, error } = await supabase
+    .from("shops")
+    .select("*, casts(*)")
+    .eq("type", dbType)
+    .order("id");
+  if (error) return [];
+  return (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city);
+}
+
+// 都市別・エリア別取得
+export async function getShopsByCityAndArea(city: string, areaName: string): Promise<Shop[]> {
+  const { data: shops, error } = await supabase
+    .from("shops")
+    .select("*, casts(*)")
+    .order("id");
+  if (error) return [];
+  return (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city && s.area_category === areaName);
+}
+
+// 都市別全店取得
+export async function getShopsByCity(city: string): Promise<Shop[]> {
+  const { data: shops, error } = await supabase
+    .from("shops")
+    .select("*, casts(*)")
+    .order("plan", { ascending: false })
+    .order("id");
+  if (error) return [];
+  const filtered = (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city);
+  if (filtered.length === 0) return [];
+  const shopIds = filtered.map((s: any) => s.id);
+  const { data: photoRequests } = await supabase
+    .from("photo_requests")
+    .select("shop_id, url, sort_order")
+    .in("shop_id", shopIds)
+    .eq("status", "approved")
+    .order("sort_order");
+  return filtered.map((shop: any) => {
+    const photos = (photoRequests ?? []).filter((p: any) => p.shop_id === shop.id).map((p: any) => p.url);
+    return { ...shop, photos };
+  });
 }
 
 export async function getShopBySlug(slug: string): Promise<Shop | null> {

@@ -14,12 +14,12 @@ export default function Header() {
   };
 
   const menuItems = [
-    { label: "🥂 ラウンジ/ニュークラ", href: "/lounge" },
-    { label: "🍹 ガールズバー", href: "/girls-bar" },
-    { label: "🍶 スナック", href: "/snack" },
-    { label: "🍸 カジュアルバー", href: "/casual-bar" },
-    { label: "📍 末広エリア", href: "/area/suehiro" },
-    { label: "📍 愛国エリア", href: "/area/aikoku" },
+    { label: "🥂 ラウンジ/ニュークラ", href: "/kushiro/lounge" },
+    { label: "🍹 ガールズバー", href: "/kushiro/girls-bar" },
+    { label: "🍶 スナック", href: "/kushiro/snack" },
+    { label: "🍸 カジュアルバー", href: "/kushiro/casual-bar" },
+    { label: "📍 末広エリア", href: "/kushiro/area/suehiro" },
+    { label: "📍 愛国エリア", href: "/kushiro/area/aikoku" },
     { label: "⭐ ランキング", href: "/ranking" },
     { label: "📋 店舗一覧", href: "/" },
     { label: "📝 店舗会員登録はこちら", href: "/for-owners" },
