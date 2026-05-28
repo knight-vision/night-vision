@@ -2,6 +2,8 @@
 import { useState, useEffect, memo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { PREFECTURES, REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
+import { CITIES } from "@/lib/cities";
 
 type Shop = { id: number; name: string; type: string; area: string; slug: string };
 
@@ -74,7 +76,9 @@ export default function JoinPage() {
   const tokenRaw = params?.token;
   const token = Array.isArray(tokenRaw) ? tokenRaw[0] : (tokenRaw as string | undefined);
 
-  const [step, setStep] = useState<"loading"|"confirm"|"search"|"register"|"done">(token ? "loading" : "search");
+  const [step, setStep] = useState<"loading"|"area"|"confirm"|"search"|"register"|"done">(token ? "loading" : "area");
+  const [selectedPref, setSelectedPref] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
   const [shop, setShop] = useState<Shop | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Shop[]>([]);
@@ -154,9 +158,73 @@ export default function JoinPage() {
           </>
         )}
 
+        {step === "area" && (
+          <>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)", marginBottom: 6, textAlign: "center" }}>店舗会員登録</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginBottom: 20 }}>まず店舗のエリアを選択してください</div>
+
+            {/* 都道府県選択 */}
+            <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6, display: "block" }}>都道府県</label>
+            <select
+              value={selectedPref}
+              onChange={e => { setSelectedPref(e.target.value); setSelectedCity(""); }}
+              style={{ width: "100%", padding: "12px 14px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-primary)", fontSize: 16, outline: "none", marginBottom: 12, fontFamily: "var(--font)" }}
+            >
+              <option value="">選択してください</option>
+              {REGION_ORDER.map(region => {
+                const prefs = getPrefecturesByRegion()[region];
+                if (!prefs) return null;
+                return (
+                  <optgroup key={region} label={region}>
+                    {prefs.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </optgroup>
+                );
+              })}
+            </select>
+
+            {/* 市区町村選択（都道府県選択後） */}
+            {selectedPref && (
+              <>
+                <label style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6, display: "block" }}>市区町村・エリア</label>
+                <select
+                  value={selectedCity}
+                  onChange={e => setSelectedCity(e.target.value)}
+                  style={{ width: "100%", padding: "12px 14px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-primary)", fontSize: 16, outline: "none", marginBottom: 16, fontFamily: "var(--font)" }}
+                >
+                  <option value="">選択してください</option>
+                  {(PREFECTURES.find(p => p.key === selectedPref)?.cities || []).map(c => (
+                    <option key={c.key} value={c.key}>{c.name}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            <button
+              onClick={() => setStep("search")}
+              disabled={!selectedPref || !selectedCity}
+              style={{
+                width: "100%", padding: "14px", background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                border: "none", borderRadius: 12, color: "#fff", fontSize: 15, fontWeight: 700,
+                cursor: !selectedPref || !selectedCity ? "not-allowed" : "pointer",
+                opacity: !selectedPref || !selectedCity ? 0.5 : 1, fontFamily: "var(--font)",
+              }}
+            >次へ →</button>
+          </>
+        )}
+
         {step === "search" && (
           <>
             <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text-primary)", marginBottom: 6, textAlign: "center" }}>店舗会員登録</div>
+            {selectedPref && selectedCity && (() => {
+              const pref = PREFECTURES.find(p => p.key === selectedPref);
+              const city = pref?.cities.find(c => c.key === selectedCity);
+              return (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--accent)15", border: "1px solid var(--accent)33", borderRadius: 10, padding: "8px 14px", marginBottom: 12 }}>
+                  <span style={{ fontSize: 12, color: "var(--accent)" }}>📍 {pref?.name} › {city?.name}</span>
+                  <button onClick={() => setStep("area")} style={{ fontSize: 11, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}>変更</button>
+                </div>
+              );
+            })()}
             <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginBottom: 20 }}>お店の名前を入力して検索してください</div>
             {error && <div style={{ background: "#ff444418", border: "1px solid #ff444444", borderRadius: 10, padding: "10px 14px", color: "#ff4444", fontSize: 13, marginBottom: 16 }}>{error}</div>}
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>

@@ -2,20 +2,34 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import { getPrefecture } from "@/lib/japan";
+import { getCityByPrefecture } from "@/lib/cities";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // /[prefecture] または /[prefecture]/[city]/... の場合に都道府県名を取得
+  // /[prefecture]/[city]/... の場合に都市・エリア名を取得
   const segments = pathname.split("/").filter(Boolean);
   const prefKey = segments[0];
-  const pref = prefKey ? getPrefecture(prefKey) : null;
+  const cityKey = segments[1];
 
-  // タイトル表示
-  const titleEn = pref ? `${pref.name.toUpperCase()} NIGHT VISION` : "NIGHT VISION";
-  const titleJa = pref ? `${pref.name}ナイトビジョン` : "ナイトビジョン";
+  const genreKeys = ["lounge","girls-bar","snack","casual-bar","area"];
+  const cityConfig = (prefKey && cityKey && !genreKeys.includes(cityKey))
+    ? getCityByPrefecture(prefKey, cityKey) : null;
+
+  // cities.tsにない都市はjapan.tsから検索
+  const japanPref = prefKey ? getPrefecture(prefKey) : null;
+  const japanCity = (!cityConfig && japanPref && cityKey && !genreKeys.includes(cityKey))
+    ? japanPref.cities.find(c => c.key === cityKey) : null;
+
+  // displayName（六本木など）> name（釧路など）> 市区町村名から「市/区」を除去
+  const areaName = cityConfig?.displayName || cityConfig?.name
+    || japanCity?.name?.replace(/市$|区$|町$|村$/, "")
+    || null;
+
+  const titleEn = areaName ? `${areaName.toUpperCase()} NIGHT VISION` : "NIGHT VISION";
+  const titleJa = areaName ? `${areaName}ナイトビジョン` : "ナイトビジョン";
 
   const handleLogoClick = () => {
     router.push("/");

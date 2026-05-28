@@ -2,10 +2,11 @@
 // 新都市追加時はここに追加するだけ
 
 export type CityConfig = {
-  key: string;           // URLスラッグ（例: kushiro, sapporo）
-  prefectureKey: string; // 都道府県URLスラッグ（例: hokkaido, tokyo）
-  name: string;          // 表示名（例: 釧路）
-  prefecture: string;    // 都道府県表示名
+  key: string;
+  prefectureKey: string;
+  name: string;          // 正式名（区市名など）
+  displayName?: string;  // ヘッダー表示名（例：六本木、梅田）
+  prefecture: string;
   description: string;
   areas: AreaConfig[];
   genres: GenreConfig[];
@@ -115,6 +116,7 @@ export const CITIES: CityConfig[] = [
     key: "roppongi",
     prefectureKey: "tokyo",
     name: "六本木",
+    displayName: "六本木",
     prefecture: "東京都",
     description: "東京都港区六本木の夜遊びスポット情報。六本木交差点・西麻布エリアのラウンジ・ガールズバー・クラブを紹介。",
     areas: [
@@ -129,6 +131,7 @@ export const CITIES: CityConfig[] = [
     key: "ueno",
     prefectureKey: "tokyo",
     name: "上野",
+    displayName: "上野",
     prefecture: "東京都",
     description: "東京都台東区上野の夜遊びスポット情報。上野駅周辺・御徒町エリアのラウンジ・ガールズバー・スナックを紹介。",
     areas: [
