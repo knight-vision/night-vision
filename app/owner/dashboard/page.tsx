@@ -14,7 +14,6 @@ import SalesTab from "@/components/SalesTab";
 import TodayTab from "@/components/TodayTab";
 import CastPerformanceTab from "@/components/CastPerformanceTab";
 import CastRecordTab from "@/components/CastRecordTab";
-import PwaManifestInjector from "@/components/PwaManifestInjector";
 
 // iOSでホーム画面追加を案内するバナー
 function PwaBanner() {
@@ -546,7 +545,6 @@ export default function OwnerDashboard() {
   const rejectedPhotos = photoRequests.filter((p) => p.status === "rejected");
   return (
     <div>
-      <PwaManifestInjector manifestUrl="/owner-manifest.json" />
       <Header />
       <PwaBanner />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>

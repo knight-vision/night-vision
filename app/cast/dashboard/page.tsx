@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import CastMyRecordTab from "@/components/CastMyRecordTab";
 import CastCustomersTab from "@/components/CastCustomersTab";
-import PwaManifestInjector from "@/components/PwaManifestInjector";
 
 function PwaBanner() {
   const [show, setShow] = useState(false);
@@ -204,7 +203,6 @@ export default function CastDashboard() {
 
   return (
     <>
-      <PwaManifestInjector manifestUrl="/cast-manifest.json" />
       <Header />
       <PwaBanner />
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px" }}>

@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import PwaManifestInjector from "@/components/PwaManifestInjector";
 
 export default function CastLoginPage() {
   const router = useRouter();
@@ -43,7 +42,6 @@ export default function CastLoginPage() {
 
   return (
     <>
-      <PwaManifestInjector manifestUrl="/cast-manifest.json" />
       <Header />
       <main style={{ maxWidth: 420, margin: "60px auto", padding: "0 16px" }}>
         <div style={{
