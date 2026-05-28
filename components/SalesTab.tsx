@@ -158,6 +158,9 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
 
   useEffect(() => { loadMenus(); }, [loadMenus]);
   useEffect(() => { loadTodaySlips(slipDate); }, [slipDate, loadTodaySlips]);
+  useEffect(() => {
+    if (initialView === "cast_sales") loadSales(month);
+  }, [initialView]);
   useEffect(() => { if (view==="sales") loadSales(month); }, [view, month, loadSales]);
 
   // 伝票保存
@@ -219,6 +222,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
 
       setSlipSaved(true);
       await loadTodaySlips(slipDate);
+      await loadSales(month); // キャスト売上タブに即反映
       setTimeout(()=>{ setSlipSaved(false); resetForm(); }, 1200);
     } catch(e:any) { setMsg("保存失敗: "+e.message); }
     setSlipSaving(false);
