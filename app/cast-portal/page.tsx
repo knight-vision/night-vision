@@ -79,6 +79,9 @@ export default function CastPortalPage() {
   }, []);
 
   const fetchData = async (id: string, sid: string | null) => {
+    // 確定シフト取得
+    const csRes = await fetch(`/api/cast-confirmed-shifts?cast_id=${id}`);
+    if (csRes.ok) setConfirmedShifts(await csRes.json());
     const params = new URLSearchParams({ cast_id: id });
     if (sid) params.set("shop_id", sid);
     const res = await fetch(`/api/cast-shift-request?${params}`);
@@ -128,6 +131,7 @@ export default function CastPortalPage() {
   const [portalView, setPortalView] = useState<"home"|"shift"|"payroll"|"photos"|"settings">("home");
   const [shiftSubView, setShiftSubView] = useState<"request"|"change">("request");
   const [payrollSubView, setPayrollSubView] = useState<"payroll"|"slips">("payroll");
+  const [confirmedShifts, setConfirmedShifts] = useState<{id:string;date:string;start_time:string;end_time:string}[]>([]);
   const [castAccountId, setCastAccountId] = useState<string|null>(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
@@ -225,9 +229,30 @@ export default function CastPortalPage() {
 
       {/* シフト希望 */}
       {portalView === "shift" && <>
-      {/* 提出済みシフト */}
+
+      {/* 確定シフト */}
+      {confirmedShifts.length > 0 && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--online-border)", borderRadius: 16, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--online)", marginBottom: 10 }}>✅ 確定シフト</div>
+          {confirmedShifts.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r => {
+            const d = new Date(r.date + "T00:00:00");
+            const isToday = r.date === new Date().toISOString().slice(0,10);
+            return (
+              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                <span style={{ color: isToday ? "var(--accent)" : "var(--text-secondary)", fontWeight: isToday ? 700 : 400 }}>
+                  {fmtDate(d)}{isToday && <span style={{ fontSize: 10, marginLeft: 5, color: "var(--accent)" }}>今日</span>}
+                </span>
+                <span style={{ color: "var(--text-primary)" }}>{r.start_time?.slice(0,5)} 〜 {r.end_time?.slice(0,5)}</span>
+                <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "var(--online-bg)", color: "var(--online)", border: "1px solid var(--online-border)" }}>確定</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 提出済みシフト希望 */}
       {existing.length > 0 && Object.keys(draft).length === 0 && (
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 20 }}>
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>📋 提出済みのシフト希望</div>
           {existing.map(r => {
             const d = new Date(r.date + "T00:00:00");
@@ -405,7 +430,7 @@ export default function CastPortalPage() {
             ))}
           </div>
           {payrollSubView === "payroll" && (
-            <CastPayrollPanel castId={castId} castName={castName} />
+            <CastPayrollPanel castId={castId} castName={castName} shopId={shopId||undefined} />
           )}
           {payrollSubView === "slips" && shopId && (
             <CastSlipHistoryPanel castId={castId} shopId={shopId} />

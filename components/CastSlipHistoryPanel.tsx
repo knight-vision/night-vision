@@ -152,7 +152,8 @@ export default function CastSlipHistoryPanel({
               const myEntry = (slip.cast_entries || []).find(
                 (e) => String(e.cast_id) === String(castId)
               );
-              const typeInfo = TYPE_MAP[myEntry?.type || "free"];
+              const rawType = myEntry?.type || "free";
+              const typeInfo = TYPE_MAP[rawType] || TYPE_MAP["free"];
               const isOpen = openSlipId === slip.id;
               return (
                 <div key={slip.id} style={{ borderBottom: "1px solid var(--border)" }}>
