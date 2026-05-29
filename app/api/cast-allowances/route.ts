@@ -11,9 +11,10 @@ function getDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
-// GET: shop_idで月次手当一覧取得
+// GET: shop_idで月次手当一覧取得（cast_id指定可）
 export async function GET(req: NextRequest) {
   const shopId = req.nextUrl.searchParams.get("shop_id");
+  const castId = req.nextUrl.searchParams.get("cast_id");
   const month = req.nextUrl.searchParams.get("month"); // YYYY-MM
   if (!shopId) return NextResponse.json([], { status: 400 });
 
@@ -21,13 +22,17 @@ export async function GET(req: NextRequest) {
   const startDate = `${target}-01`;
   const endDate = `${target}-31`;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("cast_daily_allowances")
     .select("*")
     .eq("shop_id", shopId)
     .gte("date", startDate)
     .lte("date", endDate)
     .order("date");
+
+  if (castId) query = query.eq("cast_id", Number(castId));
+
+  const { data, error } = await query;
 
   if (error) return NextResponse.json([], { status: 500 });
   return NextResponse.json(data);
