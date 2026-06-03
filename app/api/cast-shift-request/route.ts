@@ -78,10 +78,27 @@ export async function POST(req: NextRequest) {
       );
     }
   }
-  return NextResponse.json({ success: true });
-}
+  // Expo Push通知
+  const { data: ownerPush } = await supabase
+    .from("shop_owners")
+    .select("push_token")
+    .eq("shop_id", shop_id)
+    .single();
+  if (ownerPush?.push_token) {
+    const castName3 = castData?.name || "キャスト";
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: ownerPush.push_token,
+        title: "📩 シフト希望が届きました",
+        body: `${castName3}から${requests.length}日分の希望シフトが届きました`,
+        data: { type: "shift_request" },
+      }),
+    });
+  }
 
-export async function DELETE(req: NextRequest) {
+  return NextResponse.json({ success: true });(req: NextRequest) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "idが必要です" }, { status: 400 });
   const { error } = await supabase.from("shift_requests").delete().eq("id", id);
