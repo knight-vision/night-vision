@@ -78,27 +78,37 @@ export async function POST(req: NextRequest) {
       );
     }
   }
-  // Expo Push通知
-  const { data: ownerPush } = await supabase
-    .from("shop_owners")
-    .select("push_token")
-    .eq("shop_id", shop_id)
-    .single();
-  if (ownerPush?.push_token) {
-    const castName3 = castData?.name || "キャスト";
-    await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: ownerPush.push_token,
-        title: "📩 シフト希望が届きました",
-        body: `${castName3}から${requests.length}日分の希望シフトが届きました`,
-        data: { type: "shift_request" },
-      }),
-    });
+  // Expo Push通知（複数オーナーに対応）
+  try {
+    const { data: owners } = await supabase
+      .from("shop_owners")
+      .select("push_token")
+      .eq("shop_id", shop_id);
+    const tokens = (owners || []).map((o: any) => o.push_token).filter(Boolean);
+    if (tokens.length > 0) {
+      const castName3 = castData?.name || "キャスト";
+      await Promise.all(tokens.map(token => 
+        fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            to: token,
+            title: "📩 シフト希望が届きました",
+            body: `${castName3}から${requests.length}日分の希望シフトが届きました`,
+            sound: "default",
+            data: { type: "shift_request" },
+          }),
+        })
+      ));
+    }
+  } catch (e) {
+    console.error("Push notification failed:", e);
   }
 
-  return NextResponse.json({ success: true });(req: NextRequest) {
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   if (!id) return NextResponse.json({ error: "idが必要です" }, { status: 400 });
   const { error } = await supabase.from("shift_requests").delete().eq("id", id);

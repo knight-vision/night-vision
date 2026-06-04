@@ -90,6 +90,31 @@ export async function POST(req: NextRequest) {
         "ポータルで確認"
       );
     }
+    // キャストにExpo Push通知（push_token登録済みの場合）
+    try {
+      const { data: pushAccounts } = await supabase
+        .from("cast_accounts")
+        .select("push_token")
+        .eq("cast_id", castId);
+      const pushTokens = (pushAccounts || []).map((a: any) => a.push_token).filter(Boolean);
+      if (pushTokens.length > 0) {
+        await Promise.all(pushTokens.map(token =>
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              to: token,
+              title: "📅 シフト確定のお知らせ",
+              body: `${shopName}から${myShifts.length}日分の確定シフトが届きました`,
+              sound: "default",
+              data: { type: "shift_confirmed" },
+            }),
+          })
+        ));
+      }
+    } catch (e) {
+      console.error("Push notification failed:", e);
+    }
   }
   return NextResponse.json({ success: true });
 }
