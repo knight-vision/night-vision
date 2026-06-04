@@ -13,14 +13,16 @@ export async function POST(req: NextRequest) {
 
   let result;
   if (shop_owner_id) {
+    // shop_owners.id は数値型
     result = await supabase.from("shop_owners")
       .update({ push_token: token, push_platform: platform })
       .eq("id", Number(shop_owner_id))
       .select();
   } else if (cast_account_id) {
+    // cast_accounts.id は UUID型なのでそのまま文字列
     result = await supabase.from("cast_accounts")
       .update({ push_token: token, push_platform: platform })
-      .eq("id", Number(cast_account_id))
+      .eq("id", String(cast_account_id))
       .select();
   } else {
     return NextResponse.json({ error: "shop_owner_id or cast_account_id required" }, { status: 400 });
@@ -28,13 +30,12 @@ export async function POST(req: NextRequest) {
 
   if (result?.error) {
     console.error("[push-token] error:", result.error);
-    return NextResponse.json({ error: result.error.message, hint: "DB column 'push_token' or 'push_platform' may be missing" }, { status: 500 });
+    return NextResponse.json({ error: result.error.message }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, updated: result?.data?.length || 0 });
 }
 
-// 動作確認用GET：保存されているpush_tokenを返す（デバッグ用）
 export async function GET(req: NextRequest) {
   const shopOwnerId = req.nextUrl.searchParams.get("shop_owner_id");
   const castAccountId = req.nextUrl.searchParams.get("cast_account_id");
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from("cast_accounts")
       .select("id, email, push_token, push_platform")
-      .eq("id", Number(castAccountId))
+      .eq("id", String(castAccountId))
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
