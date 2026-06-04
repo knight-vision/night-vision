@@ -60,45 +60,59 @@ export async function POST(req: NextRequest) {
   const shopName = shopData?.name || "お店";
   for (const castId of castIds) {
     const { data: account } = await supabase.from("cast_accounts").select("email, line_user_id, casts(name)").eq("cast_id", castId).single();
-    if (!account?.email) continue;
+    if (!account) continue;
     const castName = (account.casts as any)?.name || "キャスト";
     const myShifts = shifts.filter((s: any) => s.cast_id === castId);
-    await resend.emails.send({
-      from: "NIGHT VISION <info@night-vision.jp>",
-      to: account.email,
-      subject: `【${shopName}】確定シフトのお知らせ`,
-      html: emailHtml({
-        preheader: `${shopName}から${myShifts.length}日分の確定シフトが届きました`,
-        title: `📅 確定シフトのお知らせ`,
-        body: `
-          <p style="margin:0 0 6px;color:#c0bdd8;">${castName}さん</p>
-          <p style="margin:0 0 16px;color:#c0bdd8;"><strong style="color:#f0eeff;">${shopName}</strong>の確定シフトが届きました。</p>
-          ${emailDateList(myShifts.map((s: any) => ({ date: s.date, time: `${s.start_time}〜${s.end_time}` })))}
-        `,
-        ctaText: "キャストポータルを開く",
-        ctaUrl: "https://www.night-vision.jp/cast-portal",
-      }),
-    });
 
-    // キャストにLINE通知（line_user_idが登録済みの場合）
-    if (account.line_user_id) {
-      const dateList = myShifts.map((s: any) => `${s.date} ${s.start_time}〜${s.end_time}`).join("\n");
-      await sendLineMessage(
-        account.line_user_id,
-        `📅 確定シフトが届きました\n\n${shopName}\n\n${dateList}`,
-        "https://www.night-vision.jp/cast-portal",
-        "ポータルで確認"
-      );
+    // メール通知（失敗しても続行）
+    if (account.email) {
+      try {
+        await resend.emails.send({
+          from: "NIGHT VISION <info@night-vision.jp>",
+          to: account.email,
+          subject: `【${shopName}】確定シフトのお知らせ`,
+          html: emailHtml({
+            preheader: `${shopName}から${myShifts.length}日分の確定シフトが届きました`,
+            title: `📅 確定シフトのお知らせ`,
+            body: `
+              <p style="margin:0 0 6px;color:#c0bdd8;">${castName}さん</p>
+              <p style="margin:0 0 16px;color:#c0bdd8;"><strong style="color:#f0eeff;">${shopName}</strong>の確定シフトが届きました。</p>
+              ${emailDateList(myShifts.map((s: any) => ({ date: s.date, time: `${s.start_time}〜${s.end_time}` })))}
+            `,
+            ctaText: "キャストポータルを開く",
+            ctaUrl: "https://www.night-vision.jp/cast-portal",
+          }),
+        });
+      } catch (e) {
+        console.error("[confirm-shift] email error for cast", castId, e);
+      }
     }
-    // キャストにExpo Push通知（push_token登録済みの場合）
+
+    // LINE通知（失敗しても続行）
+    if (account.line_user_id) {
+      try {
+        const dateList = myShifts.map((s: any) => `${s.date} ${s.start_time}〜${s.end_time}`).join("\n");
+        await sendLineMessage(
+          account.line_user_id,
+          `📅 確定シフトが届きました\n\n${shopName}\n\n${dateList}`,
+          "https://www.night-vision.jp/cast-portal",
+          "ポータルで確認"
+        );
+      } catch (e) {
+        console.error("[confirm-shift] LINE error for cast", castId, e);
+      }
+    }
+
+    // Expo Push通知（最重要・必ず実行）
     try {
       const { data: pushAccounts } = await supabase
         .from("cast_accounts")
         .select("push_token")
         .eq("cast_id", castId);
       const pushTokens = (pushAccounts || []).map((a: any) => a.push_token).filter(Boolean);
+      console.log(`[confirm-shift] cast_id=${castId} push_tokens=${pushTokens.length}`);
       if (pushTokens.length > 0) {
-        await Promise.all(pushTokens.map(token =>
+        const results = await Promise.all(pushTokens.map(token =>
           fetch("https://exp.host/--/api/v2/push/send", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Accept": "application/json" },
@@ -109,11 +123,12 @@ export async function POST(req: NextRequest) {
               sound: "default",
               data: { type: "shift_confirmed" },
             }),
-          })
+          }).then(r => r.json()).catch(e => ({ error: e?.message }))
         ));
+        console.log(`[confirm-shift] push results:`, JSON.stringify(results));
       }
     } catch (e) {
-      console.error("Push notification failed:", e);
+      console.error("[confirm-shift] Push notification failed:", e);
     }
   }
   return NextResponse.json({ success: true });
