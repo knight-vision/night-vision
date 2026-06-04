@@ -7,20 +7,55 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// プッシュトークンを保存
 export async function POST(req: NextRequest) {
   const { token, platform, shop_owner_id, cast_account_id } = await req.json();
   if (!token) return NextResponse.json({ error: "token required" }, { status: 400 });
 
+  let result;
   if (shop_owner_id) {
-    await supabase.from("shop_owners")
+    result = await supabase.from("shop_owners")
       .update({ push_token: token, push_platform: platform })
-      .eq("id", Number(shop_owner_id));
+      .eq("id", Number(shop_owner_id))
+      .select();
   } else if (cast_account_id) {
-    await supabase.from("cast_accounts")
+    result = await supabase.from("cast_accounts")
       .update({ push_token: token, push_platform: platform })
-      .eq("id", Number(cast_account_id));
+      .eq("id", Number(cast_account_id))
+      .select();
+  } else {
+    return NextResponse.json({ error: "shop_owner_id or cast_account_id required" }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  if (result?.error) {
+    console.error("[push-token] error:", result.error);
+    return NextResponse.json({ error: result.error.message, hint: "DB column 'push_token' or 'push_platform' may be missing" }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, updated: result?.data?.length || 0 });
+}
+
+// 動作確認用GET：保存されているpush_tokenを返す（デバッグ用）
+export async function GET(req: NextRequest) {
+  const shopOwnerId = req.nextUrl.searchParams.get("shop_owner_id");
+  const castAccountId = req.nextUrl.searchParams.get("cast_account_id");
+
+  if (shopOwnerId) {
+    const { data, error } = await supabase
+      .from("shop_owners")
+      .select("id, email, push_token, push_platform")
+      .eq("id", Number(shopOwnerId))
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  }
+  if (castAccountId) {
+    const { data, error } = await supabase
+      .from("cast_accounts")
+      .select("id, email, push_token, push_platform")
+      .eq("id", Number(castAccountId))
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  }
+  return NextResponse.json({ error: "id required" }, { status: 400 });
 }
