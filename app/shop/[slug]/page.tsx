@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import { getAllSlugs, getShopBySlug, supabase } from "@/lib/shops";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { cityKeyToName } from "@/lib/cities";
@@ -124,6 +124,12 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   const shop = await getShopBySlug(params.slug);
   if (!shop) notFound();
   if (!shop) return null;
+
+  // 非公開店舗はオーナー管理画面へリダイレクト
+  if (shop.is_active === false) {
+    redirect('/owner/login');
+  }
+
   recordPageView(shop.id);
 
   // 求人情報を取得（最大3件）
