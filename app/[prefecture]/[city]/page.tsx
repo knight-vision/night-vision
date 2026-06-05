@@ -16,12 +16,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!city) return {};
   const genres = getGenresForPrefecture(params.prefecture);
   const cityName = city.displayName || city.name;
+  // 「その他」を除いた繁華街・エリア名（例: 釧路→末広・愛国、札幌→すすきの・大通…）
+  const areaNames = city.areas.filter(a => a.key !== "other").map(a => a.name);
+  const areaText = areaNames.length > 0 ? `${areaNames.join("・")}など` : "";
   const title = `${cityName}ナイトビジョン｜${cityName}の${genres[0].name}・ガールズバー・スナック情報`;
-  const description = `${cityName}ナイトビジョンは、${city.prefecture}${cityName}の${genres.map(g=>g.name).join("・")}情報を掲載。${city.description}`;
+  const description = `${cityName}ナイトビジョンは、${city.prefecture}${cityName}（${areaText}）の${genres.map(g=>g.name).join("・")}情報を掲載。${city.description}`;
   const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
+  // エリア名 × 主要業種のロングテールキーワード（例: 「歌舞伎町 キャバクラ」「すすきの スナック」）
+  const areaKeywords = areaNames.flatMap(a => [`${a} キャバクラ`, `${a} スナック`, `${a} ガールズバー`, `${a} 飲み屋`, `${a} ${cityName}`]);
   return {
     title, description,
-    keywords: [`${cityName}ナイトビジョン`, `${cityName} ナイトビジョン`, `${cityName} キャバクラ`, `${cityName} ガールズバー`, `${cityName} スナック`, `${cityName} ラウンジ`, `${cityName} 夜遊び`],
+    keywords: [
+      `${cityName}ナイトビジョン`, `${cityName} ナイトビジョン`,
+      `${cityName} キャバクラ`, `${cityName} ガールズバー`, `${cityName} スナック`, `${cityName} ラウンジ`, `${cityName} 夜遊び`,
+      ...areaKeywords,
+    ],
     alternates: { canonical: url },
     openGraph: { title, description, url, siteName: "NIGHT VISION", type: "website",
       images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }] },
@@ -40,6 +49,8 @@ export default async function CityPage({ params }: Props) {
 
   const cityName = city.displayName || city.name;
   const pageUrl = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
+  // 「その他」を除いた繁華街・エリア名
+  const areaNames = city.areas.filter(a => a.key !== "other").map(a => a.name);
 
   // 構造化データ：このページが「○○ナイトビジョン」というサイト/コレクションであることを明示
   const jsonLd = {
@@ -66,7 +77,14 @@ export default async function CityPage({ params }: Props) {
         "@type": "CollectionPage",
         name: `${cityName}ナイトビジョン｜${cityName}の${genres[0].name}・ガールズバー・スナック情報`,
         url: pageUrl,
-        about: { "@type": "Place", name: `${city.prefecture}${cityName}` },
+        about: {
+          "@type": "Place",
+          name: `${city.prefecture}${cityName}`,
+          // 主要な繁華街・エリアを所属場所として明示（例: 歌舞伎町、すすきの、末広）
+          ...(areaNames.length > 0 ? {
+            containsPlace: areaNames.map(a => ({ "@type": "Place", name: `${cityName}${a}` })),
+          } : {}),
+        },
       },
     ],
   };
@@ -131,6 +149,15 @@ export default async function CityPage({ params }: Props) {
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
           : <ShopList shops={shops} />
         }
+
+        {/* SEO用テキスト（控えめ表示・エリア名を含む） */}
+        {areaNames.length > 0 && (
+          <p style={{ color: "var(--text-hint)", fontSize: 11, lineHeight: 1.9, marginTop: 32, textAlign: "center" }}>
+            {cityName}ナイトビジョンでは、{areaNames.join("・")}エリアを中心に
+            {city.prefecture}{cityName}の{genres.map(g => g.name.split("/")[0]).join("・")}・スナック・ガールズバーなど
+            夜のお店情報を掲載しています。
+          </p>
+        )}
       </main>
       <OwnerCTA />
     </>

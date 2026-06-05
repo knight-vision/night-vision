@@ -15,12 +15,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityByPrefecture(params.prefecture, params.city);
   const genre = getGenre(params.genre);
   if (!city || !genre) return {};
-  const title = `${city.name}の${genre.name}一覧｜料金・出勤情報｜NIGHT VISION`;
-  const description = `${city.name}の${genre.name}を検索。キャスト・料金・本日の出勤情報を毎日更新。`;
+  const cityName = city.displayName || city.name;
+  // 「その他」を除いた繁華街・エリア名
+  const areaNames = city.areas.filter(a => a.key !== "other").map(a => a.name);
+  const areaText = areaNames.length > 0 ? `${areaNames.join("・")}など${cityName}各エリアの` : `${cityName}の`;
+  const title = `${cityName}の${genre.name}一覧｜料金・出勤情報｜NIGHT VISION`;
+  const description = `${areaText}${genre.name}を検索。キャスト・料金・本日の出勤情報を毎日更新。`;
   const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/${genre.key}`;
+  // エリア × 業種のロングテールキーワード（例: 「歌舞伎町 キャバクラ」「すすきの ガールズバー」）
+  const areaKeywords = areaNames.map(a => `${a} ${genre.name}`);
   return {
     title, description,
-    keywords: [`${city.name} ${genre.name}`, `${city.name} ${genre.name} 求人`, `${city.name} ${genre.name} 料金`],
+    keywords: [
+      `${cityName} ${genre.name}`, `${cityName} ${genre.name} 求人`, `${cityName} ${genre.name} 料金`,
+      ...areaKeywords,
+    ],
     alternates: { canonical: url },
     openGraph: { title, description, url, siteName: "NIGHT VISION", type: "website",
       images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }] },
