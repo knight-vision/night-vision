@@ -31,13 +31,6 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> 
   カジュアルバー: { bg: "#a855f722", border: "#a855f7", text: "#a855f7" },
 };
 
-const TYPE_EMOJI: Record<string, string> = {
-  スナック: "🍶",
-  ガールズバー: "🍹",
-  ラウンジ: "🥂",
-  カジュアルバー: "🍸",
-};
-
 const DEFAULT_DESC: Record<string, string> = {
   スナック: "地元に愛されるアットホームなスナック。カラオケや会話を楽しめます。",
   ガールズバー: "気軽に立ち寄れるガールズバー。お酒とトークを楽しもう。",
@@ -50,14 +43,6 @@ const BG_GRADIENTS: Record<string, string> = {
   ガールズバー: "radial-gradient(ellipse at 70% 50%, #00d4ff15 0%, transparent 70%), radial-gradient(ellipse at 20% 80%, #0099bb10 0%, transparent 60%)",
   ラウンジ: "radial-gradient(ellipse at 50% 30%, #ffd70018 0%, transparent 70%), radial-gradient(ellipse at 80% 80%, #aa880010 0%, transparent 60%)",
   カジュアルバー: "radial-gradient(ellipse at 40% 60%, #a855f718 0%, transparent 70%)",
-};
-
-// 写真なし店舗のフォールバック用：ジャンル別の濃いグラデ背景（店名タイポを乗せる）
-const FALLBACK_GRADIENTS: Record<string, string> = {
-  スナック: "linear-gradient(135deg, #2e1a26 0%, #40243a 60%, #1a1322 100%)",
-  ガールズバー: "linear-gradient(135deg, #1a222e 0%, #243a40 60%, #13202a 100%)",
-  ラウンジ: "linear-gradient(135deg, #2a1a2e 0%, #3d2440 60%, #1a1330 100%)",
-  カジュアルバー: "linear-gradient(135deg, #22221a 0%, #3a3624 60%, #1a1813 100%)",
 };
 
 function cardTagStyle(color: string): React.CSSProperties {
@@ -101,8 +86,6 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
   const openStatus = isOpenNow(shop.open_hour, shop.closed_days);
   const desc = shop.description || DEFAULT_DESC[shop.type] || "";
   const bg = BG_GRADIENTS[shop.type] ?? "";
-  const emoji = TYPE_EMOJI[shop.type] ?? "🍺";
-  const fallbackGrad = FALLBACK_GRADIENTS[shop.type] ?? "linear-gradient(135deg, #1a1a26, #26263a 60%, #13131f)";
 
   return (
     <div
@@ -147,36 +130,32 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
         </div>
       )}
 
-      {/* 写真なし（フリー・スタンダード or 写真未登録）：ジャンル別グラデ＋店名タイポ */}
-      {!hasBanner && (
-        <div style={{
-          position: "relative", width: "100%", height: 132, overflow: "hidden",
-          background: fallbackGrad,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 30% 20%, ${tc.border}22, transparent 55%)` }} />
-          <div style={{ fontSize: 40, opacity: 0.5, position: "relative", zIndex: 2 }}>{emoji}</div>
-          <div style={{
-            position: "absolute", bottom: 12, left: 16, zIndex: 2,
-            fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em",
-            color: "#fff", opacity: 0.18, fontFamily: "var(--font)",
-            maxWidth: "70%", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-          }}>{shop.name}</div>
-          <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, zIndex: 2 }}>
-            <span style={cardTagStyle(tc.text)}>{shop.type}</span>
-            <span style={cardTagStyle("#c4a8f0")}>{shop.area_category ?? shop.area}</span>
-          </div>
-          {openStatus === true && <span style={openBadgeStyle(true)}>● 営業中</span>}
-          {openStatus === false && <span style={openBadgeStyle(false)}>○ 営業時間外</span>}
-          {onCount > 0 && (
-            <div style={liveBadgeStyle}>
-              <span style={liveDotStyle} />{onCount}名出勤中
-            </div>
-          )}
-        </div>
-      )}
-
       <div style={{ padding: 16, position: "relative" }}>
+        {/* ジャンル・エリア・営業状態の行（写真なし店舗用） */}
+        {!hasBanner && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999,
+              background: tc.bg, border: `1px solid ${tc.border}55`, color: tc.text,
+            }}>{shop.type}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999,
+              background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)",
+            }}>{shop.area_category ?? shop.area}</span>
+            {openStatus === true && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#9be8b4", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9be8b4", boxShadow: "0 0 6px #9be8b4" }} />営業中
+              </span>
+            )}
+            {openStatus === false && (
+              <span style={{ fontSize: 11, color: "var(--text-hint)" }}>営業時間外</span>
+            )}
+            {onCount > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#e8b4c8" }}>本日 {onCount}名出勤</span>
+            )}
+          </div>
+        )}
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: "var(--text-primary)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.2, fontFamily: "var(--font)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
