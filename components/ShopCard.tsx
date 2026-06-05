@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Shop } from "@/lib/shops";
 import { canUsePremium } from "@/lib/plan";
 import FavoriteButton from "./FavoriteButton";
@@ -77,7 +77,6 @@ const liveDotStyle: React.CSSProperties = {
 };
 
 export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { message: string; created_at: string } | null }) {
-  const router = useRouter();
   const tc = TYPE_COLORS[shop.type] ?? { bg: "#ffffff11", border: "#ffffff33", text: "#ffffff88" };
   const onCount = (shop.casts ?? []).filter((c) => c.on_today === true).length;
   // 写真掲載はプレミアム・プロのみ（または手動掲載フラグ）。料金プランの差別化要因。
@@ -87,24 +86,25 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
   const desc = shop.description || DEFAULT_DESC[shop.type] || "";
   const bg = BG_GRADIENTS[shop.type] ?? "";
 
-  // 遷移はonPointerUpでタップ判定して実行する。
-  // scale変形でonClickがキャンセルされるiOS Safariの挙動を回避するため、
-  // ルート要素は動かさず、変形は内側ラッパー(.card-inner)にかける。
-  const navigate = () => router.push("/shop/" + shop.slug);
-  const downPos = { x: 0, y: 0, moved: false };
+  // 遷移は<Link>のネイティブ挙動に任せる（prefetchで先読みされ体感が速い）。
+  // ポインターハンドラは押下フィードバック（沈み込み）のみを担当する。
+  // 変形はルートではなく内側ラッパー(data-card-inner)にかけ、Linkのタップ判定を妨げない。
   const setInnerTransform = (el: HTMLElement, v: string) => {
     const inner = el.querySelector<HTMLElement>("[data-card-inner]");
     if (inner) inner.style.transform = v;
   };
 
   return (
-    <div
-      role="link"
-      tabIndex={0}
+    <Link
+      href={"/shop/" + shop.slug}
+      prefetch
       style={{
+        display: "block",
         borderRadius: 16,
         cursor: "pointer",
         position: "relative",
+        textDecoration: "none",
+        color: "inherit",
         WebkitTapHighlightColor: "transparent",
         touchAction: "manipulation",
       }}
@@ -118,28 +118,17 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
         setInnerTransform(e.currentTarget, "");
       }}
       onPointerDown={(e) => {
-        downPos.x = e.clientX; downPos.y = e.clientY; downPos.moved = false;
         setInnerTransform(e.currentTarget, "scale(0.975)");
         if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
           navigator.vibrate(8);
         }
       }}
-      onPointerMove={(e) => {
-        // スクロール（指の移動）はタップとみなさない
-        if (Math.abs(e.clientX - downPos.x) > 10 || Math.abs(e.clientY - downPos.y) > 10) {
-          downPos.moved = true;
-        }
-      }}
       onPointerUp={(e) => {
         setInnerTransform(e.currentTarget, e.pointerType === "mouse" ? "translateY(-2px)" : "");
-        if (!downPos.moved) navigate();
       }}
       onPointerCancel={(e) => {
-        downPos.moved = true;
         setInnerTransform(e.currentTarget, "");
       }}
-      // キーボード操作・フォールバック用
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(); } }}
     >
     <div
       data-card-inner
@@ -247,24 +236,24 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
             {shop.budget ?? "料金未設定"}
           </span>
           {shop.instagram && (
-            <a
-              href={"https://instagram.com/" + shop.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+            <span
+              role="link"
+              tabIndex={0}
+              // <Link>(=<a>)内に<a>をネストできないため、span+window.openで遷移。
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open("https://instagram.com/" + shop.instagram, "_blank", "noopener,noreferrer"); }}
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => e.stopPropagation()}
-              style={{ fontSize: 11, color: "var(--accent2)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+              style={{ fontSize: 11, color: "var(--accent2)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3, cursor: "pointer" }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
               </svg>
               @{shop.instagram}
-            </a>
+            </span>
           )}
         </div>
       </div>
     </div>
-    </div>
+    </Link>
   );
 }

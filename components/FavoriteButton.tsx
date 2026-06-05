@@ -14,6 +14,7 @@ export default function FavoriteButton({ shopId, size = 20 }: { shopId: number; 
   const active = mounted && isFavorite(shopId);
 
   const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const wasActive = isFavorite(shopId);
     toggle(shopId);
