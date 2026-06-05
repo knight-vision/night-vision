@@ -33,9 +33,20 @@ export async function POST(req: NextRequest) {
   }
   const { data: castData } = await supabase.from("casts").select("name").eq("id", cast_id).single();
   const { data: ownerData } = await supabase.from("shop_owners").select("email, shops(name)").eq("shop_id", shop_id).single();
+  // Supabase time型は0-23時しか受け付けないので、25:00などを01:00に正規化
+  const normalizeTime = (t: string): string => {
+    if (!t || !t.includes(':')) return t;
+    const [hStr, m = '00'] = t.split(':');
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return t;
+    const normH = h >= 24 ? h - 24 : h;
+    return `${String(normH).padStart(2, '0')}:${m.slice(0, 2)}`;
+  };
   const rows = requests.map((r: any) => ({
     cast_id: Number(cast_id), shop_id: Number(shop_id),
-    date: r.date, start_time: r.start_time, end_time: r.end_time,
+    date: r.date,
+    start_time: normalizeTime(r.start_time),
+    end_time: normalizeTime(r.end_time),
     note: r.note || null, status: "pending",
   }));
   const { error } = await supabase.from("shift_requests").upsert(rows, { onConflict: "cast_id,date" });
@@ -47,9 +58,9 @@ export async function POST(req: NextRequest) {
     await resend.emails.send({
       from: "NIGHT VISION <info@night-vision.jp>",
       to: ownerData.email,
-      subject: `【シフト希望】${castName}から希望シフトが届きました`,
+      subject: `【シフト希望】${castName}さんから希望シフトが届きました`,
       html: emailHtml({
-        preheader: `${castName}から${requests.length}日分の希望シフトが届きました`,
+        preheader: `${castName}さんから${requests.length}日分の希望シフトが届きました`,
         title: `📩 希望シフトが届きました`,
         body: `
           <p style="margin:0 0 6px;color:#c0bdd8;">${shopName} オーナー様</p>
@@ -72,7 +83,7 @@ export async function POST(req: NextRequest) {
       const dateList = requests.map((r: any) => `${r.date} ${r.start_time}〜${r.end_time}`).join("\n");
       await sendLineMessage(
         ownerLine.line_user_id,
-        `📩 シフト希望が届きました\n\nキャスト: ${castName2}\n\n${dateList}`,
+        `📩 シフト希望が届きました\n\nキャスト: ${castName2}さん\n\n${dateList}`,
         "https://www.night-vision.jp/owner/dashboard?tab=shift",
         "シフト管理を開く"
       );
@@ -94,7 +105,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             to: token,
             title: "📩 シフト希望が届きました",
-            body: `${castName3}から${requests.length}日分の希望シフトが届きました`,
+            body: `${castName3}さんから${requests.length}日分の希望シフトが届きました`,
             sound: "default",
             data: { type: "shift_request" },
           }),

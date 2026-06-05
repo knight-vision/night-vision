@@ -45,7 +45,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { shop_id, shifts } = await req.json();
   if (!shop_id || !shifts?.length) return NextResponse.json({ error: "必須パラメータが不足しています" }, { status: 400 });
-  const rows = shifts.map((s: any) => ({ cast_id: Number(s.cast_id), shop_id: Number(shop_id), date: s.date, start_time: s.start_time, end_time: s.end_time }));
+  // Supabase time型は0-23時しか受け付けないので、25:00などを01:00に正規化
+  const normalizeTime = (t: string): string => {
+    if (!t || !t.includes(':')) return t;
+    const [hStr, m = '00'] = t.split(':');
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return t;
+    const normH = h >= 24 ? h - 24 : h;
+    return `${String(normH).padStart(2, '0')}:${m.slice(0, 2)}`;
+  };
+  const rows = shifts.map((s: any) => ({
+    cast_id: Number(s.cast_id),
+    shop_id: Number(shop_id),
+    date: s.date,
+    start_time: normalizeTime(s.start_time),
+    end_time: normalizeTime(s.end_time),
+  }));
   const { error } = await supabase.from("confirmed_shifts").upsert(rows, { onConflict: "cast_id,date" });
   if (error) return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
   for (const s of shifts) {
