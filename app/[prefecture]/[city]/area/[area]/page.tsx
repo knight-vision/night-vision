@@ -34,7 +34,7 @@ export default async function CityAreaPage({ params }: Props) {
   const area = getArea(city, params.area);
   if (!area) notFound();
 
-  const areaName = areaKeyToName(params.area) || area.name;
+  const areaName = areaKeyToName(params.area, city) || area.name;
   const shops = await getShopsByCityAndArea(city.key, areaName);
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
   const genres = getGenresForPrefecture(params.prefecture);

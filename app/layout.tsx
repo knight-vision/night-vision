@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: "ナイトビジョン",
   },
   title: {
-    default: "NIGHT VISION｜釧路の飲み屋・スナック・ガールズバー・ラウンジ情報",
+    default: "NIGHT VISION｜全国のキャバクラ・ガールズバー・スナック・ラウンジ情報",
     template: "%s｜NIGHT VISION",
   },
   description: "釧路のスナック・ガールズバー・ラウンジ・飲み屋の最新情報をまとめた地域密着型ナイトガイド。お店の雰囲気・料金・キャスト情報を掲載。",

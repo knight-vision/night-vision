@@ -1,6 +1,8 @@
 // 都市設定ファイル
 // 新都市追加時はここに追加するだけ
 
+import { PREFECTURES as JAPAN_PREFECTURES } from "./japan";
+
 export type CityConfig = {
   key: string;
   prefectureKey: string;
@@ -184,4 +186,16 @@ export function areaKeyToName(key: string, city?: CityConfig): string {
   // 釧路のデフォルトマッピング（後方互換）
   const map: Record<string, string> = { suehiro: "末広", aikoku: "愛国", other: "その他" };
   return map[key] || key;
+}
+
+// 都市キーから表示名に変換（cities.ts → japan.ts の順で検索）
+export function cityKeyToName(key: string): string | null {
+  const city = CITIES.find(c => c.key === key);
+  if (city) return city.name;
+  // japan.ts側に存在する場合はそちらの市区町村名を使う（「市」等は残す）
+  for (const pref of JAPAN_PREFECTURES) {
+    const jc = pref.cities.find(c => c.key === key);
+    if (jc) return jc.name;
+  }
+  return null;
 }

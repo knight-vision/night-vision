@@ -3,6 +3,7 @@ import { getAllSlugs, getShopBySlug, supabase } from "@/lib/shops";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { cityKeyToName } from "@/lib/cities";
 import FavoriteButton from "@/components/FavoriteButton";
 import PhotoViewer from "@/components/PhotoViewer";
 import DemoGate from "@/components/DemoGate";
@@ -66,32 +67,33 @@ export async function generateMetadata({
   const shop = await getShopBySlug(params.slug);
   if (!shop) return {};
   const area = shop.area_category ?? shop.area ?? "";
+  const cityName = ((shop as any).city ? cityKeyToName((shop as any).city) : null) || (shop as any).prefecture || "";
   const castNames = (shop.casts ?? []).slice(0, 3).map((c: any) => c.name).join("・");
-  const desc = `${shop.name}は釧路${area}エリアにある${shop.type}です。` +
+  const desc = `${shop.name}は${cityName}${area}エリアにある${shop.type}です。` +
     (shop.description ? shop.description.slice(0, 80) : "") +
     `営業時間：${shop.open_hour ?? ""}。` +
     (shop.budget ? `予算：${shop.budget}。` : "") +
     (castNames ? `在籍キャスト：${castNames}など。` : "") +
-    `釧路${shop.type}をお探しならナイトビジョンで。`;
+    `${cityName}${shop.type}をお探しならナイトビジョンで。`;
   return {
-    title: `${shop.name}｜釧路${area}の${shop.type}【公式情報】`,
+    title: `${shop.name}｜${cityName}${area}の${shop.type}【公式情報】`,
     description: desc.slice(0, 160),
     keywords: [
       shop.name,
-      `釧路 ${shop.name}`,
+      `${cityName} ${shop.name}`,
       `${area} ${shop.name}`,
-      `釧路 ${shop.type}`,
-      `釧路 ${area} ${shop.type}`,
-      `${shop.name} 釧路`,
+      `${cityName} ${shop.type}`,
+      `${cityName} ${area} ${shop.type}`,
+      `${shop.name} ${cityName}`,
       `${shop.name} ${shop.type}`,
       `${shop.name} 営業時間`,
       `${shop.name} 料金`,
       `${shop.name} キャスト`,
-      `釧路 ${shop.type} 料金`,
-      `釧路 夜遊び ${shop.type}`,
+      `${cityName} ${shop.type} 料金`,
+      `${cityName} 夜遊び ${shop.type}`,
     ],
     openGraph: {
-      title: `${shop.name}｜釧路${area}の${shop.type}`,
+      title: `${shop.name}｜${cityName}${area}の${shop.type}`,
       description: desc.slice(0, 100),
       url: "https://www.night-vision.jp/shop/" + shop.slug,
       siteName: "NIGHT VISION",
@@ -473,7 +475,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org", "@type": ["BarOrPub", "LocalBusiness"],
           name: shop.name, description: shop.description,
-          address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: (shop as any).city || "釧路市", addressRegion: (shop as any).prefecture || "北海道", addressCountry: "JP" },
+          address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: ((shop as any).city ? cityKeyToName((shop as any).city) : null) || (shop as any).city || "釧路市", addressRegion: (shop as any).prefecture || "北海道", addressCountry: "JP" },
           url: `https://www.night-vision.jp/shop/${shop.slug}`, telephone: shop.tel, openingHours: shop.open_hour, priceRange: shop.budget,
         })}} />
       </main>

@@ -1,2 +1,2 @@
 import { redirect } from "next/navigation";
-export default function Page() { redirect("/kushiro/area/aikoku"); }
+export default function Page() { redirect("/hokkaido/kushiro/area/aikoku"); }

@@ -1,2 +1,2 @@
 import { redirect } from "next/navigation";
-export default function Page() { redirect("/kushiro/girls-bar"); }
+export default function Page() { redirect("/hokkaido/kushiro/girls-bar"); }

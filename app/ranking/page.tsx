@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/shops";
+import { CITIES } from "@/lib/cities";
 import Link from "next/link";
 
 type ShopRank = {
@@ -11,6 +12,7 @@ type ShopRank = {
   type: string;
   area_category: string;
   area: string;
+  city?: string;
   open_hour: string;
   image: string | null;
   favorite_count: number;
@@ -54,20 +56,22 @@ const RANK_COLORS = ["#ffd700", "#c0c0c0", "#cd7f32"];
 export default function RankingPage() {
   const [rankType, setRankType] = useState<RankType>("favorite");
   const [period, setPeriod] = useState<Period>("weekly");
+  const [cityFilter, setCityFilter] = useState<string>("");
   const [shops, setShops] = useState<ShopRank[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRanking();
-  }, [rankType, period]);
+  }, [rankType, period, cityFilter]);
 
   async function fetchAllShops(): Promise<ShopRank[]> {
-    const { data } = await supabase
+    let q = supabase
       .from("shops")
-      .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
+      .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
       .order("plan", { ascending: false })
-      .order("id")
-      .limit(10);
+      .order("id");
+    if (cityFilter) q = (q as any).eq("city", cityFilter);
+    const { data } = await q.limit(10);
     return (data ?? []).map((s) => ({ ...s, count: 0 }));
   }
 
@@ -76,18 +80,15 @@ export default function RankingPage() {
     try {
       if (period === "all") {
         const col = rankType === "favorite" ? "favorite_count" : "page_views";
-        const { data } = await supabase
+        let q = supabase
           .from("shops")
-          .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
+          .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
           .order(col, { ascending: false })
-          .order("id")
-          .limit(10);
+          .order("id");
+        if (cityFilter) q = (q as any).eq("city", cityFilter);
+        const { data } = await q.limit(10);
         const result = (data ?? []).map((s) => ({ ...s, count: s[col] ?? 0 }));
-        if (result.every((s) => s.count === 0)) {
-          setShops(result);
-        } else {
-          setShops(result);
-        }
+        setShops(result);
       } else {
         const table = rankType === "favorite" ? "favorite_events" : "view_events";
         const days = parseDays(PERIOD_INTERVALS[period]!);
@@ -123,23 +124,25 @@ export default function RankingPage() {
 
         const { data: shopData } = await supabase
           .from("shops")
-          .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
+          .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
           .in("id", topIds);
 
         const result = (shopData ?? [])
+          .filter((s) => !cityFilter || (s.city || "kushiro") === cityFilter)
           .map((s) => ({ ...s, count: countMap[s.id] ?? 0 }))
           .sort((a, b) => b.count - a.count);
 
         if (result.length < 10) {
           // 足りない分をデフォルト順で補完
           const existingIds = new Set(result.map((s) => s.id));
-          const { data: extra } = await supabase
+          let eq = supabase
             .from("shops")
-            .select("id, slug, name, type, area_category, area, open_hour, image, favorite_count, page_views")
-            .not("id", "in", `(${[...existingIds].join(",")})`)
+            .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
+            .not("id", "in", `(${[...existingIds].join(",") || 0})`)
             .order("plan", { ascending: false })
-            .order("id")
-            .limit(10 - result.length);
+            .order("id");
+          if (cityFilter) eq = (eq as any).eq("city", cityFilter);
+          const { data: extra } = await eq.limit(10 - result.length);
           const extraMapped = (extra ?? []).map((s) => ({ ...s, count: 0 }));
           setShops([...result, ...extraMapped]);
         } else {
@@ -211,6 +214,25 @@ export default function RankingPage() {
               }}
             >{PERIOD_LABELS[p]}</button>
           ))}
+        </div>
+
+        {/* 都市フィルター */}
+        <div style={{ marginBottom: 24 }}>
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            style={{
+              width: "100%", padding: "10px 12px", borderRadius: 10,
+              fontSize: 13, fontFamily: "var(--font)", cursor: "pointer",
+              background: "var(--bg-input)", border: "1px solid var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <option value="">🗾 全国すべて</option>
+            {CITIES.map((c) => (
+              <option key={c.key} value={c.key}>{c.prefecture} {c.displayName || c.name}</option>
+            ))}
+          </select>
         </div>
 
         {loading ? (

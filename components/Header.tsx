@@ -41,22 +41,25 @@ export default function Header() {
   // URLから都市設定を取得してメニューを動的に生成
   const prefKey2 = segments[0];
   const cityKey2 = segments[1];
-  const currentCity = (prefKey2 && cityKey2) ? getCityByPrefecture(prefKey2, cityKey2) : null;
+  const currentCity = (prefKey2 && cityKey2 && !genreKeys.includes(cityKey2))
+    ? getCityByPrefecture(prefKey2, cityKey2) : null;
 
-  // 現在の都市に応じたメニュー（なければ釧路デフォルト）
-  const basePref = currentCity?.prefectureKey || "hokkaido";
-  const baseCity = currentCity?.key || "kushiro";
-  const menuGenres = getGenresForPrefecture(basePref);
-  const menuAreas = currentCity?.areas || [
-    { key: "suehiro", name: "末広" },
-    { key: "aikoku", name: "愛国" },
-  ];
+  // 都市コンテキストがあるページ専用のメニュー項目（業種・エリア）
+  const cityScopedItems = currentCity ? (() => {
+    const basePref = currentCity.prefectureKey;
+    const baseCity = currentCity.key;
+    const menuGenres = getGenresForPrefecture(basePref);
+    const menuAreas = currentCity.areas;
+    return [
+      { label: "📋 店舗一覧", href: `/${basePref}/${baseCity}` },
+      ...menuGenres.map(g => ({ label: `${g.englishLabel.includes("LOUNGE") || g.englishLabel.includes("CABARET") ? "🥂" : g.englishLabel.includes("GIRLS") ? "🍹" : g.englishLabel.includes("SNACK") ? "🍶" : "🍸"} ${g.name}`, href: `/${basePref}/${baseCity}/${g.key}` })),
+      ...menuAreas.filter(a => a.key !== "other").map(a => ({ label: `📍 ${a.name}エリア`, href: `/${basePref}/${baseCity}/area/${a.key}` })),
+    ];
+  })() : [];
 
   const menuItems = [
     { label: "🗾 エリアから探す", href: "/map" },
-    { label: "📋 店舗一覧", href: `/${basePref}/${baseCity}` },
-    ...menuGenres.map(g => ({ label: `${g.englishLabel.includes("LOUNGE") ? "🥂" : g.englishLabel.includes("GIRLS") ? "🍹" : g.englishLabel.includes("SNACK") ? "🍶" : "🍸"} ${g.name}`, href: `/${basePref}/${baseCity}/${g.key}` })),
-    ...menuAreas.filter(a => a.key !== "other").map(a => ({ label: `📍 ${a.name}エリア`, href: `/${basePref}/${baseCity}/area/${a.key}` })),
+    ...cityScopedItems,
     { label: "⭐ ランキング", href: "/ranking" },
     { label: "📝 店舗会員登録はこちら", href: "/for-owners" },
     { label: "🚨 店舗情報の報告", href: "/report" },

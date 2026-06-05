@@ -31,7 +31,7 @@ export type Shop = {
   name: string;
   type: "スナック" | "ガールズバー" | "ラウンジ" | "カジュアルバー";
   area: string;
-  area_category: "末広" | "愛国" | "その他";
+  area_category: string;
   city: string;
   prefecture: string;
   budget: string;
