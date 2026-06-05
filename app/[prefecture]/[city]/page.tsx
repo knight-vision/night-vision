@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import OwnerCTA from "@/components/OwnerCTA";
 import ShopList from "@/components/ShopList";
 import Link from "next/link";
 import { getShopsByCity } from "@/lib/shops";
@@ -146,6 +147,7 @@ export default async function CityPage({ params }: Props) {
           : <ShopList shops={shops} areas={areaOptions} />
         }
       </main>
+      <OwnerCTA />
     </>
   );
 }

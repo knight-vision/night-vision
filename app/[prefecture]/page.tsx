@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import OwnerCTA from "@/components/OwnerCTA";
 import Link from "next/link";
 import { getPrefecture } from "@/lib/japan";
 import { getCity, getCityByPrefecture } from "@/lib/cities";
@@ -74,6 +75,7 @@ export default function PrefecturePage({ params }: Props) {
           })}
         </div>
       </main>
+      <OwnerCTA />
     </>
   );
 }

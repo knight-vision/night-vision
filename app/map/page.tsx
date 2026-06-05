@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import OwnerCTA from "@/components/OwnerCTA";
 import Link from "next/link";
 import { REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
 import { getCitiesByPrefecture } from "@/lib/cities";
@@ -49,6 +50,7 @@ export default function MapPage() {
           );
         })}
       </main>
+      <OwnerCTA />
     </>
   );
 }
