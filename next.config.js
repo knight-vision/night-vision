@@ -4,8 +4,10 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    // 最適化（WebP変換・リサイズ）を無効化。初回アクセス時のサーバー変換待ちをなくし、
+    // 元画像を直接配信する。遅延読み込みとレイアウトシフト防止(fill/width/height)は維持される。
+    unoptimized: true,
     remotePatterns: [
-      // Supabaseストレージの画像をnext/imageで最適化（WebP変換・遅延読み込み・リサイズ）
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
