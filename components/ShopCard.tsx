@@ -90,6 +90,8 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
   return (
     <div
       onClick={() => router.push("/shop/" + shop.slug)}
+      role="link"
+      tabIndex={0}
       style={{
         background: "var(--bg-card)",
         border: `1px solid ${tc.border}22`,
@@ -97,14 +99,35 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
         cursor: "pointer",
         overflow: "hidden",
         boxShadow: `var(--card-shadow), 0 4px 20px ${tc.border}10`,
-        transition: "transform 0.18s, box-shadow 0.18s",
+        transition: "transform 0.12s ease, box-shadow 0.18s ease",
         position: "relative",
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "manipulation",
       }}
-      onMouseEnter={(e) => {
+      // ホバー演出はマウス（細かいポインタ）のみ。タッチではhover扱いにせず1タップで遷移させる。
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "mouse") return;
         e.currentTarget.style.transform = "translateY(-2px)";
         e.currentTarget.style.boxShadow = `var(--card-shadow-hover), 0 8px 32px ${tc.border}20`;
       }}
-      onMouseLeave={(e) => {
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "mouse") return;
+        e.currentTarget.style.transform = "";
+        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
+      }}
+      // 押下フィードバック（沈み込み）。タッチ／マウス両対応で「効いた感」を出す。
+      onPointerDown={(e) => {
+        e.currentTarget.style.transform = "scale(0.975)";
+        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 2px 10px ${tc.border}10`;
+        // iOS SafariはVibration API非対応のため、対応端末でのみ軽い触感を付与
+        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+          navigator.vibrate(8);
+        }
+      }}
+      onPointerUp={(e) => {
+        e.currentTarget.style.transform = e.pointerType === "mouse" ? "translateY(-2px)" : "";
+      }}
+      onPointerCancel={(e) => {
         e.currentTarget.style.transform = "";
         e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
       }}
