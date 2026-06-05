@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
 
   const normalized = email.toLowerCase().trim();
   const { data, error } = await supabase
-    .from("shop_owners")
-    .select("id, email, shops(name)")
+    .from("cast_accounts")
+    .select("id, email, casts(name)")
     .eq("email", normalized)
     .single();
 
@@ -36,11 +36,11 @@ export async function POST(req: NextRequest) {
   const hash = await bcrypt.hash(newPassword, 10);
 
   await supabase
-    .from("shop_owners")
+    .from("cast_accounts")
     .update({ password_hash: hash })
     .eq("id", data.id);
 
-  const shopName = (data.shops as any)?.name ?? "ご担当者";
+  const castName = (data.casts as any)?.name ?? "キャスト";
 
   await resend.emails.send({
     from: "NIGHT VISION <info@night-vision.jp>",
@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
       preheader: "新しいパスワードをお送りします",
       title: "🔑 パスワードリセット",
       body: `
-        <p style="margin:0 0 6px;color:#c0bdd8;">${shopName} ご担当者様</p>
-        <p style="margin:0 0 16px;color:#c0bdd8;">パスワードリセットのリクエストを受け付けました。以下の新しいパスワードでログインし、アカウント設定からパスワードを変更してください。</p>
+        <p style="margin:0 0 6px;color:#c0bdd8;">${castName} さん</p>
+        <p style="margin:0 0 16px;color:#c0bdd8;">パスワードリセットのリクエストを受け付けました。以下の新しいパスワードでログインし、設定からパスワードを変更してください。</p>
         ${emailInfoTable([
           { label: "メールアドレス", value: normalized },
           { label: "新しいパスワード", value: newPassword, highlight: true },
