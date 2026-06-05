@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import OwnerCTA from "@/components/OwnerCTA";
 import ShopList from "@/components/ShopList";
 import Link from "next/link";
 import { getShopsByCityAndType } from "@/lib/shops";
@@ -83,6 +84,7 @@ export default async function CityGenrePage({ params }: Props) {
           : <ShopList shops={shops} defaultType={genre.dbType} hideTypeFilter={true} />
         }
       </main>
+      <OwnerCTA />
     </>
   );
 }
