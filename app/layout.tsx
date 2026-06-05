@@ -52,6 +52,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "NIGHT VISION",
+              alternateName: ["ナイトビジョン", "ナイトビジョン 全国"],
+              url: "https://www.night-vision.jp",
+              inLanguage: "ja",
+              description: "全国のキャバクラ・ガールズバー・スナック・ラウンジ情報を掲載するナイトライフガイド。",
+            }),
+          }}
+        />
       </head>
       <body>
         {children}

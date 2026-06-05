@@ -35,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 都市トップ
     cityUrls.push({
       url: `${BASE}/${prefKey}/${cityKey}`,
-      lastModified: now, changeFrequency: "daily", priority: 0.9,
+      lastModified: now, changeFrequency: "daily", priority: 0.95,
     });
     // 都市×業種
     for (const g of genres) {

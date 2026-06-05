@@ -14,12 +14,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = getCityByPrefecture(params.prefecture, params.city);
   if (!city) return {};
   const genres = getGenresForPrefecture(params.prefecture);
-  const title = `${city.name}の${genres[0].name}・ガールズバー・スナック一覧｜NIGHT VISION`;
-  const description = `${city.name}の${genres.map(g=>g.name).join("・")}情報を掲載。${city.description}`;
+  const cityName = city.displayName || city.name;
+  const title = `${cityName}ナイトビジョン｜${cityName}の${genres[0].name}・ガールズバー・スナック情報`;
+  const description = `${cityName}ナイトビジョンは、${city.prefecture}${cityName}の${genres.map(g=>g.name).join("・")}情報を掲載。${city.description}`;
   const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
   return {
     title, description,
-    keywords: [`${city.name} キャバクラ`, `${city.name} ガールズバー`, `${city.name} スナック`, `${city.name} ラウンジ`, `${city.name} 夜遊び`],
+    keywords: [`${cityName}ナイトビジョン`, `${cityName} ナイトビジョン`, `${cityName} キャバクラ`, `${cityName} ガールズバー`, `${cityName} スナック`, `${cityName} ラウンジ`, `${cityName} 夜遊び`],
     alternates: { canonical: url },
     openGraph: { title, description, url, siteName: "NIGHT VISION", type: "website",
       images: [{ url: "https://www.night-vision.jp/icon-512.png", width: 512, height: 512 }] },
@@ -39,8 +40,45 @@ export default async function CityPage({ params }: Props) {
   // ShopList用のエリア一覧を動的に生成
   const areaOptions = city.areas.map(a => ({ label: `📍 ${a.name}`, value: a.name }));
 
+  const cityName = city.displayName || city.name;
+  const pageUrl = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
+
+  // 構造化データ：このページが「○○ナイトビジョン」というサイト/コレクションであることを明示
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${pageUrl}#website`,
+        name: `${cityName}ナイトビジョン`,
+        alternateName: [`${cityName} NIGHT VISION`, "NIGHT VISION", "ナイトビジョン"],
+        url: pageUrl,
+        inLanguage: "ja",
+        description: `${city.prefecture}${cityName}の${genres.map(g => g.name).join("・")}情報を掲載するナイトライフガイド。`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "TOP", item: "https://www.night-vision.jp" },
+          { "@type": "ListItem", position: 2, name: prefName, item: `https://www.night-vision.jp/${params.prefecture}` },
+          { "@type": "ListItem", position: 3, name: cityName, item: pageUrl },
+        ],
+      },
+      {
+        "@type": "CollectionPage",
+        name: `${cityName}ナイトビジョン｜${cityName}の${genres[0].name}・ガールズバー・スナック情報`,
+        url: pageUrl,
+        about: { "@type": "Place", name: `${city.prefecture}${cityName}` },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         {/* パンくず */}

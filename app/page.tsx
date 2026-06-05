@@ -150,9 +150,9 @@ export default async function HomePage() {
                   borderRadius: 10, textDecoration: "none",
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginBottom: 2 }}>
-                    {city.name}の{g.name.split("/")[0]}・スナック
+                    {city.displayName || city.name}ナイトビジョン
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{city.prefecture}のナイトライフ</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{city.prefecture}の{g.name.split("/")[0]}・スナック・ガールズバー情報</div>
                 </a>
               );
             })}
