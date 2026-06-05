@@ -69,7 +69,6 @@ type Shop = {
   name: string;
   type: string;
   area: string;
-  area_category: string;
   budget: string;
   open_hour: string;
   open_time: string | null;
@@ -320,7 +319,6 @@ export default function OwnerDashboard() {
     await supabase.from("shops").update({
       name: shop.name,
       area: shop.area,
-      area_category: shop.area_category,
       budget: shop.budget,
       tel: shop.tel,
       description: shop.description,
@@ -643,14 +641,6 @@ export default function OwnerDashboard() {
               </div>
             )}
           </div>
-            <div style={fieldStyle}>
-              <label style={labelStyle}>エリア区分</label>
-              <select value={shop.area_category ?? "末広"} onChange={(e) => setShop({ ...shop, area_category: e.target.value })} style={inputStyle}>
-                <option value="末広">末広</option>
-                <option value="愛国">愛国</option>
-                <option value="その他">その他</option>
-              </select>
-            </div>
             <div style={fieldStyle}>
               <label style={labelStyle}>席数</label>
               <input type="number" value={shop.seats ?? ""} onChange={(e) => setShop({ ...shop, seats: parseInt(e.target.value) || null })} style={inputStyle} />

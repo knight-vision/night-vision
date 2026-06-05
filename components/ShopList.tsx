@@ -32,14 +32,12 @@ const TYPES = [
 
 const PER_PAGE = 20;
 
-export default function ShopList({ shops, areas: areasProp, defaultType, hideTypeFilter }: {
+export default function ShopList({ shops, defaultType, hideTypeFilter }: {
   shops: Shop[];
-  areas?: { label: string; value: string }[];
   defaultType?: string;
   hideTypeFilter?: boolean;
 }) {
   const [selectedType, setSelectedType] = useState<string>(defaultType || "");
-  const [selectedArea, setSelectedArea] = useState<string>("");
   const [favOnly, setFavOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
   const [sortKey, setSortKey] = useState<string>("default");
@@ -84,14 +82,12 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
   const filtered = shops.filter((shop) => {
     const typeMatch = !selectedType || shop.type === selectedType ||
       (selectedType === "その他" && !["ラウンジ", "ガールズバー", "スナック", "カジュアルバー"].includes(shop.type));
-    const areaMatch = !selectedArea || (shop.area_category ?? "その他") === selectedArea;
     const favMatch = !favOnly || isFavorite(shop.id);
     const openMatch = !openOnly || isOpenNow(shop.open_hour, shop.closed_days) === true;
     const searchMatch = !searchQuery ||
       shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (shop.description ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (shop.area ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-    return typeMatch && areaMatch && favMatch && openMatch && searchMatch;
+      (shop.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+    return typeMatch && favMatch && openMatch && searchMatch;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -153,7 +149,7 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
     setPage(1);
   };
 
-  const hasFilter = selectedType !== "" || selectedArea !== "" || searchQuery !== "" || openOnly || favOnly;
+  const hasFilter = selectedType !== "" || searchQuery !== "" || openOnly || favOnly;
 
   return (
     <div>
@@ -184,40 +180,6 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
                 }}
               >
                 {type.label}
-                {active && <span style={{ opacity: 0.6, fontSize: 11 }}>✕</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      )}
-
-      {/* エリアフィルター（チップ式） */}
-      {areasProp && areasProp.length > 0 && (
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
-          AREA · エリア
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {areasProp.map((area) => {
-            const active = selectedArea === area.value;
-            const color = isLight ? "#007ab8" : "#00d4ff";
-            return (
-              <button
-                key={area.value}
-                onClick={() => handleFilter(area.value, selectedArea, setSelectedArea)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px", borderRadius: 999,
-                  cursor: "pointer",
-                  fontWeight: active ? 700 : 500, fontSize: 12.5,
-                  fontFamily: "var(--font)", transition: "all 0.15s",
-                  background: active ? color + "22" : "var(--bg-input)",
-                  border: "1.5px solid " + (active ? color : "var(--border)"),
-                  color: active ? color : "var(--text-secondary)",
-                }}
-              >
-                {area.label}
                 {active && <span style={{ opacity: 0.6, fontSize: 11 }}>✕</span>}
               </button>
             );
@@ -360,13 +322,12 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
           {sorted.length}件中 {Math.min((page - 1) * PER_PAGE + 1, sorted.length)}〜{Math.min(page * PER_PAGE, sorted.length)}件表示
           {selectedType && <span style={{ color: "var(--text-secondary)" }}> · {selectedType}</span>}
-          {selectedArea && <span style={{ color: "var(--text-secondary)" }}> · {selectedArea}エリア</span>}
           {searchQuery && <span style={{ color: "var(--text-secondary)" }}> · 「{searchQuery}」</span>}
           {favOnly && <span style={{ color: "#ffd700" }}> · お気に入り</span>}
           {openOnly && <span style={{ color: "var(--online)" }}> · 営業中</span>}
         </div>
         {hasFilter && (
-          <button onClick={() => { setSelectedType(""); setSelectedArea(""); setFavOnly(false); setOpenOnly(false); setSearchQuery(""); setPage(1); }} style={{
+          <button onClick={() => { setSelectedType(""); setFavOnly(false); setOpenOnly(false); setSearchQuery(""); setPage(1); }} style={{
             background: "none", border: "1px solid var(--border)", color: "var(--text-muted)",
             padding: "3px 10px", borderRadius: 10, fontSize: 11, cursor: "pointer",
             fontFamily: "var(--font)",
@@ -385,7 +346,7 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="店名・エリアで検索..."
+          placeholder="店名で検索..."
           style={{
             width: "100%", padding: "11px 40px 11px 40px",
             background: "var(--bg-input)", border: "1.5px solid var(--border)",

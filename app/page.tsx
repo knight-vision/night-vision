@@ -55,7 +55,7 @@ export default async function HomePage() {
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 20, flexWrap: "wrap" }}>
             {[
               { label: "掲載店舗", value: shops.length, unit: "件" },
-              { label: "掲載エリア", value: CITIES.length, unit: "都市" },
+              { label: "掲載都市", value: CITIES.length, unit: "都市" },
               { label: "出勤中", value: onTotal, unit: "名" },
             ].map((s) => (
               <div key={s.label} style={{
@@ -71,10 +71,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 掲載エリアから探す */}
+        {/* 掲載地域から探す */}
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 12 }}>
-            エリアから探す
+            地域から探す
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {CITIES.map(city => (

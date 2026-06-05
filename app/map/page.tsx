@@ -5,7 +5,7 @@ import { getCitiesByPrefecture } from "@/lib/cities";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "エリアから探す｜NIGHT VISION",
+  title: "地域から探す｜NIGHT VISION",
   description: "都道府県からナイトライフ情報を探す。全国のラウンジ・ガールズバー・スナック情報。",
 };
 
@@ -16,7 +16,7 @@ export default function MapPage() {
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 80px" }}>
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>エリアから探す</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>地域から探す</h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>都道府県を選んでください</p>
           <p style={{ fontSize: 11, color: "var(--accent)", marginTop: 6 }}>● = 掲載店舗あり</p>
         </div>

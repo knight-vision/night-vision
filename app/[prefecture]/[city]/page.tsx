@@ -37,9 +37,6 @@ export default async function CityPage({ params }: Props) {
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
   const genres = getGenresForPrefecture(params.prefecture);
 
-  // ShopList用のエリア一覧を動的に生成
-  const areaOptions = city.areas.map(a => ({ label: `📍 ${a.name}`, value: a.name }));
-
   const cityName = city.displayName || city.name;
   const pageUrl = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}`;
 
@@ -105,7 +102,6 @@ export default async function CityPage({ params }: Props) {
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
             {[
               { label: "掲載店舗", value: shops.length, unit: "件" },
-              { label: "エリア", value: city.areas.length, unit: "区域" },
               { label: "出勤中", value: onCount, unit: "名" },
             ].map(s => (
               <div key={s.label} style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "8px 16px", textAlign: "center" }}>
@@ -129,21 +125,10 @@ export default async function CityPage({ params }: Props) {
           ))}
         </div>
 
-        {/* エリアナビ */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-          {city.areas.map(a => (
-            <Link key={a.key} href={`/${city.prefectureKey}/${city.key}/area/${a.key}`} style={{
-              padding: "6px 14px", borderRadius: 20, fontSize: 12,
-              background: "var(--bg-input)", border: "1px solid var(--border)",
-              color: "var(--text-muted)", textDecoration: "none",
-            }}>📍 {a.name}</Link>
-          ))}
-        </div>
-
         {/* 店舗一覧（検索・並び替え付き） */}
         {shops.length === 0
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
-          : <ShopList shops={shops} areas={areaOptions} />
+          : <ShopList shops={shops} />
         }
       </main>
     </>

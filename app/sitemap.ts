@@ -25,7 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // 都市・業種・エリアページ
+  // 都市・業種ページ
   const cityUrls: MetadataRoute.Sitemap = [];
   for (const city of CITIES) {
     const prefKey = city.prefectureKey;
@@ -42,13 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       cityUrls.push({
         url: `${BASE}/${prefKey}/${cityKey}/${g.key}`,
         lastModified: now, changeFrequency: "daily", priority: 0.85,
-      });
-    }
-    // 都市×エリア
-    for (const a of city.areas) {
-      cityUrls.push({
-        url: `${BASE}/${prefKey}/${cityKey}/area/${a.key}`,
-        lastModified: now, changeFrequency: "daily", priority: 0.8,
       });
     }
     // 都道府県トップ

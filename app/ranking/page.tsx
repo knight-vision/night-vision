@@ -10,7 +10,6 @@ type ShopRank = {
   slug: string;
   name: string;
   type: string;
-  area_category: string;
   area: string;
   city?: string;
   open_hour: string;
@@ -67,7 +66,7 @@ export default function RankingPage() {
   async function fetchAllShops(): Promise<ShopRank[]> {
     let q = supabase
       .from("shops")
-      .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
+      .select("id, slug, name, type, area, city, open_hour, image, favorite_count, page_views")
       .order("plan", { ascending: false })
       .order("id");
     if (cityFilter) q = (q as any).eq("city", cityFilter);
@@ -82,7 +81,7 @@ export default function RankingPage() {
         const col = rankType === "favorite" ? "favorite_count" : "page_views";
         let q = supabase
           .from("shops")
-          .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
+          .select("id, slug, name, type, area, city, open_hour, image, favorite_count, page_views")
           .order(col, { ascending: false })
           .order("id");
         if (cityFilter) q = (q as any).eq("city", cityFilter);
@@ -124,7 +123,7 @@ export default function RankingPage() {
 
         const { data: shopData } = await supabase
           .from("shops")
-          .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
+          .select("id, slug, name, type, area, city, open_hour, image, favorite_count, page_views")
           .in("id", topIds);
 
         const result = (shopData ?? [])
@@ -137,7 +136,7 @@ export default function RankingPage() {
           const existingIds = new Set(result.map((s) => s.id));
           let eq = supabase
             .from("shops")
-            .select("id, slug, name, type, area_category, area, city, open_hour, image, favorite_count, page_views")
+            .select("id, slug, name, type, area, city, open_hour, image, favorite_count, page_views")
             .not("id", "in", `(${[...existingIds].join(",") || 0})`)
             .order("plan", { ascending: false })
             .order("id");
@@ -287,7 +286,7 @@ export default function RankingPage() {
                           background: tc.bg, border: "1px solid " + tc.border, color: tc.text,
                         }}>{shop.type}</span>
                         <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                          {shop.area_category ?? shop.area}
+                          {shop.area}
                         </span>
                       </div>
                       <div style={{ color: "var(--text-primary)", fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>

@@ -31,7 +31,6 @@ export type Shop = {
   name: string;
   type: "スナック" | "ガールズバー" | "ラウンジ" | "カジュアルバー";
   area: string;
-  area_category: string;
   city: string;
   prefecture: string;
   budget: string;
@@ -115,16 +114,6 @@ export async function getShopsByCityAndType(city: string, dbType: string): Promi
     .order("id");
   if (error) return [];
   return (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city);
-}
-
-// 都市別・エリア別取得
-export async function getShopsByCityAndArea(city: string, areaName: string): Promise<Shop[]> {
-  const { data: shops, error } = await supabase
-    .from("shops")
-    .select("*, casts(*)")
-    .order("id");
-  if (error) return [];
-  return (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city && s.area_category === areaName);
 }
 
 // 都市別全店取得

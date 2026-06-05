@@ -118,7 +118,6 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, #0f0f1a, transparent)" }} />
           <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6 }}>
             <span style={cardTagStyle(tc.text)}>{shop.type}</span>
-            <span style={cardTagStyle("#c4a8f0")}>{shop.area_category ?? shop.area}</span>
           </div>
           {openStatus === true && <span style={openBadgeStyle(true)}>● 営業中</span>}
           {openStatus === false && <span style={openBadgeStyle(false)}>○ 営業時間外</span>}
@@ -131,17 +130,13 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
       )}
 
       <div style={{ padding: 16, position: "relative" }}>
-        {/* ジャンル・エリア・営業状態の行（写真なし店舗用） */}
+        {/* ジャンル・営業状態の行（写真なし店舗用） */}
         {!hasBanner && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 999,
               background: tc.bg, border: `1px solid ${tc.border}55`, color: tc.text,
             }}>{shop.type}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 999,
-              background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)",
-            }}>{shop.area_category ?? shop.area}</span>
             {openStatus === true && (
               <span style={{ fontSize: 11, fontWeight: 700, color: "#9be8b4", display: "inline-flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#9be8b4", boxShadow: "0 0 6px #9be8b4" }} />営業中
@@ -163,9 +158,6 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
             </div>
             {shop.open_hour && (
               <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 3 }}>{shop.open_hour}</div>
-            )}
-            {shop.area && (
-              <div style={{ color: "var(--text-hint)", fontSize: 11, marginTop: 2 }}>📍 {shop.area}</div>
             )}
           </div>
           <div style={{ flexShrink: 0, marginLeft: 8 }}>

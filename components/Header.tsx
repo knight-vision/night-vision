@@ -14,7 +14,7 @@ export default function Header() {
   const prefKey = segments[0];
   const cityKey = segments[1];
 
-  const genreKeys = ["lounge","girls-bar","snack","casual-bar","area"];
+  const genreKeys = ["lounge","girls-bar","snack","casual-bar"];
   const cityConfig = (prefKey && cityKey && !genreKeys.includes(cityKey))
     ? getCityByPrefecture(prefKey, cityKey) : null;
 
@@ -44,21 +44,19 @@ export default function Header() {
   const currentCity = (prefKey2 && cityKey2 && !genreKeys.includes(cityKey2))
     ? getCityByPrefecture(prefKey2, cityKey2) : null;
 
-  // 都市コンテキストがあるページ専用のメニュー項目（業種・エリア）
+  // 都市コンテキストがあるページ専用のメニュー項目（業種別）
   const cityScopedItems = currentCity ? (() => {
     const basePref = currentCity.prefectureKey;
     const baseCity = currentCity.key;
     const menuGenres = getGenresForPrefecture(basePref);
-    const menuAreas = currentCity.areas;
     return [
       { label: "📋 店舗一覧", href: `/${basePref}/${baseCity}` },
       ...menuGenres.map(g => ({ label: `${g.englishLabel.includes("LOUNGE") || g.englishLabel.includes("CABARET") ? "🥂" : g.englishLabel.includes("GIRLS") ? "🍹" : g.englishLabel.includes("SNACK") ? "🍶" : "🍸"} ${g.name}`, href: `/${basePref}/${baseCity}/${g.key}` })),
-      ...menuAreas.filter(a => a.key !== "other").map(a => ({ label: `📍 ${a.name}エリア`, href: `/${basePref}/${baseCity}/area/${a.key}` })),
     ];
   })() : [];
 
   const menuItems = [
-    { label: "🗾 エリアから探す", href: "/map" },
+    { label: "🗾 地域から探す", href: "/map" },
     ...cityScopedItems,
     { label: "⭐ ランキング", href: "/ranking" },
     { label: "📝 店舗会員登録はこちら", href: "/for-owners" },

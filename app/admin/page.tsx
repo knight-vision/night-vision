@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/shops";
 import { PREFECTURES, REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
-import { CITIES } from "@/lib/cities";
 
 
 
@@ -28,7 +27,6 @@ type Shop = {
   name: string;
   type: string;
   area: string;
-  area_category: string;
   budget: string;
   open_hour: string;
   tel: string;
@@ -52,7 +50,7 @@ type Cast = {
 };
 
 const EMPTY_SHOP: Partial<Shop> = {
-  slug: "", name: "", type: "スナック", area: "", area_category: "",
+  slug: "", name: "", type: "スナック", area: "",
   budget: "", open_hour: "", tel: "", description: "", instagram: "",
   plan: "free", referred: false, closed_days: "", seats: 0,
 };
@@ -780,37 +778,6 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>エリア区分</label>
-                    {(() => {
-                      const cityKey = (editShop as any).city;
-                      const cityCfg = CITIES.find(c => c.key === cityKey);
-                      if (cityCfg) {
-                        return (
-                          <select
-                            value={editShop.area_category ?? ""}
-                            onChange={e => setEditShop({ ...editShop, area_category: e.target.value })}
-                            style={inputStyle}
-                          >
-                            <option value="">選択してください</option>
-                            {cityCfg.areas.map(a => (
-                              <option key={a.key} value={a.name}>{a.name}</option>
-                            ))}
-                          </select>
-                        );
-                      }
-                      // CITIESに未登録の都市は自由入力
-                      return (
-                        <input
-                          type="text"
-                          value={editShop.area_category ?? ""}
-                          onChange={e => setEditShop({ ...editShop, area_category: e.target.value })}
-                          placeholder="例：すすきの、駅前など"
-                          style={inputStyle}
-                        />
-                      );
-                    })()}
-                  </div>
-                  <div>
                     <label style={labelStyle}>業種 *</label>
                     <select value={editShop.type ?? "スナック"} onChange={(e) => setEditShop({ ...editShop, type: e.target.value })} style={inputStyle}>
                       <option>ラウンジ</option>
@@ -910,7 +877,7 @@ export default function AdminPage() {
                     </div>
                     <div style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2 }}>
                       {(shop as any).prefecture && <span style={{ marginRight: 6 }}>📍 {(shop as any).prefecture} {(shop as any).city}</span>}
-                      {shop.type} · {shop.area_category} · {shop.plan}
+                      {shop.type} · {shop.plan}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

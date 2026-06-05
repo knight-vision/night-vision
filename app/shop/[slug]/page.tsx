@@ -66,24 +66,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const shop = await getShopBySlug(params.slug);
   if (!shop) return {};
-  const area = shop.area_category ?? shop.area ?? "";
   const cityName = ((shop as any).city ? cityKeyToName((shop as any).city) : null) || (shop as any).prefecture || "";
   const castNames = (shop.casts ?? []).slice(0, 3).map((c: any) => c.name).join("・");
-  const desc = `${shop.name}は${cityName}${area}エリアにある${shop.type}です。` +
+  const desc = `${shop.name}は${cityName}にある${shop.type}です。` +
     (shop.description ? shop.description.slice(0, 80) : "") +
     `営業時間：${shop.open_hour ?? ""}。` +
     (shop.budget ? `予算：${shop.budget}。` : "") +
     (castNames ? `在籍キャスト：${castNames}など。` : "") +
     `${cityName}${shop.type}をお探しならナイトビジョンで。`;
   return {
-    title: `${shop.name}｜${cityName}${area}の${shop.type}【公式情報】`,
+    title: `${shop.name}｜${cityName}の${shop.type}【公式情報】`,
     description: desc.slice(0, 160),
     keywords: [
       shop.name,
       `${cityName} ${shop.name}`,
-      `${area} ${shop.name}`,
       `${cityName} ${shop.type}`,
-      `${cityName} ${area} ${shop.type}`,
       `${shop.name} ${cityName}`,
       `${shop.name} ${shop.type}`,
       `${shop.name} 営業時間`,
@@ -93,7 +90,7 @@ export async function generateMetadata({
       `${cityName} 夜遊び ${shop.type}`,
     ],
     openGraph: {
-      title: `${shop.name}｜${cityName}${area}の${shop.type}`,
+      title: `${shop.name}｜${cityName}の${shop.type}`,
       description: desc.slice(0, 100),
       url: "https://www.night-vision.jp/shop/" + shop.slug,
       siteName: "NIGHT VISION",
@@ -253,9 +250,6 @@ export default async function ShopPage({ params }: { params: { slug: string } })
               padding: "3px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
               border: `1px solid ${tc.border}`, color: tc.text, background: tc.border + "18",
             }}>{shop.type}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", background: "var(--bg-input)", padding: "3px 10px", borderRadius: 20 }}>
-              {shop.area_category ?? shop.area}
-            </span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>

@@ -17,9 +17,10 @@ const nextConfig = {
       { source: "/lounge",      destination: "/hokkaido/kushiro/lounge",      permanent: true },
       { source: "/snack",       destination: "/hokkaido/kushiro/snack",       permanent: true },
       { source: "/casual-bar",  destination: "/hokkaido/kushiro/casual-bar",  permanent: true },
-      { source: "/area/suehiro", destination: "/hokkaido/kushiro/area/suehiro", permanent: true },
-      { source: "/area/aikoku",  destination: "/hokkaido/kushiro/area/aikoku",  permanent: true },
-      { source: "/area/:slug",   destination: "/hokkaido/kushiro/area/:slug",   permanent: true },
+      // 旧エリアURL（廃止済み）→ 釧路の都市トップへ集約
+      { source: "/area/:slug*", destination: "/hokkaido/kushiro", permanent: true },
+      { source: "/hokkaido/kushiro/area/:slug*", destination: "/hokkaido/kushiro", permanent: true },
+      { source: "/:pref/:city/area/:slug*", destination: "/:pref/:city", permanent: true },
     ];
   },
 };

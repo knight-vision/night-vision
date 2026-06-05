@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const genre = getGenre(params.genre);
   if (!city || !genre) return {};
   const title = `${city.name}の${genre.name}一覧｜料金・出勤情報｜NIGHT VISION`;
-  const description = `${city.name}の${genre.name}を${city.areas.length}エリアで検索。キャスト・料金・本日の出勤情報を毎日更新。`;
+  const description = `${city.name}の${genre.name}を検索。キャスト・料金・本日の出勤情報を毎日更新。`;
   const url = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/${genre.key}`;
   return {
     title, description,
@@ -35,7 +35,6 @@ export default async function CityGenrePage({ params }: Props) {
   const shops = await getShopsByCityAndType(city.key, genre.dbType);
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
   const genres = getGenresForPrefecture(params.prefecture);
-  const areaOptions = city.areas.map(a => ({ label: `📍 ${a.name}`, value: a.name }));
 
   return (
     <>
@@ -81,7 +80,7 @@ export default async function CityGenrePage({ params }: Props) {
 
         {shops.length === 0
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
-          : <ShopList shops={shops} areas={areaOptions} defaultType={genre.dbType} hideTypeFilter={true} />
+          : <ShopList shops={shops} defaultType={genre.dbType} hideTypeFilter={true} />
         }
       </main>
     </>
