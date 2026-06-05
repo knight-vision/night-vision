@@ -37,6 +37,8 @@ export default function FavoriteButton({ shopId, size = 20 }: { shopId: number; 
   return (
     <button
       onClick={handleClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
       title={active ? "お気に入り解除" : "お気に入り登録"}
       style={{
         background: active ? "#ffd70022" : "var(--bg-input)",

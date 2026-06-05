@@ -87,49 +87,70 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
   const desc = shop.description || DEFAULT_DESC[shop.type] || "";
   const bg = BG_GRADIENTS[shop.type] ?? "";
 
+  // 遷移はonPointerUpでタップ判定して実行する。
+  // scale変形でonClickがキャンセルされるiOS Safariの挙動を回避するため、
+  // ルート要素は動かさず、変形は内側ラッパー(.card-inner)にかける。
+  const navigate = () => router.push("/shop/" + shop.slug);
+  const downPos = { x: 0, y: 0, moved: false };
+  const setInnerTransform = (el: HTMLElement, v: string) => {
+    const inner = el.querySelector<HTMLElement>("[data-card-inner]");
+    if (inner) inner.style.transform = v;
+  };
+
   return (
     <div
-      onClick={() => router.push("/shop/" + shop.slug)}
       role="link"
       tabIndex={0}
       style={{
-        background: "var(--bg-card)",
-        border: `1px solid ${tc.border}22`,
         borderRadius: 16,
         cursor: "pointer",
-        overflow: "hidden",
-        boxShadow: `var(--card-shadow), 0 4px 20px ${tc.border}10`,
-        transition: "transform 0.12s ease, box-shadow 0.18s ease",
         position: "relative",
         WebkitTapHighlightColor: "transparent",
         touchAction: "manipulation",
       }}
-      // ホバー演出はマウス（細かいポインタ）のみ。タッチではhover扱いにせず1タップで遷移させる。
+      // ホバー演出はマウスのみ。
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow = `var(--card-shadow-hover), 0 8px 32px ${tc.border}20`;
+        setInnerTransform(e.currentTarget, "translateY(-2px)");
       }}
       onPointerLeave={(e) => {
         if (e.pointerType !== "mouse") return;
-        e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
+        setInnerTransform(e.currentTarget, "");
       }}
-      // 押下フィードバック（沈み込み）。タッチ／マウス両対応で「効いた感」を出す。
       onPointerDown={(e) => {
-        e.currentTarget.style.transform = "scale(0.975)";
-        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 2px 10px ${tc.border}10`;
-        // iOS SafariはVibration API非対応のため、対応端末でのみ軽い触感を付与
+        downPos.x = e.clientX; downPos.y = e.clientY; downPos.moved = false;
+        setInnerTransform(e.currentTarget, "scale(0.975)");
         if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
           navigator.vibrate(8);
         }
       }}
+      onPointerMove={(e) => {
+        // スクロール（指の移動）はタップとみなさない
+        if (Math.abs(e.clientX - downPos.x) > 10 || Math.abs(e.clientY - downPos.y) > 10) {
+          downPos.moved = true;
+        }
+      }}
       onPointerUp={(e) => {
-        e.currentTarget.style.transform = e.pointerType === "mouse" ? "translateY(-2px)" : "";
+        setInnerTransform(e.currentTarget, e.pointerType === "mouse" ? "translateY(-2px)" : "");
+        if (!downPos.moved) navigate();
       }}
       onPointerCancel={(e) => {
-        e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = `var(--card-shadow), 0 4px 20px ${tc.border}10`;
+        downPos.moved = true;
+        setInnerTransform(e.currentTarget, "");
+      }}
+      // キーボード操作・フォールバック用
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(); } }}
+    >
+    <div
+      data-card-inner
+      style={{
+        background: "var(--bg-card)",
+        border: `1px solid ${tc.border}22`,
+        borderRadius: 16,
+        overflow: "hidden",
+        boxShadow: `var(--card-shadow), 0 4px 20px ${tc.border}10`,
+        transition: "transform 0.12s ease, box-shadow 0.18s ease",
+        position: "relative",
       }}
     >
       <div style={{ position: "absolute", inset: 0, background: "var(--card-glow, " + bg + ")", pointerEvents: "none", borderRadius: 16 }} />
@@ -231,6 +252,8 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
               style={{ fontSize: 11, color: "var(--accent2)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -241,6 +264,7 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
