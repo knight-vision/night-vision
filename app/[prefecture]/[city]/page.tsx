@@ -7,7 +7,9 @@ import { getCityByPrefecture, PREFECTURE_NAMES, getGenresForPrefecture } from "@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+// 店舗一覧は頻繁には変わらないため60秒ISRでキャッシュ配信（サーバー往復削減・表示高速化）。
+// 出勤状況(on_today)も最大60秒遅れで反映されるが、日単位の情報なので実用上問題ない。
+export const revalidate = 60;
 
 type Props = { params: { prefecture: string; city: string } };
 

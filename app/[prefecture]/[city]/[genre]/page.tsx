@@ -8,7 +8,8 @@ import { getGenreSeo } from "@/lib/seo-content";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+// 店舗一覧は頻繁には変わらないため60秒ISRでキャッシュ配信（サーバー往復削減・表示高速化）。
+export const revalidate = 60;
 
 type Props = { params: { prefecture: string; city: string; genre: string } };
 

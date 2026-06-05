@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -106,7 +107,7 @@ export async function getShopsByType(type: string): Promise<Shop[]> {
 }
 
 // 都市別・業種別取得
-export async function getShopsByCityAndType(city: string, dbType: string): Promise<Shop[]> {
+async function getShopsByCityAndType_inner(city: string, dbType: string): Promise<Shop[]> {
   const { data: shops, error } = await supabase
     .from("shops")
     .select("*, casts(*)")
@@ -116,8 +117,15 @@ export async function getShopsByCityAndType(city: string, dbType: string): Promi
   return (shops as Shop[]).filter((s: any) => !s.hidden && (s.city || "kushiro") === city);
 }
 
+// 60秒キャッシュ（一覧ページのISRを実効化）。出勤状況は最大60秒遅れで反映。
+export const getShopsByCityAndType = unstable_cache(
+  getShopsByCityAndType_inner,
+  ["shops-by-city-and-type"],
+  { revalidate: 60 }
+);
+
 // 都市別全店取得
-export async function getShopsByCity(city: string): Promise<Shop[]> {
+async function getShopsByCity_inner(city: string): Promise<Shop[]> {
   const { data: shops, error } = await supabase
     .from("shops")
     .select("*, casts(*)")
@@ -138,6 +146,13 @@ export async function getShopsByCity(city: string): Promise<Shop[]> {
     return { ...shop, photos };
   });
 }
+
+// 60秒キャッシュ（一覧ページのISRを実効化）。
+export const getShopsByCity = unstable_cache(
+  getShopsByCity_inner,
+  ["shops-by-city"],
+  { revalidate: 60 }
+);
 
 export async function getShopBySlug(slug: string): Promise<Shop | null> {
   const { data: shop, error } = await supabase
