@@ -16,14 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  // キャストページ
-  const { data: casts } = await supabase.from("casts").select("id, created_at");
-  const castUrls = (casts ?? []).map(c => ({
-    url: `${BASE}/cast/${c.id}`,
-    lastModified: c.created_at ? new Date(c.created_at) : now,
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
+  // ※ キャストページ（/cast/[id]）は現状コンテンツが薄くnoindex化しているため
+  //   サイトマップには含めない。コンテンツ充実後に復活させる。
 
   // 都市・業種ページ
   const cityUrls: MetadataRoute.Sitemap = [];
@@ -71,6 +65,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/hokkaido/kushiro/snack`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     ...dedupedCityUrls,
     ...shopUrls,
-    ...castUrls,
   ];
 }

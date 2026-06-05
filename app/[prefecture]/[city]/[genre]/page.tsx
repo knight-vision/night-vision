@@ -4,6 +4,7 @@ import ShopList from "@/components/ShopList";
 import Link from "next/link";
 import { getShopsByCityAndType } from "@/lib/shops";
 import { getCityByPrefecture, getGenre, PREFECTURE_NAMES, getGenresForPrefecture } from "@/lib/cities";
+import { getGenreSeo } from "@/lib/seo-content";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -46,8 +47,58 @@ export default async function CityGenrePage({ params }: Props) {
   const prefName = PREFECTURE_NAMES[params.prefecture] || params.prefecture;
   const genres = getGenresForPrefecture(params.prefecture);
 
+  const cityName = city.displayName || city.name;
+  const pageUrl = `https://www.night-vision.jp/${city.prefectureKey}/${city.key}/${genre.key}`;
+  const areaNames = city.areas.filter(a => a.key !== "other").map(a => a.name);
+  const areaText = areaNames.join("・");
+
+  // SEO本文・FAQ
+  const seo = getGenreSeo(genre.key);
+  const seoCtx = { cityName, prefecture: city.prefecture, genreName: genre.name, areaText, shopCount: shops.length };
+  const seoParagraphs = seo ? seo.paragraphs(seoCtx) : [];
+  const faqItems = seo ? seo.faq(seoCtx) : [];
+
+  // 構造化データ（パンくず・FAQ・店舗リスト）
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "TOP", item: "https://www.night-vision.jp" },
+          { "@type": "ListItem", position: 2, name: prefName, item: `https://www.night-vision.jp/${params.prefecture}` },
+          { "@type": "ListItem", position: 3, name: cityName, item: `https://www.night-vision.jp/${city.prefectureKey}/${city.key}` },
+          { "@type": "ListItem", position: 4, name: genre.name, item: pageUrl },
+        ],
+      },
+      ...(faqItems.length > 0 ? [{
+        "@type": "FAQPage",
+        mainEntity: faqItems.map(f => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      }] : []),
+      ...(shops.length > 0 ? [{
+        "@type": "ItemList",
+        name: `${cityName}の${genre.name}一覧`,
+        numberOfItems: shops.length,
+        itemListElement: shops.slice(0, 30).map((s, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          url: `https://www.night-vision.jp/shop/${(s as any).slug}`,
+          name: s.name,
+        })),
+      }] : []),
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -92,6 +143,41 @@ export default async function CityGenrePage({ params }: Props) {
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
           : <ShopList shops={shops} defaultType={genre.dbType} hideTypeFilter={true} />
         }
+
+        {/* SEO本文（独自説明文） */}
+        {seoParagraphs.length > 0 && (
+          <section style={{ marginTop: 40, borderTop: "1px solid var(--border)", paddingTop: 28 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", marginBottom: 14 }}>
+              {cityName}の{genre.name}について
+            </h2>
+            {seoParagraphs.map((p, i) => (
+              <p key={i} style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 2, marginBottom: 14 }}>
+                {p}
+              </p>
+            ))}
+          </section>
+        )}
+
+        {/* FAQ */}
+        {faqItems.length > 0 && (
+          <section style={{ marginTop: 28 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", marginBottom: 14 }}>
+              よくある質問
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {faqItems.map((f, i) => (
+                <div key={i} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+                    Q. {f.q}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                    A. {f.a}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <OwnerCTA />
     </>

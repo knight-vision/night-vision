@@ -158,6 +158,24 @@ export default async function CityPage({ params }: Props) {
             夜のお店情報を掲載しています。
           </p>
         )}
+
+        {/* 都市名つき内部リンク（SEO・アンカーテキスト最適化） */}
+        <nav style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 20 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, fontWeight: 700, letterSpacing: "0.1em" }}>
+            {cityName}の夜のお店を業種から探す
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {genres.map(g => (
+              <Link key={g.key} href={`/${city.prefectureKey}/${city.key}/${g.key}`} style={{
+                fontSize: 12.5, color: "var(--accent)", textDecoration: "none",
+                padding: "8px 10px", background: "var(--bg-card)",
+                border: "1px solid var(--border)", borderRadius: 8,
+              }}>
+                {cityName}の{g.name}
+              </Link>
+            ))}
+          </div>
+        </nav>
       </main>
       <OwnerCTA />
     </>

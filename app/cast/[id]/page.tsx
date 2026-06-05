@@ -35,6 +35,10 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title: cast.name + "｜" + cast.shops.name,
     description: cast.name + "は釧路の" + cast.shops.name + "に在籍しています。" + cast.comment,
     alternates: { canonical: "https://www.night-vision.jp/cast/" + params.id },
+    // キャストページは現状コンテンツが薄いため検索インデックスから除外し、
+    // クロール予算を業種・店舗ページに集中させる。
+    // 将来コンテンツが充実したらこのrobots設定を外せばインデックス対象に戻せる。
+    robots: { index: false, follow: true },
   };
 }
 
