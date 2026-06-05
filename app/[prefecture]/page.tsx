@@ -31,12 +31,25 @@ export default function PrefecturePage({ params }: Props) {
   const pref = getPrefecture(params.prefecture);
   if (!pref) notFound();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "TOP", item: "https://www.night-vision.jp" },
+      { "@type": "ListItem", position: 2, name: pref.name, item: `https://www.night-vision.jp/${pref.key}` },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 80px" }}>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, display: "flex", gap: 6 }}>
-          <Link href="/map" style={{ color: "var(--text-muted)", textDecoration: "none" }}>エリア一覧</Link>
+          <Link href="/map" style={{ color: "var(--text-muted)", textDecoration: "none" }}>地域一覧</Link>
           <span>›</span>
           <span>{pref.name}</span>
         </div>

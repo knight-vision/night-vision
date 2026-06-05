@@ -466,12 +466,37 @@ export default async function ShopPage({ params }: { params: { slug: string } })
           </div>
         )}
 
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          "@context": "https://schema.org", "@type": ["BarOrPub", "LocalBusiness"],
-          name: shop.name, description: shop.description,
-          address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: ((shop as any).city ? cityKeyToName((shop as any).city) : null) || (shop as any).city || "釧路市", addressRegion: (shop as any).prefecture || "北海道", addressCountry: "JP" },
-          url: `https://www.night-vision.jp/shop/${shop.slug}`, telephone: shop.tel, openingHours: shop.open_hour, priceRange: shop.budget,
-        })}} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify((() => {
+          // SNSアカウントをURL化（@username形式・URL形式の両方に対応）
+          const toIgUrl = (v: string | null) => v ? (v.startsWith("http") ? v : `https://www.instagram.com/${v.replace(/^@/, "")}`) : null;
+          const toXUrl = (v: string | null) => v ? (v.startsWith("http") ? v : `https://x.com/${v.replace(/^@/, "")}`) : null;
+          const toTtUrl = (v: string | null) => v ? (v.startsWith("http") ? v : `https://www.tiktok.com/@${v.replace(/^@/, "")}`) : null;
+          const sameAs = [toIgUrl(shop.instagram), toXUrl(shop.x_account), toTtUrl(shop.tiktok_account)].filter(Boolean);
+          // 業種に応じた schema.org タイプ
+          const typeMap: Record<string, string> = { スナック: "BarOrPub", ガールズバー: "BarOrPub", ラウンジ: "NightClub", カジュアルバー: "BarOrPub" };
+          const bizType = typeMap[shop.type] || "BarOrPub";
+          // 掲載写真（バナー優先、なければicon）
+          const images = (shop.photos && shop.photos.length > 0 ? shop.photos : [shop.image].filter(Boolean)) as string[];
+
+          const data: any = {
+            "@context": "https://schema.org", "@type": [bizType, "LocalBusiness"],
+            name: shop.name, description: shop.description,
+            address: { "@type": "PostalAddress", streetAddress: shop.area, addressLocality: ((shop as any).city ? cityKeyToName((shop as any).city) : null) || (shop as any).city || "釧路市", addressRegion: (shop as any).prefecture || "北海道", addressCountry: "JP" },
+            url: `https://www.night-vision.jp/shop/${shop.slug}`, telephone: shop.tel, openingHours: shop.open_hour, priceRange: shop.budget,
+          };
+          if (images.length > 0) data.image = images;
+          if (sameAs.length > 0) data.sameAs = sameAs;
+          // お気に入り数は「お気に入り登録のインタラクション数」として正しく表現する
+          // （実レビューがないのにaggregateRatingで星評価を捏造するのはペナルティ対象のため使わない）
+          if (shop.favorite_count && shop.favorite_count > 0) {
+            data.interactionStatistic = {
+              "@type": "InteractionCounter",
+              interactionType: "https://schema.org/LikeAction",
+              userInteractionCount: shop.favorite_count,
+            };
+          }
+          return data;
+        })()) }} />
       </main>
     </div>
   );

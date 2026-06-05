@@ -35,6 +35,18 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "NIGHT VISION",
+          alternateName: "ナイトビジョン",
+          url: "https://www.night-vision.jp",
+          logo: "https://www.night-vision.jp/icon-512.png",
+          description: "全国のキャバクラ・ガールズバー・スナック・ラウンジ情報を掲載するナイトライフガイド。",
+        }) }}
+      />
       <Header />
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 60px" }}>
         <section style={{ textAlign: "center", padding: "32px 0 28px" }}>
