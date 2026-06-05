@@ -30,12 +30,6 @@ const TYPES = [
   { label: "🍺 その他",               value: "その他",        dark: "#aaaaaa", light: "#666666" },
 ];
 
-const AREAS = [
-  { label: "📍 末広",   value: "末広",  dark: "#ff6b9d", light: "#cc2266" },
-  { label: "📍 愛国",   value: "愛国",  dark: "#00d4ff", light: "#007ab8" },
-  { label: "📍 その他", value: "その他", dark: "#aaaaaa", light: "#666666" },
-];
-
 const PER_PAGE = 20;
 
 export default function ShopList({ shops, areas: areasProp, defaultType, hideTypeFilter }: {
