@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 
 type Props = {
   photos: string[];
@@ -17,9 +18,9 @@ export default function PhotoViewer({ photos, shopName }: Props) {
         {/* 1枚目はメインバナー */}
         <div
           onClick={() => setLightbox(photos[0])}
-          style={{ borderRadius: 16, overflow: "hidden", marginBottom: photos.length > 1 ? 8 : 0, height: 220, cursor: "zoom-in" }}
+          style={{ position: "relative", borderRadius: 16, overflow: "hidden", marginBottom: photos.length > 1 ? 8 : 0, height: 220, cursor: "zoom-in" }}
         >
-          <img src={photos[0]} alt={shopName + "の写真"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <Image src={photos[0]} alt={shopName + "の写真"} fill sizes="(max-width: 680px) 100vw, 680px" priority style={{ objectFit: "cover" }} />
         </div>
 
         {/* 2枚目以降はスライダー */}
@@ -29,9 +30,9 @@ export default function PhotoViewer({ photos, shopName }: Props) {
               <div
                 key={i}
                 onClick={() => setLightbox(photo)}
-                style={{ flexShrink: 0, width: 200, height: 140, borderRadius: 12, overflow: "hidden", scrollSnapAlign: "start", cursor: "zoom-in" }}
+                style={{ position: "relative", flexShrink: 0, width: 200, height: 140, borderRadius: 12, overflow: "hidden", scrollSnapAlign: "start", cursor: "zoom-in" }}
               >
-                <img src={photo} alt={shopName + "の写真" + (i + 2)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <Image src={photo} alt={shopName + "の写真" + (i + 2)} fill sizes="200px" style={{ objectFit: "cover" }} />
               </div>
             ))}
           </div>

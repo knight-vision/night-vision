@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Image from "next/image";
 import { supabase } from "@/lib/shops";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -74,7 +75,7 @@ export default async function CastPage({ params }: { params: { id: string } }) {
             border: "2px solid var(--accent)44",
           }}>
             {iconPhoto
-              ? <img src={iconPhoto} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ? <Image src={iconPhoto} alt={cast.name} width={100} height={100} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : "👩"}
           </div>
 

@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Image from "next/image";
 import { getAllSlugs, getShopBySlug, supabase } from "@/lib/shops";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -349,7 +350,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                       display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
                     }}>
                       {(cast as any).icon_photo
-                        ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ? <Image src={(cast as any).icon_photo} alt={cast.name} fill sizes="200px" style={{ objectFit: "cover" }} />
                         : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
                       <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>本日出勤</div>
                     </div>
@@ -441,7 +442,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                       display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
                     }}>
                       {(cast as any).icon_photo
-                        ? <img src={(cast as any).icon_photo} alt={cast.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ? <Image src={(cast as any).icon_photo} alt={cast.name} fill sizes="200px" style={{ objectFit: "cover" }} />
                         : <span style={{ fontSize: 48, opacity: 0.4 }}>👩</span>}
                       {cast.on_today === true && (
                         <div style={{ position: "absolute", top: 8, right: 8, background: "var(--online)", borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>本日出勤</div>

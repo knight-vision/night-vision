@@ -3,6 +3,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      // Supabaseストレージの画像をnext/imageで最適化（WebP変換・遅延読み込み・リサイズ）
+      { protocol: "https", hostname: "*.supabase.co" },
+    ],
+  },
   async redirects() {
     return [
       // wwwなしをwwwありにリダイレクト

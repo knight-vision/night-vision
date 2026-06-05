@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import { supabase } from "@/lib/shops";
 import { CITIES } from "@/lib/cities";
 import Link from "next/link";
+import Image from "next/image";
 
 type ShopRank = {
   id: number;
@@ -273,7 +274,7 @@ export default function RankingPage() {
                       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                     }}>
                       {shop.image
-                        ? <img src={shop.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ? <Image src={shop.image} alt={shop.name + "のサムネイル"} width={44} height={44} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : TYPE_EMOJI[shop.type] ?? "🍺"
                       }
                     </div>

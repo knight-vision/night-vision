@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { Shop } from "@/lib/shops";
 import { canUsePremium } from "@/lib/plan";
 import FavoriteButton from "./FavoriteButton";
@@ -147,7 +148,13 @@ export default function ShopCard({ shop, tweet }: { shop: Shop; tweet?: { messag
       {/* バナー写真：プレミアム・プロのみ */}
       {hasBanner && (
         <div style={{ position: "relative", width: "100%", height: 150, overflow: "hidden" }}>
-          <img src={shop.image ?? ""} alt={shop.name + "の店内"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <Image
+            src={shop.image ?? ""}
+            alt={shop.name + "の店内"}
+            fill
+            sizes="(max-width: 680px) 100vw, 680px"
+            style={{ objectFit: "cover" }}
+          />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, background: "linear-gradient(to top, #0f0f1a, transparent)" }} />
           <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6 }}>
             <span style={cardTagStyle(tc.text)}>{shop.type}</span>

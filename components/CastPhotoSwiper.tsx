@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function CastPhotoSwiper({ photos, castName }: { photos: string[]; castName: string }) {
   const [current, setCurrent] = useState(0);
@@ -15,10 +16,12 @@ export default function CastPhotoSwiper({ photos, castName }: { photos: string[]
 
       {/* メイン写真 */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", background: "#0a0a14" }}>
-        <img
+        <Image
           src={photos[current]}
           alt={`${castName} ${current + 2}枚目`}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          fill
+          sizes="(max-width: 680px) 100vw, 680px"
+          style={{ objectFit: "cover" }}
         />
         {photos.length > 1 && (
           <>
@@ -62,10 +65,11 @@ export default function CastPhotoSwiper({ photos, castName }: { photos: string[]
         <div style={{ display: "flex", gap: 4, padding: "8px 12px 12px", overflowX: "auto" }}>
           {photos.map((url, i) => (
             <div key={i} onClick={() => setCurrent(i)} style={{
+              position: "relative",
               width: 56, height: 56, borderRadius: 8, overflow: "hidden", flexShrink: 0,
               cursor: "pointer", border: `2px solid ${i === current ? "var(--accent)" : "transparent"}`,
             }}>
-              <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <Image src={url} alt={`${castName} サムネイル${i + 1}`} fill sizes="56px" style={{ objectFit: "cover" }} />
             </div>
           ))}
         </div>
