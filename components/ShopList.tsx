@@ -164,7 +164,7 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
   return (
     <div>
 
-      {/* ジャンルフィルター */}
+      {/* ジャンルフィルター（チップ式） */}
       {!hideTypeFilter && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
@@ -179,22 +179,26 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
                 key={type.value}
                 onClick={() => handleFilter(type.value, selectedType, setSelectedType)}
                 style={{
-                  flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
-                  textAlign: "center", cursor: "pointer",
-                  fontWeight: active ? 700 : 500, fontSize: 12,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px", borderRadius: 999,
+                  cursor: "pointer",
+                  fontWeight: active ? 700 : 500, fontSize: 12.5,
                   fontFamily: "var(--font)", transition: "all 0.15s",
-                  background: active ? color + "20" : "var(--bg-input)",
+                  background: active ? color + "22" : "var(--bg-input)",
                   border: "1.5px solid " + (active ? color : "var(--border)"),
                   color: active ? color : "var(--text-secondary)",
                 }}
-              >{type.label}</button>
+              >
+                {type.label}
+                {active && <span style={{ opacity: 0.6, fontSize: 11 }}>✕</span>}
+              </button>
             );
           })}
         </div>
       </div>
       )}
 
-      {/* エリアフィルター */}
+      {/* エリアフィルター（チップ式） */}
       {areasProp && areasProp.length > 0 && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.15em", marginBottom: 8, fontWeight: 700 }}>
@@ -209,15 +213,19 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
                 key={area.value}
                 onClick={() => handleFilter(area.value, selectedArea, setSelectedArea)}
                 style={{
-                  flex: 1, minWidth: 80, padding: "10px 8px", borderRadius: 12,
-                  textAlign: "center", cursor: "pointer",
-                  fontWeight: active ? 700 : 500, fontSize: 12,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px", borderRadius: 999,
+                  cursor: "pointer",
+                  fontWeight: active ? 700 : 500, fontSize: 12.5,
                   fontFamily: "var(--font)", transition: "all 0.15s",
-                  background: active ? color + "20" : "var(--bg-input)",
+                  background: active ? color + "22" : "var(--bg-input)",
                   border: "1.5px solid " + (active ? color : "var(--border)"),
                   color: active ? color : "var(--text-secondary)",
                 }}
-              >{area.label}</button>
+              >
+                {area.label}
+                {active && <span style={{ opacity: 0.6, fontSize: 11 }}>✕</span>}
+              </button>
             );
           })}
         </div>
@@ -225,39 +233,55 @@ export default function ShopList({ shops, areas: areasProp, defaultType, hideTyp
       )}
 
 {/* お気に入り・営業中フィルター・並び替え */}
-<div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <button
-          onClick={() => { setFavOnly(!favOnly); setPage(1); }}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "8px 18px", borderRadius: 20, cursor: "pointer",
-            fontWeight: favOnly ? 700 : 500, fontSize: 13,
-            fontFamily: "var(--font)", transition: "all 0.15s",
-            background: favOnly ? "#ffd70022" : "var(--bg-input)",
-            border: "1.5px solid " + (favOnly ? "#ffd700" : "var(--border)"),
-            color: favOnly ? "#ffd700" : "var(--text-secondary)",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill={favOnly ? "#ffd700" : "none"} stroke={favOnly ? "#ffd700" : "currentColor"} strokeWidth="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-          お気に入りのみ
-        </button>
+<div style={{ marginBottom: 20, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <button
           onClick={() => { setOpenOnly(!openOnly); setPage(1); }}
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "8px 18px", borderRadius: 20, cursor: "pointer",
-            fontWeight: openOnly ? 700 : 500, fontSize: 13,
-            fontFamily: "var(--font)", transition: "all 0.15s",
-            background: openOnly ? "var(--online-bg)" : "var(--bg-input)",
-            border: "1.5px solid " + (openOnly ? "var(--online)" : "var(--border)"),
-            color: openOnly ? "var(--online)" : "var(--text-secondary)",
+            padding: "6px 4px", borderRadius: 20, cursor: "pointer",
+            fontSize: 13, fontFamily: "var(--font)", background: "none", border: "none",
+            fontWeight: openOnly ? 700 : 500,
+            color: openOnly ? "var(--text-primary)" : "var(--text-muted)",
           }}
         >
-          <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: openOnly ? "var(--online)" : "var(--border-hover)" }} />
+          <span style={{
+            width: 36, height: 20, borderRadius: 999, position: "relative",
+            background: openOnly ? "var(--online)" : "var(--border)",
+            transition: "all 0.2s", flexShrink: 0, display: "inline-block",
+          }}>
+            <span style={{
+              position: "absolute", top: 2, left: openOnly ? 18 : 2,
+              width: 16, height: 16, borderRadius: "50%", background: "#fff",
+              transition: "all 0.2s",
+            }} />
+          </span>
           現在営業中のみ
         </button>
+        <button
+          onClick={() => { setFavOnly(!favOnly); setPage(1); }}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "6px 4px", borderRadius: 20, cursor: "pointer",
+            fontSize: 13, fontFamily: "var(--font)", background: "none", border: "none",
+            fontWeight: favOnly ? 700 : 500,
+            color: favOnly ? "var(--text-primary)" : "var(--text-muted)",
+          }}
+        >
+          <span style={{
+            width: 36, height: 20, borderRadius: 999, position: "relative",
+            background: favOnly ? "#ffd700" : "var(--border)",
+            transition: "all 0.2s", flexShrink: 0, display: "inline-block",
+          }}>
+            <span style={{
+              position: "absolute", top: 2, left: favOnly ? 18 : 2,
+              width: 16, height: 16, borderRadius: "50%", background: "#fff",
+              transition: "all 0.2s",
+            }} />
+          </span>
+          お気に入りのみ
+        </button>
+
+        <div style={{ width: 1, height: 22, background: "var(--border)" }} />
 
         {/* 並び替え */}
         <div style={{ position: "relative" }}>
