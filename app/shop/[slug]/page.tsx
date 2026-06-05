@@ -126,7 +126,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
   if (!shop) return null;
 
   // 非公開店舗はオーナー管理画面へリダイレクト
-  if (shop.is_active === false) {
+  if ((shop as any).is_active === false) {
     redirect('/owner/login');
   }
 
