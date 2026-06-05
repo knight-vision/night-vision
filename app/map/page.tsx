@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import { REGION_ORDER, getPrefecturesByRegion } from "@/lib/japan";
+import { getCitiesByPrefecture } from "@/lib/cities";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function MapPage() {
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", marginBottom: 8 }}>エリアから探す</h1>
           <p style={{ fontSize: 13, color: "var(--text-muted)" }}>都道府県を選んでください</p>
+          <p style={{ fontSize: 11, color: "var(--accent)", marginTop: 6 }}>● = 掲載店舗あり</p>
         </div>
         {REGION_ORDER.map(regionName => {
           const prefs = regions[regionName];
@@ -27,15 +29,21 @@ export default function MapPage() {
                 {regionName}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {prefs.map(pref => (
-                  <Link key={pref.key} href={`/${pref.key}`} style={{
-                    padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 500,
-                    border: "1px solid var(--border)", background: "var(--bg-input)",
-                    color: "var(--text-secondary)", textDecoration: "none",
-                  }}>
-                    {pref.name}
-                  </Link>
-                ))}
+                {prefs.map(pref => {
+                  const hasContent = getCitiesByPrefecture(pref.key).length > 0;
+                  return (
+                    <Link key={pref.key} href={`/${pref.key}`} style={{
+                      padding: "8px 16px", borderRadius: 20, fontSize: 13,
+                      fontWeight: hasContent ? 700 : 500,
+                      border: "1px solid " + (hasContent ? "var(--accent)" : "var(--border)"),
+                      background: hasContent ? "var(--accent)15" : "var(--bg-input)",
+                      color: hasContent ? "var(--accent)" : "var(--text-muted)",
+                      textDecoration: "none",
+                    }}>
+                      {pref.name}{hasContent ? " ●" : ""}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           );

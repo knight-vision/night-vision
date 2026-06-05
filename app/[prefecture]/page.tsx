@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import { getPrefecture } from "@/lib/japan";
-import { getCity } from "@/lib/cities";
+import { getCity, getCityByPrefecture } from "@/lib/cities";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -48,15 +48,30 @@ export default function PrefecturePage({ params }: Props) {
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {pref.cities.map(city => (
-            <Link key={city.key} href={`/${pref.key}/${city.key}`} style={{
-              padding: "9px 18px", borderRadius: 20, fontSize: 13, fontWeight: 500,
-              border: "1px solid var(--border)", background: "var(--bg-input)",
-              color: "var(--text-secondary)", textDecoration: "none",
-            }}>
-              {city.name}
-            </Link>
-          ))}
+          {pref.cities.map(city => {
+            const configured = !!getCityByPrefecture(pref.key, city.key);
+            if (configured) {
+              return (
+                <Link key={city.key} href={`/${pref.key}/${city.key}`} style={{
+                  padding: "9px 18px", borderRadius: 20, fontSize: 13, fontWeight: 500,
+                  border: "1px solid var(--border)", background: "var(--bg-input)",
+                  color: "var(--text-secondary)", textDecoration: "none",
+                }}>
+                  {city.name}
+                </Link>
+              );
+            }
+            // 未掲載の市区町村（準備中）
+            return (
+              <span key={city.key} style={{
+                padding: "9px 18px", borderRadius: 20, fontSize: 13, fontWeight: 500,
+                border: "1px dashed var(--border)", background: "transparent",
+                color: "var(--text-hint)", cursor: "default",
+              }}>
+                {city.name}<span style={{ fontSize: 10, marginLeft: 4 }}>準備中</span>
+              </span>
+            );
+          })}
         </div>
       </main>
     </>

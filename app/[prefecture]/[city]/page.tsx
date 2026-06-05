@@ -105,7 +105,7 @@ export default async function CityPage({ params }: Props) {
         {/* 店舗一覧（検索・並び替え付き） */}
         {shops.length === 0
           ? <p style={{ color: "var(--text-hint)", fontSize: 14, textAlign: "center", padding: "40px 0" }}>現在掲載中の店舗はありません。</p>
-          : <ShopList shops={shops} />
+          : <ShopList shops={shops} areas={areaOptions} />
         }
       </main>
     </>
