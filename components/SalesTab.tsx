@@ -28,19 +28,38 @@ type DailySales = { id?: string; date: string; cash_sales: number; card_sales: n
 type CastSale = { id?: string; cast_id: number; date: string; sales_type: string; amount: number; count: number; memo: string };
 type ConfirmedShift = { cast_id: number; date: string; start_time: string; end_time: string };
 type Allowance = { cast_id: number; date: string; amount: number; label: string };
-type ShopMenu = { id: string; name: string; price: number };
+// 品目カテゴリ: 伝票入力時にこのカテゴリでバック率が自動適用される
+type MenuCategory = "honshimei" | "baai" | "douhan" | "bottle" | "drink" | "none";
+type BackType = "fixed" | "rate" | "none";
+type ShopMenu = {
+  id: string; name: string; price: number;
+  category?: MenuCategory;
+  back_type?: BackType;
+  back_value?: number; // fixedなら円、rateなら0〜1の率
+};
 type SlipItem = { name: string; qty: number; price: number };
 type SlipCast = { cast_id: string; type: string };
 
+// カテゴリの表示ラベルと、デフォルトのバック方式
+const MENU_CATEGORIES: { key: MenuCategory; label: string; defaultBackType: BackType }[] = [
+  { key: "honshimei", label: "本指名料", defaultBackType: "fixed" },
+  { key: "baai",      label: "場内指名", defaultBackType: "fixed" },
+  { key: "douhan",    label: "同伴料",   defaultBackType: "fixed" },
+  { key: "bottle",    label: "ボトル",   defaultBackType: "rate" },
+  { key: "drink",     label: "ドリンク", defaultBackType: "rate" },
+  { key: "none",      label: "対象外",   defaultBackType: "none" },
+];
+const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(MENU_CATEGORIES.map(c => [c.key, c.label]));
+
 const DEFAULT_PRESETS: ShopMenu[] = [
-  { id: "p1", name: "セット料金", price: 3000 },
-  { id: "p2", name: "ビール", price: 800 },
-  { id: "p3", name: "ハイボール", price: 800 },
-  { id: "p4", name: "ソフトドリンク", price: 600 },
-  { id: "p5", name: "シャンパン（モエ）", price: 35000 },
-  { id: "p6", name: "場内指名料", price: 1000 },
-  { id: "p7", name: "同伴料", price: 2000 },
-  { id: "p8", name: "延長料", price: 3000 },
+  { id: "p1", name: "セット料金", price: 3000, category: "none", back_type: "none", back_value: 0 },
+  { id: "p2", name: "ビール", price: 800, category: "none", back_type: "none", back_value: 0 },
+  { id: "p3", name: "ハイボール", price: 800, category: "drink", back_type: "rate", back_value: 0.1 },
+  { id: "p4", name: "ソフトドリンク", price: 600, category: "drink", back_type: "rate", back_value: 0.1 },
+  { id: "p5", name: "シャンパン（モエ）", price: 35000, category: "bottle", back_type: "rate", back_value: 0.1 },
+  { id: "p6", name: "場内指名料", price: 1000, category: "baai", back_type: "fixed", back_value: 500 },
+  { id: "p7", name: "同伴料", price: 2000, category: "douhan", back_type: "fixed", back_value: 1000 },
+  { id: "p8", name: "延長料", price: 3000, category: "none", back_type: "none", back_value: 0 },
 ];
 const SHIMEI_TYPES = ["フリー", "場内指名", "本指名", "同伴", "アフター", "出張"];
 
@@ -124,6 +143,34 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [editingId, setEditingId] = useState<string|null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editCategory, setEditCategory] = useState<MenuCategory>("none");
+  const [editBackType, setEditBackType] = useState<BackType>("none");
+  const [editBackValue, setEditBackValue] = useState("");
+  const [showMenuManager, setShowMenuManager] = useState(false);
+
+  // 品名マスタの編集を開始
+  const startEditMenu = (m: ShopMenu) => {
+    setEditingId(m.id);
+    setEditName(m.name);
+    setEditPrice(String(m.price));
+    setEditCategory((m.category as MenuCategory) || "none");
+    setEditBackType((m.back_type as BackType) || "none");
+    // rateは0〜1で保存されているので、編集時は%表示(×100)にする
+    setEditBackValue(m.back_type === "rate" ? String(Math.round((m.back_value || 0) * 100)) : String(m.back_value || 0));
+  };
+
+  // 品名マスタの編集を保存
+  const saveEditMenu = async () => {
+    if (!editingId) return;
+    // rateなら%(0〜100)を0〜1に戻す。fixedはそのまま円
+    const backValueStored = editBackType === "rate" ? (Number(editBackValue) || 0) / 100 : (Number(editBackValue) || 0);
+    await fetch("/api/shop-menus", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: editingId, name: editName, price: Number(editPrice) || 0, category: editCategory, back_type: editBackType, back_value: backValueStored }),
+    });
+    setEditingId(null);
+    await loadMenus();
+  };
 
   const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
   const slipTax = Math.floor(slipSubtotal*TAX_RATE);
@@ -142,7 +189,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
       if (missing.length > 0) {
         await Promise.all(missing.map((p, i) =>
           fetch("/api/shop-menus", { method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, sort_order: i }) })
+            body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, category: p.category, back_type: p.back_type, back_value: p.back_value, sort_order: i }) })
         ));
         const res2 = await fetch(`/api/shop-menus?shop_id=${shopId}`);
         if (res2.ok) setShopMenus(await res2.json());
@@ -501,6 +548,68 @@ ${rows.map(({ cast, d, dayRows }) => `
             </div>
           ))}
           <button onClick={()=>setSlipCasts([...slipCasts,{cast_id:"",type:"フリー"}])} style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",marginBottom:14}}>＋ キャストを追加</button>
+
+          {/* 品名マスタ管理（カテゴリ・バック率設定） */}
+          <div style={{marginBottom:14}}>
+            <button onClick={()=>setShowMenuManager(v=>!v)} style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,color:"var(--text-secondary)",fontSize:12.5,cursor:"pointer",fontFamily:"var(--font)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span>⚙️ 品名マスタ設定（カテゴリ・バック率）</span>
+              <span style={{color:"var(--text-muted)"}}>{showMenuManager?"閉じる ▲":"開く ▼"}</span>
+            </button>
+            {showMenuManager && (
+              <div style={{border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px",padding:"12px",background:"var(--bg-card)"}}>
+                <p style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.7,margin:"0 0 10px"}}>
+                  各品目にカテゴリとバックを設定すると、伝票入力時に自動でバックが計算されます。指名・同伴は固定額、ボトル・ドリンクは料金に対する％です。
+                </p>
+                {allPresets.map(m=>(
+                  <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"8px 0"}}>
+                    {editingId===m.id ? (
+                      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"grid",gridTemplateColumns:"2fr 90px",gap:6}}>
+                          <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="品目名" style={inp}/>
+                          <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} placeholder="単価" style={{...inp,textAlign:"right"}}/>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                          <select value={editCategory} onChange={e=>{
+                            const cat = e.target.value as MenuCategory;
+                            setEditCategory(cat);
+                            // カテゴリに応じてデフォルトのバック方式を自動セット
+                            const def = MENU_CATEGORIES.find(c=>c.key===cat)?.defaultBackType || "none";
+                            setEditBackType(def);
+                          }} style={inp}>
+                            {MENU_CATEGORIES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}
+                          </select>
+                          <select value={editBackType} onChange={e=>setEditBackType(e.target.value as BackType)} style={inp}>
+                            <option value="none">バックなし</option>
+                            <option value="fixed">固定額（円）</option>
+                            <option value="rate">料金の％</option>
+                          </select>
+                        </div>
+                        {editBackType!=="none" && (
+                          <input type="number" value={editBackValue} onChange={e=>setEditBackValue(e.target.value)} placeholder={editBackType==="rate"?"バック率（％）例: 10":"バック額（円）例: 500"} style={inp}/>
+                        )}
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={saveEditMenu} style={{flex:1,padding:"7px",background:"var(--accent)",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>保存</button>
+                          <button onClick={()=>setEditingId(null)} style={{flex:1,padding:"7px",background:"transparent",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>キャンセル</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{minWidth:0}}>
+                          <span style={{fontSize:13,color:"var(--text-secondary)"}}>{m.name}</span>
+                          <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:8}}>
+                            {CATEGORY_LABEL[m.category||"none"]}
+                            {m.back_type==="fixed" && ` ・バック¥${(m.back_value||0).toLocaleString()}`}
+                            {m.back_type==="rate" && ` ・バック${Math.round((m.back_value||0)*100)}%`}
+                          </span>
+                        </div>
+                        <button onClick={()=>startEditMenu(m)} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginLeft:8}}>編集</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* 品目 */}
           <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:8,letterSpacing:"0.08em"}}>注文品目</div>
