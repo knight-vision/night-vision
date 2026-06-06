@@ -33,6 +33,7 @@ type ShopMenu = {
   id: string; name: string; price: number;
   back_type?: BackType;
   back_value?: number; // fixedなら円、rateなら0〜1の率
+  is_default?: boolean; // 伝票入力時に最初から表示するか
 };
 // 品目の担当キャスト配分（複数キャストで割合配分、合計100%）
 type ItemAllocation = { cast_id: string; type: string; pct: number };
@@ -179,6 +180,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [editPrice, setEditPrice] = useState("");
   const [editBackType, setEditBackType] = useState<BackType>("none");
   const [editBackValue, setEditBackValue] = useState("");
+  const [editIsDefault, setEditIsDefault] = useState(false);
   const [showMenuManager, setShowMenuManager] = useState(false);
 
   // 品名マスタの編集を開始
@@ -187,6 +189,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     setEditName(m.name);
     setEditPrice(String(m.price));
     setEditBackType((m.back_type as BackType) || "none");
+    setEditIsDefault(!!m.is_default);
     // rateは0〜1で保存されているので、編集時は%表示(×100)にする
     setEditBackValue(m.back_type === "rate" ? String(Math.round((m.back_value || 0) * 100)) : String(m.back_value || 0));
   };
@@ -198,7 +201,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     const backValueStored = editBackType === "rate" ? (Number(editBackValue) || 0) / 100 : (Number(editBackValue) || 0);
     await fetch("/api/shop-menus", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: editingId, name: editName, price: Number(editPrice) || 0, back_type: editBackType, back_value: backValueStored }),
+      body: JSON.stringify({ id: editingId, name: editName, price: Number(editPrice) || 0, back_type: editBackType, back_value: backValueStored, is_default: editIsDefault }),
     });
     setEditingId(null);
     await loadMenus();
@@ -258,6 +261,19 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   }, [shopId]);
 
   useEffect(() => { loadMenus(); }, [loadMenus]);
+
+  // 品名マスタ読み込み後、新規入力で品目が空ならデフォルト品目を反映
+  useEffect(() => {
+    if (editingSlipId) return; // 編集中は触らない
+    const defaults = shopMenus.filter(m => m.is_default);
+    if (defaults.length === 0) return;
+    // 品目が初期状態（1行・未入力）のときだけ差し替え
+    setSlipItems(prev => {
+      const isEmpty = prev.length === 1 && !prev[0].name && !prev[0].price;
+      if (!isEmpty) return prev;
+      return defaults.map(m => ({ name:m.name, qty:1, price:m.price, menu_id:m.id, back_type:m.back_type||"none", back_value:m.back_value||0 }));
+    });
+  }, [shopMenus, editingSlipId]);
   useEffect(() => { loadTodaySlips(slipDate); }, [slipDate, loadTodaySlips]);
   useEffect(() => {
     if (initialView === "cast_sales") loadSales(month);
@@ -310,11 +326,25 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
         const newSlipId = savedSlip?.id || savedSlip?.[0]?.id || null;
 
         // 品目ごとの配分から、キャスト売上と配分明細を生成
+        // 上部キャスト欄で有効なキャスト（cast_idあり）
+        const validCasts = slipCasts.filter(c => c.cast_id);
         // 各キャストの (sales_type別) 売上・バックを集計
         type Agg = { sales: number; back: number; type: string };
         const castAgg: Record<string, Agg> = {};
         for (const item of slipItems) {
-          const allocs = (item.allocations || []).filter(a => a.cast_id);
+          // この品目の担当配分を決める：
+          //  - 品目に個別配分(allocations)があればそれを使う（複数キャスト時）
+          //  - なければ上部キャスト欄にフォールバック
+          //    * 1人なら その人に100%
+          //    * 複数人なら 均等割
+          let allocs = (item.allocations || []).filter(a => a.cast_id);
+          if (allocs.length === 0 && validCasts.length > 0) {
+            const base = Math.floor(100 / validCasts.length);
+            allocs = validCasts.map((c, k) => ({
+              cast_id: c.cast_id, type: c.type,
+              pct: k === validCasts.length - 1 ? 100 - base * (validCasts.length - 1) : base,
+            }));
+          }
           if (allocs.length === 0) continue;
           const itemSales = item.qty * item.price;
           const itemBack = itemBackTotal(item);
@@ -322,7 +352,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
             const ratio = a.pct / 100;
             const allocSales = Math.round(itemSales * ratio);
             const allocBack = Math.round(itemBack * ratio);
-            // 指名種別は伝票のキャスト欄から引く（同じキャストの指名種別）
+            // 指名種別は上部キャスト欄から引く（同じキャストの指名種別）
             const castEntry = slipCasts.find(sc => String(sc.cast_id) === String(a.cast_id));
             const stype = castEntry ? (SHIMEI_TO_SALES_TYPE[castEntry.type] || "free") : "free";
             // slip_allocations に1行ずつ記録
@@ -354,8 +384,15 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     setSlipSaving(false);
   };
 
+  // 伝票入力フォームの初期品目（is_defaultの品名を最初から並べる）
+  const buildInitialItems = useCallback((): SlipItem[] => {
+    const defaults = shopMenus.filter(m => m.is_default);
+    if (defaults.length === 0) return [{ name:"", qty:1, price:0 }];
+    return defaults.map(m => ({ name:m.name, qty:1, price:m.price, menu_id:m.id, back_type:m.back_type||"none", back_value:m.back_value||0 }));
+  }, [shopMenus]);
+
   const resetForm = () => {
-    setSlipItems([{name:"",qty:1,price:0}]);
+    setSlipItems(buildInitialItems());
     setSlipCasts([{cast_id:"",type:"フリー"}]);
     setPayment("現金"); setSlipMemo(""); setEditingSlipId(null);
   };
@@ -626,6 +663,10 @@ ${rows.map(({ cast, d, dayRows }) => `
                         {editBackType!=="none" && (
                           <input type="number" value={editBackValue} onChange={e=>setEditBackValue(e.target.value)} placeholder={editBackType==="rate"?"バック率（％）例: 10":"バック額（円）例: 500"} style={inp}/>
                         )}
+                        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"var(--text-secondary)",cursor:"pointer",padding:"2px 0"}}>
+                          <input type="checkbox" checked={editIsDefault} onChange={e=>setEditIsDefault(e.target.checked)} style={{width:16,height:16,cursor:"pointer"}}/>
+                          伝票入力時に最初から表示する（セット料金など）
+                        </label>
                         <div style={{display:"flex",gap:6}}>
                           <button onClick={saveEditMenu} style={{flex:1,padding:"7px",background:"var(--accent)",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>保存</button>
                           <button onClick={()=>setEditingId(null)} style={{flex:1,padding:"7px",background:"transparent",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>キャンセル</button>
@@ -639,6 +680,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                             {m.back_type==="fixed" && `バック¥${(m.back_value||0).toLocaleString()}`}
                             {m.back_type==="rate" && `バック${Math.round((m.back_value||0)*100)}%`}
                             {(!m.back_type||m.back_type==="none") && "バックなし"}
+                            {m.is_default && <span style={{marginLeft:6,color:"var(--accent)"}}>・最初から表示</span>}
                           </span>
                         </div>
                         <button onClick={()=>startEditMenu(m)} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginLeft:8}}>編集</button>
@@ -663,7 +705,9 @@ ${rows.map(({ cast, d, dayRows }) => `
               <div style={{display:"grid",gridTemplateColumns:"2fr 72px 110px",gap:8}}>
                 <div>
                   <label style={labelStyle}>品目名</label>
-                  <input value={item.name} onChange={e=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:e.target.value}:x))} placeholder="品目を入力" style={inp}/>
+                  <div style={{...inp,display:"flex",alignItems:"center",color:item.name?"var(--text)":"var(--text-muted)",minHeight:38}}>
+                    {item.name || "上のボタンから選択"}
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>数量</label>
@@ -682,9 +726,24 @@ ${rows.map(({ cast, d, dayRows }) => `
                 {slipItems.length>1&&<button onClick={()=>setSlipItems(slipItems.filter((_,idx)=>idx!==i))} style={{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:13}}>削除</button>}
               </div>
 
-              {/* 担当キャスト配分 */}
-              <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)"}}>
-                {(item.allocations||[]).map((a,ai)=>{
+              {/* 担当キャスト配分（上部キャストが2人以上のときだけ品目別に割り当て） */}
+              {(() => {
+                const validCastCount = slipCasts.filter(c=>c.cast_id).length;
+                if (validCastCount <= 1) {
+                  // 1人のときは全品目を自動でそのキャストに紐付け（UIは案内のみ）
+                  const only = slipCasts.find(c=>c.cast_id);
+                  const name = only ? (casts.find(cc=>String(cc.id)===String(only.cast_id))?.name || "") : "";
+                  return (
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)",fontSize:11,color:"var(--text-muted)"}}>
+                      {name ? `この品目は「${name}」の担当になります` : "上部でキャストを選ぶと、この品目が担当になります"}
+                    </div>
+                  );
+                }
+                // 2人以上：品目ごとに担当を割り当て
+                return (
+                <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)"}}>
+                  <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:6}}>この品目の担当（複数なら割合で配分）</div>
+                  {(item.allocations||[]).map((a,ai)=>{
                   const allocBack = Math.round(itemBackTotal(item)*(a.pct/100));
                   const allocSales = Math.round(item.qty*item.price*(a.pct/100));
                   return (
@@ -712,10 +771,12 @@ ${rows.map(({ cast, d, dayRows }) => `
                     </div>
                   );
                 })}
-                <button onClick={()=>{
-                  setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:evenAllocations([...(x.allocations||[]),{cast_id:"",type:"フリー",pct:0}])}:x));
-                }} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,padding:"2px 0",display:"inline-flex",alignItems:"center",gap:4}}>＋ 担当キャストを追加</button>
-              </div>
+                  <button onClick={()=>{
+                    setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:evenAllocations([...(x.allocations||[]),{cast_id:"",type:"フリー",pct:0}])}:x));
+                  }} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,padding:"2px 0",display:"inline-flex",alignItems:"center",gap:4}}>＋ 担当キャストを追加</button>
+                </div>
+                );
+              })()}
             </div>
           ))}
           <button onClick={()=>setSlipItems([...slipItems,{name:"",qty:1,price:0}])} style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",marginBottom:14}}>＋ 品目を追加</button>
@@ -741,7 +802,7 @@ ${rows.map(({ cast, d, dayRows }) => `
           </div>
 
           <button onClick={saveSlip} disabled={slipSaving} style={{...btnPrimary as any,background:slipSaved?"linear-gradient(135deg,#059669,#10b981)":"linear-gradient(135deg,var(--accent),var(--accent2))"}}>
-            {slipSaved?"✓ 完了":slipSaving?"保存中...":editingSlipId?"✏️ 伝票を更新する":"伝票を保存する"}
+            {slipSaved?"✓ 保存しました":slipSaving?"保存中...":editingSlipId?"✏️ 伝票を更新する":"伝票を保存する"}
           </button>
           </div>{/* sec close */}
 
