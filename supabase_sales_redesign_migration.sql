@@ -23,9 +23,9 @@
 -- ------------------------------------------------------------
 -- 1. 品名マスタ(shop_menus)の拡張
 -- ------------------------------------------------------------
--- category: 品目カテゴリ。伝票入力時にこのカテゴリでバック率が自動適用される。
---   honshimei = 本指名料 / baai = 場内指名 / douhan = 同伴料
---   bottle    = ボトル   / drink = ドリンク / none  = 対象外(店舗売上のみ)
+-- ※ category列は当初カテゴリ分類用に追加したが、設計を見直し廃止。
+--    バックは品名ごとに back_type/back_value で個別設定する方式にしたため、
+--    category列は使わない（残っていても無害。NOT NULL DEFAULT 'none'）。
 -- back_type: バックの計算方式。 fixed=固定額 / rate=料金に対する% / none=なし
 -- back_value: back_typeがfixedなら金額(円)、rateなら率(0〜1, 例:0.10=10%)
 -- ------------------------------------------------------------
@@ -33,7 +33,6 @@ ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS category   TEXT    NOT NULL DEFA
 ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS back_type  TEXT    NOT NULL DEFAULT 'none';
 ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS back_value NUMERIC NOT NULL DEFAULT 0;
 
-COMMENT ON COLUMN shop_menus.category   IS '品目カテゴリ: honshimei/baai/douhan/bottle/drink/none';
 COMMENT ON COLUMN shop_menus.back_type  IS 'バック方式: fixed(固定額)/rate(料金に対する割合)/none';
 COMMENT ON COLUMN shop_menus.back_value IS 'fixedなら円、rateなら0〜1の率';
 
