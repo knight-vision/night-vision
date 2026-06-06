@@ -34,7 +34,15 @@ type ShopMenu = {
   back_type?: BackType;
   back_value?: number; // fixedなら円、rateなら0〜1の率
 };
-type SlipItem = { name: string; qty: number; price: number };
+// 品目の担当キャスト配分（複数キャストで割合配分、合計100%）
+type ItemAllocation = { cast_id: string; type: string; pct: number };
+type SlipItem = {
+  name: string; qty: number; price: number;
+  menu_id?: string;          // 品名マスタのID（手入力品目はundefined）
+  back_type?: BackType;      // バック方式（品名マスタから自動。手入力はnone）
+  back_value?: number;       // fixedなら円、rateなら0〜1
+  allocations?: ItemAllocation[]; // この品目を担当するキャストと配分%
+};
 type SlipCast = { cast_id: string; type: string };
 
 const DEFAULT_PRESETS: ShopMenu[] = [
@@ -67,6 +75,46 @@ const SALES_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   bottle: { label: "ボトルバック", icon: "🍾" },
   other: { label: "その他", icon: "📝" },
 };
+
+// 配分を均等割にする（端数は先頭に寄せる）
+function evenAllocations(allocs: ItemAllocation[]): ItemAllocation[] {
+  const n = allocs.length;
+  if (n === 0) return allocs;
+  const base = Math.floor(100 / n);
+  const result = allocs.map(a => ({ ...a, pct: base }));
+  result[0].pct += 100 - base * n;
+  return result;
+}
+
+// 1人のpctを変えたら残りを比率を保って連動再配分し、常に合計100%にする
+function redistributeAllocations(allocs: ItemAllocation[], changedIdx: number, newPct: number): ItemAllocation[] {
+  const n = allocs.length;
+  if (n === 1) return [{ ...allocs[0], pct: 100 }];
+  const v = Math.max(0, Math.min(100, Math.round(newPct)));
+  const result = allocs.map((a, i) => ({ ...a, pct: i === changedIdx ? v : a.pct }));
+  const others = result.filter((_, i) => i !== changedIdx);
+  const remain = 100 - v;
+  const othersOld = others.reduce((s, o) => s + o.pct, 0);
+  if (othersOld === 0) {
+    const base = Math.floor(remain / others.length);
+    others.forEach((o, k) => { o.pct = k === others.length - 1 ? remain - base * (others.length - 1) : base; });
+  } else {
+    let acc = 0;
+    others.forEach((o, k) => {
+      if (k === others.length - 1) o.pct = remain - acc;
+      else { o.pct = Math.round(remain * (o.pct / othersOld)); acc += o.pct; }
+    });
+  }
+  return result;
+}
+
+// 品目1つあたりのバック総額（数量込み・サービス料を含まない品目単価ベース）
+function itemBackTotal(item: SlipItem): number {
+  const gross = item.qty * item.price;
+  if (item.back_type === "fixed") return (item.back_value || 0) * item.qty;
+  if (item.back_type === "rate") return Math.round(gross * (item.back_value || 0));
+  return 0;
+}
 
 function getDateStr(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 function fmtDate(ds: string) { const d = new Date(ds+"T00:00:00"); return `${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`; }
@@ -254,30 +302,46 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
             card_sales:(existing?.card_sales||0)+(payment==="カード"?slipTotal:0),
             invoice_sales:0, cost:existing?.cost||0, memo:existing?.memo||"" }),
         });
-        // slipsテーブルに記録
-        await fetch("/api/slips", { method:"POST", headers:{"Content-Type":"application/json"},
+        // slipsテーブルに記録（保存したIDを受け取る）
+        const slipRes = await fetch("/api/slips", { method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ shop_id:shopId, date:slipDate, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
         });
-        // キャスト売上反映
-        for (const c of slipCasts) {
-          if (!c.cast_id) continue;
-          const salesType = SHIMEI_TO_SALES_TYPE[c.type] || null;
-          if (salesType) {
-            const fee = slipItems.find(i => i.name.includes("指名") || i.name.includes("同伴") || i.name.includes("アフター") || i.name.includes("出張"));
-            const amount = salesType === "free" ? 0
-              : fee ? fee.qty * fee.price
-              : (salesType === "honshimei" ? 16000 : salesType === "douhan" ? 5000 : salesType === "after" ? 3000 : 1000);
-            await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: salesType, amount, count: 1, memo: "" }) });
+        const savedSlip = slipRes.ok ? await slipRes.json() : null;
+        const newSlipId = savedSlip?.id || savedSlip?.[0]?.id || null;
+
+        // 品目ごとの配分から、キャスト売上と配分明細を生成
+        // 各キャストの (sales_type別) 売上・バックを集計
+        type Agg = { sales: number; back: number; type: string };
+        const castAgg: Record<string, Agg> = {};
+        for (const item of slipItems) {
+          const allocs = (item.allocations || []).filter(a => a.cast_id);
+          if (allocs.length === 0) continue;
+          const itemSales = item.qty * item.price;
+          const itemBack = itemBackTotal(item);
+          for (const a of allocs) {
+            const ratio = a.pct / 100;
+            const allocSales = Math.round(itemSales * ratio);
+            const allocBack = Math.round(itemBack * ratio);
+            // 指名種別は伝票のキャスト欄から引く（同じキャストの指名種別）
+            const castEntry = slipCasts.find(sc => String(sc.cast_id) === String(a.cast_id));
+            const stype = castEntry ? (SHIMEI_TO_SALES_TYPE[castEntry.type] || "free") : "free";
+            // slip_allocations に1行ずつ記録
+            if (newSlipId) {
+              await fetch("/api/slip-allocations", { method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ shop_id:shopId, slip_id:newSlipId, menu_id:item.menu_id||null, cast_id:Number(a.cast_id), date:slipDate, category:stype, item_name:item.name, share_ratio:ratio, allocated_sales:allocSales, allocated_back:allocBack }) });
+            }
+            // キャスト売上を集計（バックがある品目はバック額、なければ売上額を計上）
+            const key = a.cast_id;
+            if (!castAgg[key]) castAgg[key] = { sales: 0, back: 0, type: stype };
+            castAgg[key].sales += allocSales;
+            castAgg[key].back += allocBack;
           }
-          // ボトルバック（品目にボトル系があればキャストにバック）
-          const bottle = slipItems.find(i => i.name.includes("モエ") || i.name.includes("ドンペリ") || i.name.includes("シャンパン") || i.name.includes("シャン") || i.name.includes("ボトル"));
-          if (bottle) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "bottle", amount: Math.floor(bottle.qty * bottle.price * 0.1), count: 1, memo: `${bottle.name}(10%バック)` }) });
-          // ドリンクバック
-          const drink = slipItems.find(i => i.name.includes("ドリンク") || i.name.includes("乾杯"));
-          if (drink) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "drink", amount: Math.floor(drink.qty * drink.price * 0.1), count: drink.qty, memo: `${drink.name}(10%バック)` }) });
-          // ショットバック
-          const shot = slipItems.find(i => i.name.includes("ショット") || i.name.includes("テキーラ"));
-          if (shot) await fetch("/api/cast-sales", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, cast_id: Number(c.cast_id), date: slipDate, sales_type: "shot", amount: Math.floor(shot.qty * shot.price * 0.1), count: shot.qty, memo: `${shot.name}(10%バック)` }) });
+        }
+        // 集計をcast_salesに反映（バック総額をそのキャストの売上成績として計上）
+        for (const [castId, agg] of Object.entries(castAgg)) {
+          const amount = agg.back > 0 ? agg.back : agg.sales;
+          await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ shop_id:shopId, cast_id:Number(castId), date:slipDate, sales_type:agg.type, amount, count:1, memo:"" }) });
         }
         setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
       }
@@ -593,7 +657,7 @@ ${rows.map(({ cast, d, dayRows }) => `
               {/* プリセット */}
               <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
                 {allPresets.map(p=>(
-                  <button key={p.id} onClick={()=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:p.name,price:p.price}:x))} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,padding:"3px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>{p.name}</button>
+                  <button key={p.id} onClick={()=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:p.name,price:p.price,menu_id:p.id,back_type:p.back_type||"none",back_value:p.back_value||0}:x))} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,padding:"3px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>{p.name}</button>
                 ))}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"2fr 72px 110px",gap:8}}>
@@ -611,8 +675,46 @@ ${rows.map(({ cast, d, dayRows }) => `
                 </div>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
-                <span style={{color:"var(--accent)",fontSize:12,fontWeight:600}}>小計: ¥{(item.qty*item.price).toLocaleString()}</span>
+                <span style={{color:"var(--accent)",fontSize:12,fontWeight:600}}>小計: ¥{(item.qty*item.price).toLocaleString()}
+                  {item.back_type==="fixed" && <span style={{color:"var(--text-muted)",fontWeight:400,marginLeft:8}}>バック¥{((item.back_value||0)*item.qty).toLocaleString()}</span>}
+                  {item.back_type==="rate" && <span style={{color:"var(--text-muted)",fontWeight:400,marginLeft:8}}>バック{Math.round((item.back_value||0)*100)}% = ¥{itemBackTotal(item).toLocaleString()}</span>}
+                </span>
                 {slipItems.length>1&&<button onClick={()=>setSlipItems(slipItems.filter((_,idx)=>idx!==i))} style={{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:13}}>削除</button>}
+              </div>
+
+              {/* 担当キャスト配分 */}
+              <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)"}}>
+                {(item.allocations||[]).map((a,ai)=>{
+                  const allocBack = Math.round(itemBackTotal(item)*(a.pct/100));
+                  const allocSales = Math.round(item.qty*item.price*(a.pct/100));
+                  return (
+                    <div key={ai} style={{display:"grid",gridTemplateColumns:"1fr 130px 80px 24px",gap:6,alignItems:"center",marginBottom:6}}>
+                      <select value={a.cast_id} onChange={e=>{
+                        setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:(x.allocations||[]).map((y,yi)=>yi===ai?{...y,cast_id:e.target.value}:y)}:x));
+                      }} style={{...inp,fontSize:12}}>
+                        <option value="">キャスト選択</option>
+                        {casts.map(cc=><option key={cc.id} value={cc.id}>{cc.name}</option>)}
+                      </select>
+                      {(item.allocations||[]).length>1 ? (
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <input type="range" min={0} max={100} value={a.pct} onChange={e=>{
+                            setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:redistributeAllocations(x.allocations||[],ai,Number(e.target.value))}:x));
+                          }} style={{flex:1}}/>
+                          <span style={{fontSize:11,color:"var(--text-muted)",minWidth:30,textAlign:"right"}}>{a.pct}%</span>
+                        </div>
+                      ) : <span style={{fontSize:11,color:"var(--text-muted)",textAlign:"right"}}>100%</span>}
+                      <span style={{fontSize:11,color:item.back_type&&item.back_type!=="none"?"var(--success,#10b981)":"var(--text-muted)",textAlign:"right"}}>
+                        {item.back_type&&item.back_type!=="none"?`¥${allocBack.toLocaleString()}`:`¥${allocSales.toLocaleString()}`}
+                      </span>
+                      <button onClick={()=>{
+                        setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:evenAllocations((x.allocations||[]).filter((_,yi)=>yi!==ai))}:x));
+                      }} style={{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:14,padding:0}} aria-label="削除">✕</button>
+                    </div>
+                  );
+                })}
+                <button onClick={()=>{
+                  setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,allocations:evenAllocations([...(x.allocations||[]),{cast_id:"",type:"フリー",pct:0}])}:x));
+                }} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,padding:"2px 0",display:"inline-flex",alignItems:"center",gap:4}}>＋ 担当キャストを追加</button>
               </div>
             </div>
           ))}
