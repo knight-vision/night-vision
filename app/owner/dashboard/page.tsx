@@ -1158,7 +1158,7 @@ export default function OwnerDashboard() {
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {[
                 { key: "list", label: "👥 キャスト一覧" },
-                { key: "cast_sales", label: "⭐ 成績表" },
+                { key: "cast_sales", label: "⭐ キャスト売上" },
                 { key: "payroll", label: "💴 給与明細" },
               ].map(st => (
                 <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{

@@ -1004,59 +1004,26 @@ ${rows.map(({ cast, d, dayRows }) => `
                   const getColor = (id: number) => CAST_COLORS[casts.findIndex(c=>c.id===id) % CAST_COLORS.length];
                   return (
                     <div style={{...sectionStyle,marginBottom:0}}>
-                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:14}}>📊 キャスト売上比較</div>
+                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:14}}>📊 売上ランキング</div>
                       {castTotals.map((item, rank)=>{
                         const color = getColor(item.cast.id);
                         const pct = item.total / maxTotal * 100;
                         return (
-                          <div key={item.cast.id} style={{marginBottom:12}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                          <div key={item.cast.id} style={{marginBottom:14}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{fontSize:13,fontWeight:700,color:"var(--text-muted)",minWidth:20}}>{rank+1}位</span>
-                                <span style={{fontWeight:700,color:"var(--text-primary)",fontSize:14}}>{item.cast.name}</span>
+                                <span style={{fontSize:13,fontWeight:700,color:rank===0?"#ffd700":rank===1?"#c0c0c0":rank===2?"#cd7f32":"var(--text-muted)",minWidth:28}}>{rank+1}位</span>
+                                <span style={{fontWeight:700,color:"var(--text-primary)",fontSize:15}}>{item.cast.name}</span>
                               </div>
-                              <span style={{fontWeight:800,color,fontSize:14}}>¥{item.total.toLocaleString()}</span>
+                              <span style={{fontWeight:800,color:"var(--text-primary)",fontSize:15}}>¥{item.total.toLocaleString()}</span>
                             </div>
-                            {/* メインバー */}
-                            <div style={{background:"var(--bg-input)",borderRadius:6,height:12,overflow:"hidden",marginBottom:4}}>
-                              <div style={{height:"100%",borderRadius:6,background:color,width:`${pct}%`,transition:"width 0.4s"}}/>
-                            </div>
-                            {/* 内訳バー */}
-                            <div style={{display:"flex",gap:3,height:5,borderRadius:3,overflow:"hidden"}}>
-                              {[
-                                {val:item.honshimei,color:"#f59e0b"},
-                                {val:item.baai,color:"#8b5cf6"},
-                                {val:item.douhan,color:"#06b6d4"},
-                                {val:item.bottle,color:"#10b981"},
-                              ].filter(t=>t.val>0).map((t,i)=>(
-                                <div key={i} style={{flex:t.val,background:t.color,borderRadius:2}}/>
-                              ))}
-                            </div>
-                            {/* 内訳数字 */}
-                            <div style={{display:"flex",gap:10,marginTop:4,flexWrap:"wrap"}}>
-                              {[
-                                {label:"⭐本指名",val:item.honshimei},
-                                {label:"🎯場内",val:item.baai},
-                                {label:"🚗同伴",val:item.douhan},
-                                {label:"🍾ボトル",val:item.bottle},
-                              ].filter(t=>t.val>0).map(t=>(
-                                <span key={t.label} style={{fontSize:10,color:"var(--text-muted)"}}>
-                                  {t.label} ¥{t.val.toLocaleString()}
-                                </span>
-                              ))}
+                            <div style={{background:"var(--bg-input)",borderRadius:7,height:14,overflow:"hidden"}}>
+                              <div style={{height:"100%",borderRadius:7,background:color,width:`${pct}%`,transition:"width 0.4s"}}/>
                             </div>
                           </div>
                         );
                       })}
-                      {/* 凡例 */}
-                      <div style={{display:"flex",gap:12,flexWrap:"wrap",paddingTop:8,borderTop:"1px solid var(--border)",marginTop:4}}>
-                        {[{c:"#f59e0b",l:"本指名"},{c:"#8b5cf6",l:"場内"},{c:"#06b6d4",l:"同伴"},{c:"#10b981",l:"ボトル"}].map(t=>(
-                          <div key={t.l} style={{display:"flex",alignItems:"center",gap:4}}>
-                            <div style={{width:8,height:8,borderRadius:2,background:t.c}}/>
-                            <span style={{fontSize:10,color:"var(--text-muted)"}}>{t.l}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <div style={{fontSize:10,color:"var(--text-hint)",marginTop:6}}>内訳は下の各キャストのカードで確認できます</div>
                     </div>
                   );
                 })()}
@@ -1069,7 +1036,21 @@ ${rows.map(({ cast, d, dayRows }) => `
                   const baai = mySales.filter(s=>s.sales_type==="baai").reduce((s,c)=>s+c.amount,0);
                   const douhan = mySales.filter(s=>s.sales_type==="douhan").reduce((s,c)=>s+c.amount,0);
                   const bottle = mySales.filter(s=>s.sales_type==="bottle").reduce((s,c)=>s+c.amount,0);
+                  // 本数（count合計）
+                  const honshimeiCnt = mySales.filter(s=>s.sales_type==="honshimei").reduce((s,c)=>s+(c.count||1),0);
+                  const baaiCnt = mySales.filter(s=>s.sales_type==="baai").reduce((s,c)=>s+(c.count||1),0);
+                  const douhanCnt = mySales.filter(s=>s.sales_type==="douhan").reduce((s,c)=>s+(c.count||1),0);
+                  const bottleCnt = mySales.filter(s=>s.sales_type==="bottle").reduce((s,c)=>s+(c.count||1),0);
                   const d = calcCastMonthly(cast);
+                  // 勤務情報（月次のみ。日次/週次はその期間のシフトを集計）
+                  const periodShifts = castSalesPeriod==="daily"
+                    ? allShifts.filter(s=>s.cast_id===cast.id&&s.date===dailyDate)
+                    : castSalesPeriod==="weekly"
+                    ? allShifts.filter(s=>s.cast_id===cast.id&&getWeekDates(weekBase).includes(s.date))
+                    : allShifts.filter(s=>s.cast_id===cast.id);
+                  const workDays = periodShifts.length;
+                  const workMins = periodShifts.reduce((s,sh)=>s+calcMinutes(sh.start_time,sh.end_time),0);
+                  const workH = Math.floor(workMins/60), workM = workMins%60;
                   const ratio = castSalesPeriod==="monthly" && d.totalPay>0 ? d.sales/d.totalPay*100 : null;
                   return (
                     <div key={cast.id} style={{...sectionStyle,marginBottom:0}}>
@@ -1087,10 +1068,15 @@ ${rows.map(({ cast, d, dayRows }) => `
                           <span style={{fontWeight:800,color:"var(--accent)",fontSize:16}}>¥{total.toLocaleString()}</span>
                         </div>
                       </div>
+                      {/* 勤務情報 */}
+                      <div style={{display:"flex",gap:14,marginBottom:10,fontSize:11,color:"var(--text-muted)"}}>
+                        <span>🗓️ 出勤 <span style={{color:"var(--text-primary)",fontWeight:700}}>{workDays}日</span></span>
+                        <span>⏱️ 勤務 <span style={{color:"var(--text-primary)",fontWeight:700}}>{workH}時間{workM>0?`${workM}分`:""}</span></span>
+                      </div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:mySales.length>0?10:0}}>
-                        {[["本指名",honshimei],["場内",baai],["同伴",douhan],["ボトル",bottle]].map(([l,v])=>(
+                        {[["本指名",honshimei,honshimeiCnt],["場内",baai,baaiCnt],["同伴",douhan,douhanCnt],["ボトル",bottle,bottleCnt]].map(([l,v,cnt])=>(
                           <div key={l as string} style={{background:"var(--bg-input)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
-                            <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:2}}>{l}</div>
+                            <div style={{fontSize:10,color:"var(--text-muted)",marginBottom:2}}>{l}{(cnt as number)>0?` ${cnt}本`:""}</div>
                             <div style={{fontSize:12,fontWeight:700,color:(v as number)>0?"var(--text-primary)":"var(--text-hint)"}}>{(v as number)>0?`¥${(v as number).toLocaleString()}`:"—"}</div>
                           </div>
                         ))}
@@ -1100,7 +1086,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                           const t=SALES_TYPE_LABELS[s.sales_type];
                           return (
                             <div key={s.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderTop:"1px solid var(--border)",color:"var(--text-muted)"}}>
-                              <span>{castSalesPeriod!=="daily"&&`${fmtDate(s.date)} `}{t?.icon} {t?.label}</span>
+                              <span>{castSalesPeriod!=="daily"&&`${fmtDate(s.date)} `}{t?.icon} {t?.label}{(s.count||1)>1?` ×${s.count}`:""}</span>
                               <span style={{color:"var(--accent)",fontWeight:600}}>¥{s.amount.toLocaleString()}</span>
                             </div>
                           );
