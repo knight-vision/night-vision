@@ -560,11 +560,12 @@ export default function OwnerDashboard() {
         </div>
 
         {/* タブ */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 20 }}>
           {TABS.map((t) => (
             <button key={t.key} onClick={() => handleSetTab(t.key)} style={{
-              flex: 1, minWidth: 80, padding: "8px 6px", borderRadius: 10,
-              fontWeight: tab === t.key ? 700 : 500, fontSize: 12,
+              padding: "10px 6px", borderRadius: 10, minHeight: 44,
+              display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
+              fontWeight: tab === t.key ? 700 : 500, fontSize: 12, lineHeight: 1.3,
               fontFamily: "var(--font)", cursor: "pointer",
               background: tab === t.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
               border: "1px solid " + (tab === t.key ? "transparent" : "var(--border)"),
