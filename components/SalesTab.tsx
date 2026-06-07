@@ -34,6 +34,7 @@ type ShopMenu = {
   back_type?: BackType;
   back_value?: number; // fixedなら円、rateなら0〜1の率
   is_default?: boolean; // 伝票入力時に最初から表示するか
+  nomination_type?: string; // 対応する指名種別（本指名/場内指名/同伴/アフター/出張）。選ぶと伝票に自動追加
 };
 // 品目の担当キャスト配分（複数キャストで割合配分、合計100%）
 type ItemAllocation = { cast_id: string; type: string; pct: number };
@@ -47,14 +48,15 @@ type SlipItem = {
 type SlipCast = { cast_id: string; type: string };
 
 const DEFAULT_PRESETS: ShopMenu[] = [
-  { id: "p1", name: "セット料金", price: 3000, back_type: "none", back_value: 0 },
+  { id: "p1", name: "セット料金", price: 3000, back_type: "none", back_value: 0, is_default: true },
   { id: "p2", name: "ビール", price: 800, back_type: "none", back_value: 0 },
   { id: "p3", name: "ハイボール", price: 800, back_type: "rate", back_value: 0.1 },
   { id: "p4", name: "ソフトドリンク", price: 600, back_type: "rate", back_value: 0.1 },
   { id: "p5", name: "シャンパン（モエ）", price: 35000, back_type: "rate", back_value: 0.1 },
-  { id: "p6", name: "場内指名料", price: 1000, back_type: "fixed", back_value: 500 },
-  { id: "p7", name: "同伴料", price: 2000, back_type: "fixed", back_value: 1000 },
-  { id: "p8", name: "延長料", price: 3000, back_type: "none", back_value: 0 },
+  { id: "p6", name: "本指名料", price: 3000, back_type: "fixed", back_value: 1500, nomination_type: "本指名" },
+  { id: "p7", name: "場内指名料", price: 1000, back_type: "fixed", back_value: 500, nomination_type: "場内指名" },
+  { id: "p8", name: "同伴料", price: 2000, back_type: "fixed", back_value: 1000, nomination_type: "同伴" },
+  { id: "p9", name: "延長料", price: 3000, back_type: "none", back_value: 0 },
 ];
 const SHIMEI_TYPES = ["フリー", "場内指名", "本指名", "同伴", "アフター", "出張"];
 
@@ -181,6 +183,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [editBackType, setEditBackType] = useState<BackType>("none");
   const [editBackValue, setEditBackValue] = useState("");
   const [editIsDefault, setEditIsDefault] = useState(false);
+  const [editNominationType, setEditNominationType] = useState("");
   const [showMenuManager, setShowMenuManager] = useState(false);
 
   // 品名マスタの編集を開始
@@ -190,6 +193,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     setEditPrice(String(m.price));
     setEditBackType((m.back_type as BackType) || "none");
     setEditIsDefault(!!m.is_default);
+    setEditNominationType(m.nomination_type || "");
     // rateは0〜1で保存されているので、編集時は%表示(×100)にする
     setEditBackValue(m.back_type === "rate" ? String(Math.round((m.back_value || 0) * 100)) : String(m.back_value || 0));
   };
@@ -201,7 +205,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     const backValueStored = editBackType === "rate" ? (Number(editBackValue) || 0) / 100 : (Number(editBackValue) || 0);
     await fetch("/api/shop-menus", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: editingId, name: editName, price: Number(editPrice) || 0, back_type: editBackType, back_value: backValueStored, is_default: editIsDefault }),
+      body: JSON.stringify({ id: editingId, name: editName, price: Number(editPrice) || 0, back_type: editBackType, back_value: backValueStored, is_default: editIsDefault, nomination_type: editNominationType || null }),
     });
     setEditingId(null);
     await loadMenus();
@@ -212,6 +216,23 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     await fetch("/api/shop-menus", { method:"PATCH", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ id: menuId, is_default: next }) });
     await loadMenus();
+  };
+
+  // 指名種別を変更したとき、対応する品名（本指名料など）を自動で品目に追加する
+  const handleNominationChange = (castIdx: number, newType: string) => {
+    setSlipCasts(prev => prev.map((x,idx)=>idx===castIdx?{...x,type:newType}:x));
+    // newTypeに対応する品名マスタを探す
+    const menu = shopMenus.find(m => m.nomination_type === newType);
+    if (!menu) return; // 対応品名がなければ何もしない（フリー等）
+    setSlipItems(prev => {
+      // 既に同じ品名が伝票にあれば二重追加しない
+      if (prev.some(it => it.menu_id === menu.id)) return prev;
+      const newItem: SlipItem = { name:menu.name, qty:1, price:menu.price, menu_id:menu.id, back_type:menu.back_type||"none", back_value:menu.back_value||0 };
+      // 空の品目行（未選択）があればそこに入れる。なければ末尾に追加
+      const emptyIdx = prev.findIndex(it => !it.menu_id && !it.name);
+      if (emptyIdx >= 0) return prev.map((it,idx)=>idx===emptyIdx?newItem:it);
+      return [...prev, newItem];
+    });
   };
 
   const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
@@ -231,7 +252,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
       if (missing.length > 0) {
         await Promise.all(missing.map((p, i) =>
           fetch("/api/shop-menus", { method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, back_type: p.back_type, back_value: p.back_value, sort_order: i }) })
+            body: JSON.stringify({ shop_id: shopId, name: p.name, price: p.price, back_type: p.back_type, back_value: p.back_value, is_default: p.is_default, nomination_type: p.nomination_type, sort_order: i }) })
         ));
         const res2 = await fetch(`/api/shop-menus?shop_id=${shopId}`);
         if (res2.ok) setShopMenus(await res2.json());
@@ -641,7 +662,7 @@ ${rows.map(({ cast, d, dayRows }) => `
               </div>
               <div>
                 <label style={labelStyle}>指名種別</label>
-                <select value={c.type} onChange={e=>setSlipCasts(slipCasts.map((x,idx)=>idx===i?{...x,type:e.target.value}:x))} style={inp}>
+                <select value={c.type} onChange={e=>handleNominationChange(i, e.target.value)} style={inp}>
                   {SHIMEI_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
@@ -683,6 +704,17 @@ ${rows.map(({ cast, d, dayRows }) => `
                           <input type="checkbox" checked={editIsDefault} onChange={e=>setEditIsDefault(e.target.checked)} style={{width:16,height:16,cursor:"pointer"}}/>
                           伝票入力時に最初から表示する（セット料金など）
                         </label>
+                        <div>
+                          <label style={{...labelStyle,display:"block",marginBottom:2}}>指名種別と連動（選ぶと伝票で自動追加）</label>
+                          <select value={editNominationType} onChange={e=>setEditNominationType(e.target.value)} style={inp}>
+                            <option value="">連動しない</option>
+                            <option value="本指名">本指名 → この品名を自動追加</option>
+                            <option value="場内指名">場内指名 → この品名を自動追加</option>
+                            <option value="同伴">同伴 → この品名を自動追加</option>
+                            <option value="アフター">アフター → この品名を自動追加</option>
+                            <option value="出張">出張 → この品名を自動追加</option>
+                          </select>
+                        </div>
                         <div style={{display:"flex",gap:6}}>
                           <button onClick={saveEditMenu} style={{flex:1,padding:"7px",background:"var(--accent)",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>保存</button>
                           <button onClick={()=>setEditingId(null)} style={{flex:1,padding:"7px",background:"transparent",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>キャンセル</button>
@@ -697,6 +729,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                             {m.back_type==="rate" && `バック${Math.round((m.back_value||0)*100)}%`}
                             {(!m.back_type||m.back_type==="none") && "バックなし"}
                             {m.is_default && <span style={{marginLeft:6,color:"var(--accent)"}}>・最初から表示</span>}
+                            {m.nomination_type && <span style={{marginLeft:6,color:"var(--accent2,#a855f7)"}}>・{m.nomination_type}と連動</span>}
                           </span>
                         </div>
                         <button onClick={()=>startEditMenu(m)} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginLeft:8}}>編集</button>

@@ -33,10 +33,12 @@ ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS category   TEXT    NOT NULL DEFA
 ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS back_type  TEXT    NOT NULL DEFAULT 'none';
 ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS back_value NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE shop_menus ADD COLUMN IF NOT EXISTS nomination_type TEXT;
 
 COMMENT ON COLUMN shop_menus.back_type  IS 'バック方式: fixed(固定額)/rate(料金に対する割合)/none';
 COMMENT ON COLUMN shop_menus.back_value IS 'fixedなら円、rateなら0〜1の率';
 COMMENT ON COLUMN shop_menus.is_default IS '伝票入力時に最初から表示する品目か';
+COMMENT ON COLUMN shop_menus.nomination_type IS '対応する指名種別(本指名/場内指名/同伴/アフター/出張)。伝票で指名種別を選ぶと自動追加';
 
 
 -- ------------------------------------------------------------
