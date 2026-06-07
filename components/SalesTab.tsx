@@ -990,14 +990,31 @@ ${rows.map(({ cast, d, dayRows }) => `
 
                 {/* ===== キャスト比較グラフ ===== */}
                 {(()=>{
-                  const castTotals = casts.map(cast=>({
-                    cast,
-                    total: filteredSales.filter(s=>s.cast_id===cast.id).reduce((a,b)=>a+b.amount,0),
-                    honshimei: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="honshimei").reduce((a,b)=>a+b.amount,0),
-                    baai: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="baai").reduce((a,b)=>a+b.amount,0),
-                    douhan: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="douhan").reduce((a,b)=>a+b.amount,0),
-                    bottle: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="bottle").reduce((a,b)=>a+b.amount,0),
-                  })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+                  // 期間に応じたシフトを返す
+                  const shiftsOf = (castId:number) => castSalesPeriod==="daily"
+                    ? allShifts.filter(s=>s.cast_id===castId&&s.date===dailyDate)
+                    : castSalesPeriod==="weekly"
+                    ? allShifts.filter(s=>s.cast_id===castId&&getWeekDates(weekBase).includes(s.date))
+                    : allShifts.filter(s=>s.cast_id===castId);
+                  const cnt = (castId:number,type:string) => filteredSales.filter(s=>s.cast_id===castId&&s.sales_type===type).reduce((a,b)=>a+(b.count||1),0);
+                  const castTotals = casts.map(cast=>{
+                    const shifts = shiftsOf(cast.id);
+                    const wmins = shifts.reduce((s,sh)=>s+calcMinutes(sh.start_time,sh.end_time),0);
+                    return {
+                      cast,
+                      total: filteredSales.filter(s=>s.cast_id===cast.id).reduce((a,b)=>a+b.amount,0),
+                      honshimei: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="honshimei").reduce((a,b)=>a+b.amount,0),
+                      baai: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="baai").reduce((a,b)=>a+b.amount,0),
+                      douhan: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="douhan").reduce((a,b)=>a+b.amount,0),
+                      bottle: filteredSales.filter(s=>s.cast_id===cast.id&&s.sales_type==="bottle").reduce((a,b)=>a+b.amount,0),
+                      honshimeiCnt: cnt(cast.id,"honshimei"),
+                      baaiCnt: cnt(cast.id,"baai"),
+                      douhanCnt: cnt(cast.id,"douhan"),
+                      bottleCnt: cnt(cast.id,"bottle"),
+                      workDays: shifts.length,
+                      workMins: wmins,
+                    };
+                  }).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
                   if (castTotals.length===0) return null;
                   const maxTotal = castTotals[0].total;
                   const CAST_COLORS = ["#ff6b9d","#00d4ff","#ffd700","#a855f7","#00e5a0","#ff9500","#00c7be","#ff3b30"];
@@ -1020,10 +1037,18 @@ ${rows.map(({ cast, d, dayRows }) => `
                             <div style={{background:"var(--bg-input)",borderRadius:7,height:14,overflow:"hidden"}}>
                               <div style={{height:"100%",borderRadius:7,background:color,width:`${pct}%`,transition:"width 0.4s"}}/>
                             </div>
+                            {/* 勤務情報・本数 */}
+                            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:6,fontSize:10.5,color:"var(--text-muted)"}}>
+                              <span>🗓️ {item.workDays}日</span>
+                              <span>⏱️ {Math.floor(item.workMins/60)}時間{item.workMins%60>0?`${item.workMins%60}分`:""}</span>
+                              {item.honshimeiCnt>0&&<span>⭐本指名 {item.honshimeiCnt}本</span>}
+                              {item.baaiCnt>0&&<span>🎯場内 {item.baaiCnt}本</span>}
+                              {item.douhanCnt>0&&<span>🚗同伴 {item.douhanCnt}本</span>}
+                              {item.bottleCnt>0&&<span>🍾ボトル {item.bottleCnt}本</span>}
+                            </div>
                           </div>
                         );
                       })}
-                      <div style={{fontSize:10,color:"var(--text-hint)",marginTop:6}}>内訳は下の各キャストのカードで確認できます</div>
                     </div>
                   );
                 })()}
