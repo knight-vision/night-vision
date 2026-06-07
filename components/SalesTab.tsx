@@ -172,6 +172,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [slipSaving, setSlipSaving] = useState(false);
   const [slipSaved, setSlipSaved] = useState(false);
   const [slipMemo, setSlipMemo] = useState("");
+  const [serviceChargeRate, setServiceChargeRate] = useState(0); // サービス料率(%) 0〜100
   const [editingSlipId, setEditingSlipId] = useState<string|null>(null);
   const [todaySlips, setTodaySlips] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(true);
@@ -236,8 +237,10 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   };
 
   const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
-  const slipTax = Math.floor(slipSubtotal*TAX_RATE);
-  const slipTotal = slipSubtotal + slipTax;
+  const slipServiceCharge = Math.floor(slipSubtotal * serviceChargeRate / 100); // サービス料（小計×率）
+  const slipTaxBase = slipSubtotal + slipServiceCharge; // 税の対象は小計＋サービス料
+  const slipTax = Math.floor(slipTaxBase*TAX_RATE);
+  const slipTotal = slipTaxBase + slipTax;
 
   // 全品名はDBから（初回は自動でデフォルト登録される）
   const allPresets = shopMenus;
@@ -332,7 +335,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
           }
         }
         await fetch("/api/slips", { method:"PATCH", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ id:editingSlipId, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
+          body: JSON.stringify({ id:editingSlipId, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, service_charge_rate:serviceChargeRate, service_charge:slipServiceCharge, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
         });
         setMsg("✅ 伝票を更新しました");
         setEditingSlipId(null);
@@ -348,7 +351,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
         });
         // slipsテーブルに記録（保存したIDを受け取る）
         const slipRes = await fetch("/api/slips", { method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ shop_id:shopId, date:slipDate, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
+          body: JSON.stringify({ shop_id:shopId, date:slipDate, payment, subtotal:slipSubtotal, tax:slipTax, total:slipTotal, service_charge_rate:serviceChargeRate, service_charge:slipServiceCharge, items:slipItems, cast_entries:slipCasts, memo:slipMemo }),
         });
         const savedSlip = slipRes.ok ? await slipRes.json() : null;
         const newSlipId = savedSlip?.id || savedSlip?.[0]?.id || null;
@@ -431,7 +434,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const resetForm = () => {
     setSlipItems(buildInitialItems());
     setSlipCasts([{cast_id:"",type:"フリー"}]);
-    setPayment("現金"); setSlipMemo(""); setEditingSlipId(null);
+    setPayment("現金"); setSlipMemo(""); setEditingSlipId(null); setServiceChargeRate(0);
   };
 
   const startEdit = (slip: any) => {
@@ -439,6 +442,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     setSlipCasts(slip.cast_entries || [{cast_id:"",type:"フリー"}]);
     setPayment(slip.payment || "現金");
     setSlipMemo(slip.memo || "");
+    setServiceChargeRate(slip.service_charge_rate || 0);
     setEditingSlipId(slip.id);
     setSlipDate(slip.date);
     window.scrollTo({top:0, behavior:"smooth"});
@@ -845,6 +849,14 @@ ${rows.map(({ cast, d, dayRows }) => `
           <div style={{background:"var(--bg-input)",borderRadius:10,padding:"12px 14px",marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
               <span style={{color:"var(--text-muted)"}}>小計</span><span style={{color:"var(--text-secondary)"}}>¥{slipSubtotal.toLocaleString()}</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,marginBottom:4}}>
+              <span style={{color:"var(--text-muted)",display:"flex",alignItems:"center",gap:6}}>
+                サービス料
+                <input type="number" min={0} max={100} value={serviceChargeRate||""} onChange={e=>setServiceChargeRate(Math.max(0,Math.min(100,Number(e.target.value)||0)))} placeholder="0" style={{width:48,padding:"3px 6px",background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text)",fontSize:12,textAlign:"right",fontFamily:"var(--font)"}}/>
+                <span style={{color:"var(--text-muted)"}}>%</span>
+              </span>
+              <span style={{color:"var(--text-secondary)"}}>¥{slipServiceCharge.toLocaleString()}</span>
             </div>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:8}}>
               <span style={{color:"var(--text-muted)"}}>消費税（10%）</span><span style={{color:"var(--text-secondary)"}}>¥{slipTax.toLocaleString()}</span>

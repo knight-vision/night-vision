@@ -26,9 +26,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { shop_id, date, payment, subtotal, tax, total, items, cast_entries, memo } = body;
+  const { shop_id, date, payment, subtotal, tax, total, service_charge_rate, service_charge, items, cast_entries, memo } = body;
   const { data, error } = await supabase.from("slips").insert({
     shop_id: Number(shop_id), date, payment, subtotal, tax, total,
+    service_charge_rate: service_charge_rate || 0, service_charge: service_charge || 0,
     items: items || [], cast_entries: cast_entries || [], memo: memo || null,
   }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -36,9 +37,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { id, payment, subtotal, tax, total, items, cast_entries, memo } = await req.json();
+  const { id, payment, subtotal, tax, total, service_charge_rate, service_charge, items, cast_entries, memo } = await req.json();
   const { error } = await supabase.from("slips").update({
     payment, subtotal, tax, total,
+    service_charge_rate: service_charge_rate || 0, service_charge: service_charge || 0,
     items: items || [], cast_entries: cast_entries || [],
     memo: memo || null, updated_at: new Date().toISOString(),
   }).eq("id", id);
