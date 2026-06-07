@@ -167,6 +167,8 @@ export default function OwnerDashboard() {
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
   const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "payroll">("list");
+  const [shopSubTab, setShopSubTab] = useState<"info" | "jobs" | "tweet">("info");
+  const [accountSubTab, setAccountSubTab] = useState<"account" | "line" | "plan">("account");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
@@ -528,11 +530,7 @@ export default function OwnerDashboard() {
     { key: "cast", label: "キャスト管理" },
     { key: "shift", label: "シフト管理" },
     { key: "sales", label: "📊 売上管理" },
-    { key: "jobs", label: "求人" },
-    { key: "tweet", label: "つぶやき" },
     { key: "feedback", label: "ご意見" },
-    { key: "line", label: "LINE通知" },
-    { key: "plan", label: "プラン" },
     { key: "password", label: "アカウント管理" },
   ];
 
@@ -589,6 +587,23 @@ export default function OwnerDashboard() {
 
         {/* 基本情報 */}
         {tab === "shop_info" && (<>
+          {/* 店舗管理サブタブ */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+            {[
+              { key: "info", label: "🏪 店舗情報" },
+              { key: "jobs", label: "📝 求人" },
+              { key: "tweet", label: "💬 つぶやき" },
+            ].map(st => (
+              <button key={st.key} onClick={() => setShopSubTab(st.key as any)} style={{
+                padding: "8px 18px", borderRadius: 20, border: "none", cursor: "pointer",
+                fontFamily: "var(--font)", fontSize: 13, fontWeight: shopSubTab === st.key ? 700 : 500,
+                background: shopSubTab === st.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+                color: shopSubTab === st.key ? "#fff" : "var(--text-secondary)",
+              }}>{st.label}</button>
+            ))}
+          </div>
+
+          {shopSubTab === "info" && (<>
           <div style={sectionStyle}>
             {[
             { label: "店舗名", key: "name", placeholder: "" },
@@ -1149,6 +1164,14 @@ export default function OwnerDashboard() {
               </div>
             )}
           </div>
+          </>)}
+
+          {shopSubTab === "jobs" && shopId && (
+            <JobsTab shopId={shopId} shopPlan={shop.plan} shopSlug={shop.slug} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+          )}
+          {shopSubTab === "tweet" && shopId && (
+            <TweetTab shopId={shopId} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+          )}
         </>
         )}
 
@@ -1400,21 +1423,6 @@ export default function OwnerDashboard() {
         )}
 
 
-        {/* つぶやき */}
-        {tab === "tweet" && (
-          <TweetTab shopId={shopId!} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
-        )}
-
-        {/* 求人 */}
-        {tab === "jobs" && (
-          <JobsTab shopId={shopId!} shopPlan={shop.plan} shopSlug={shop.slug} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
-        )}
-
-        {/* LINE通知 */}
-        {tab === "line" && (
-          <LineTab shopId={shopId!} sectionStyle={sectionStyle} btnPrimary={btnPrimary} />
-        )}
-
         {/* 売上管理 */}
         {tab === "sales" && shopId && (
           <SalesTab shopId={shopId} shopPlan={shop.plan || "free"} casts={casts} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
@@ -1426,7 +1434,98 @@ export default function OwnerDashboard() {
         )}
 
         {/* プラン */}
-        {tab === "plan" && (
+
+        {/* アカウント管理 */}
+        {tab === "password" && (
+          <div>
+            {/* アカウント管理サブタブ */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              {[
+                { key: "account", label: "🔑 アカウント" },
+                { key: "line", label: "💬 LINE通知" },
+                { key: "plan", label: "💎 プラン" },
+              ].map(st => (
+                <button key={st.key} onClick={() => setAccountSubTab(st.key as any)} style={{
+                  padding: "8px 18px", borderRadius: 20, border: "none", cursor: "pointer",
+                  fontFamily: "var(--font)", fontSize: 13, fontWeight: accountSubTab === st.key ? 700 : 500,
+                  background: accountSubTab === st.key ? "linear-gradient(135deg, var(--accent), var(--accent2))" : "var(--bg-input)",
+                  color: accountSubTab === st.key ? "#fff" : "var(--text-secondary)",
+                }}>{st.label}</button>
+              ))}
+            </div>
+
+            {accountSubTab === "line" && shopId && (
+              <LineTab shopId={shopId} sectionStyle={sectionStyle} btnPrimary={btnPrimary} />
+            )}
+
+            {accountSubTab === "account" && (<>
+            {/* ログイン情報 */}
+            <div style={{ ...sectionStyle, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔑 ログイン情報</div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4 }}>
+                現在のメールアドレス：<span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{typeof window !== "undefined" ? localStorage.getItem("owner_email") || "—" : "—"}</span>
+              </div>
+            </div>
+
+            {/* メールアドレス変更 */}
+            <div style={{ ...sectionStyle, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>📧 メールアドレス変更</div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいメールアドレス</label>
+                <input type="email" value={newOwnerEmail} onChange={e => setNewOwnerEmail(e.target.value)} placeholder="new@example.com" style={inputStyle} />
+              </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいメールアドレス（確認）</label>
+                <input type="email" value={newOwnerEmail2} onChange={e => setNewOwnerEmail2(e.target.value)} placeholder="new@example.com" style={inputStyle} />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newOwnerEmail || newOwnerEmail !== newOwnerEmail2) { setPwMsg("メールアドレスが一致しません"); return; }
+                  const res = await fetch("/api/owner-account-update", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ owner_id: ownerId, new_email: newOwnerEmail }),
+                  });
+                  if (res.ok) {
+                    setPwMsg("メールアドレスを変更しました");
+                    localStorage.setItem("owner_email", newOwnerEmail);
+                    setNewOwnerEmail(""); setNewOwnerEmail2("");
+                  } else {
+                    const d = await res.json();
+                    setPwMsg(d.error || "変更に失敗しました");
+                  }
+                }}
+                disabled={saving}
+                style={btnPrimary as React.CSSProperties}
+              >メールアドレスを変更する</button>
+            </div>
+
+            {/* パスワード変更 */}
+            <div style={sectionStyle}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔒 パスワード変更</div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいパスワード（8文字以上）</label>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>新しいパスワード（確認）</label>
+                <input type="password" value={newPassword2} onChange={(e) => setNewPassword2(e.target.value)} style={inputStyle} />
+              </div>
+              {pwMsg && (
+                <div style={{
+                  background: pwMsg.includes("変更") ? "var(--online-bg)" : "#ff444418",
+                  border: "1px solid " + (pwMsg.includes("変更") ? "var(--online-border)" : "#ff444444"),
+                  borderRadius: 10, padding: "10px 14px", color: pwMsg.includes("変更") ? "var(--online)" : "#ff4444",
+                  fontSize: 13, marginBottom: 16,
+                }}>{pwMsg}</div>
+              )}
+              <button onClick={changePassword} disabled={saving} style={btnPrimary as React.CSSProperties}>
+                {saving ? "変更中..." : "パスワードを変更する"}
+              </button>
+            </div>
+            </>)}
+
+        {accountSubTab === "plan" && (
           <div style={sectionStyle}>
             {/* 成功メッセージ */}
             {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("success") && (
@@ -1606,74 +1705,6 @@ export default function OwnerDashboard() {
             </div>
           </div>
         )}
-
-        {/* アカウント管理 */}
-        {tab === "password" && (
-          <div>
-            {/* ログイン情報 */}
-            <div style={{ ...sectionStyle, marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔑 ログイン情報</div>
-              <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 4 }}>
-                現在のメールアドレス：<span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{typeof window !== "undefined" ? localStorage.getItem("owner_email") || "—" : "—"}</span>
-              </div>
-            </div>
-
-            {/* メールアドレス変更 */}
-            <div style={{ ...sectionStyle, marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>📧 メールアドレス変更</div>
-              <div style={fieldStyle}>
-                <label style={labelStyle}>新しいメールアドレス</label>
-                <input type="email" value={newOwnerEmail} onChange={e => setNewOwnerEmail(e.target.value)} placeholder="new@example.com" style={inputStyle} />
-              </div>
-              <div style={fieldStyle}>
-                <label style={labelStyle}>新しいメールアドレス（確認）</label>
-                <input type="email" value={newOwnerEmail2} onChange={e => setNewOwnerEmail2(e.target.value)} placeholder="new@example.com" style={inputStyle} />
-              </div>
-              <button
-                onClick={async () => {
-                  if (!newOwnerEmail || newOwnerEmail !== newOwnerEmail2) { setPwMsg("メールアドレスが一致しません"); return; }
-                  const res = await fetch("/api/owner-account-update", {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ owner_id: ownerId, new_email: newOwnerEmail }),
-                  });
-                  if (res.ok) {
-                    setPwMsg("メールアドレスを変更しました");
-                    localStorage.setItem("owner_email", newOwnerEmail);
-                    setNewOwnerEmail(""); setNewOwnerEmail2("");
-                  } else {
-                    const d = await res.json();
-                    setPwMsg(d.error || "変更に失敗しました");
-                  }
-                }}
-                disabled={saving}
-                style={btnPrimary as React.CSSProperties}
-              >メールアドレスを変更する</button>
-            </div>
-
-            {/* パスワード変更 */}
-            <div style={sectionStyle}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 12, letterSpacing: "0.1em" }}>🔒 パスワード変更</div>
-              <div style={fieldStyle}>
-                <label style={labelStyle}>新しいパスワード（8文字以上）</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={inputStyle} />
-              </div>
-              <div style={fieldStyle}>
-                <label style={labelStyle}>新しいパスワード（確認）</label>
-                <input type="password" value={newPassword2} onChange={(e) => setNewPassword2(e.target.value)} style={inputStyle} />
-              </div>
-              {pwMsg && (
-                <div style={{
-                  background: pwMsg.includes("変更") ? "var(--online-bg)" : "#ff444418",
-                  border: "1px solid " + (pwMsg.includes("変更") ? "var(--online-border)" : "#ff444444"),
-                  borderRadius: 10, padding: "10px 14px", color: pwMsg.includes("変更") ? "var(--online)" : "#ff4444",
-                  fontSize: 13, marginBottom: 16,
-                }}>{pwMsg}</div>
-              )}
-              <button onClick={changePassword} disabled={saving} style={btnPrimary as React.CSSProperties}>
-                {saving ? "変更中..." : "パスワードを変更する"}
-              </button>
-            </div>
           </div>
         )}
       </main>
