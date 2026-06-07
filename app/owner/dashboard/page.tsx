@@ -12,8 +12,6 @@ import FeedbackTab from "@/components/FeedbackTab";
 import LineTab from "@/components/LineTab";
 import SalesTab from "@/components/SalesTab";
 import TodayTab from "@/components/TodayTab";
-import CastPerformanceTab from "@/components/CastPerformanceTab";
-import CastRecordTab from "@/components/CastRecordTab";
 
 // iOSでホーム画面追加を案内するバナー
 function PwaBanner() {
@@ -168,7 +166,7 @@ export default function OwnerDashboard() {
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
   const [tab, setTab] = useState<Tab>("today");
-  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "performance" | "record" | "payroll">("list");
+  const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "payroll">("list");
   const [allowanceJumpCastId, setAllowanceJumpCastId] = useState<string>("");
 
   const handleSetTab = (t: Tab) => {
@@ -1160,10 +1158,8 @@ export default function OwnerDashboard() {
             <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
               {[
                 { key: "list", label: "👥 キャスト一覧" },
-                { key: "cast_sales", label: "⭐ キャスト売上" },
-                { key: "performance", label: "📈 パフォーマンス" },
-                { key: "record", label: "📅 実績" },
-                { key: "payroll", label: "💴 給与管理" },
+                { key: "cast_sales", label: "⭐ 成績表" },
+                { key: "payroll", label: "💴 給与明細" },
               ].map(st => (
                 <button key={st.key} onClick={() => setCastSubTab(st.key as any)} style={{
                   padding: "8px 18px", borderRadius: 20, border: "none", cursor: "pointer",
@@ -1173,29 +1169,6 @@ export default function OwnerDashboard() {
                 }}>{st.label}</button>
               ))}
             </div>
-
-            {/* パフォーマンスサブタブ */}
-            {castSubTab === "performance" && shopId && (
-              <CastPerformanceTab
-                shopId={shopId}
-                casts={casts as any}
-                sectionStyle={sectionStyle}
-                inputStyle={inputStyle}
-                labelStyle={labelStyle}
-                btnPrimary={btnPrimary}
-              />
-            )}
-
-            {/* 実績サブタブ */}
-            {castSubTab === "record" && shopId && (
-              <CastRecordTab
-                shopId={shopId}
-                casts={casts}
-                sectionStyle={sectionStyle}
-                inputStyle={inputStyle}
-                labelStyle={labelStyle}
-              />
-            )}
 
             {/* キャスト売上サブタブ */}
             {castSubTab === "cast_sales" && shopId && (
