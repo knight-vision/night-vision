@@ -133,10 +133,10 @@ function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Numb
 
 import { canUseSales } from "@/lib/plan";
 
-type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties; initialView?: "slip" | "slip_list" | "sales" | "cast_sales" };
+type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties; initialView?: "slip" | "slip_list" | "menu" | "sales" | "cast_sales" };
 
 export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputStyle, labelStyle, btnPrimary, initialView }: Props) {
-  const [view, setView] = useState<"slip"|"slip_list"|"sales"|"cast_sales">(initialView || "slip");
+  const [view, setView] = useState<"slip"|"slip_list"|"menu"|"sales"|"cast_sales">(initialView || "slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
   const [selectedCastDetail, setSelectedCastDetail] = useState<number|null>(null);
@@ -189,7 +189,6 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [editBackValue, setEditBackValue] = useState("");
   const [editIsDefault, setEditIsDefault] = useState(false);
   const [editNominationType, setEditNominationType] = useState("");
-  const [showMenuManager, setShowMenuManager] = useState(false);
 
   // 品名マスタの編集を開始
   const startEditMenu = (m: ShopMenu) => {
@@ -619,8 +618,8 @@ ${rows.map(({ cast, d, dayRows }) => `
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"slip_list",label:"🗂️ 伝票一覧"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
-          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); if(v.key==="slip_list") loadMonthSlips(listMonth); }} style={{
+        {[{key:"slip",label:"📋 伝票入力"},{key:"slip_list",label:"🗂️ 伝票一覧"},{key:"menu",label:"⚙️ 品名マスタ"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
+          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); if(v.key==="slip_list") loadMonthSlips(listMonth); if(v.key==="menu") loadMenus(); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
             border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
@@ -686,75 +685,11 @@ ${rows.map(({ cast, d, dayRows }) => `
           ))}
           <button onClick={()=>setSlipCasts([...slipCasts,{cast_id:"",type:"フリー"}])} style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",marginBottom:14}}>＋ キャストを追加</button>
 
-          {/* 品名マスタ管理（カテゴリ・バック率設定） */}
-          <div style={{marginBottom:14}}>
-            <button onClick={()=>setShowMenuManager(v=>!v)} style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,color:"var(--text-secondary)",fontSize:12.5,cursor:"pointer",fontFamily:"var(--font)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span>⚙️ 品名マスタ設定（カテゴリ・バック率）</span>
-              <span style={{color:"var(--text-muted)"}}>{showMenuManager?"閉じる ▲":"開く ▼"}</span>
-            </button>
-            {showMenuManager && (
-              <div style={{border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px",padding:"12px",background:"var(--bg-card)"}}>
-                <p style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.7,margin:"0 0 10px"}}>
-                  各品目にカテゴリとバックを設定すると、伝票入力時に自動でバックが計算されます。指名・同伴は固定額、ボトル・ドリンクは料金に対する％です。
-                </p>
-                {allPresets.map(m=>(
-                  <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"8px 0"}}>
-                    {editingId===m.id ? (
-                      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                        <div style={{display:"grid",gridTemplateColumns:"2fr 90px",gap:6}}>
-                          <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="品目名" style={inp}/>
-                          <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} placeholder="単価" style={{...inp,textAlign:"right"}}/>
-                        </div>
-                        <div>
-                          <select value={editBackType} onChange={e=>setEditBackType(e.target.value as BackType)} style={inp}>
-                            <option value="none">バックなし</option>
-                            <option value="fixed">固定額（円）</option>
-                            <option value="rate">料金の％</option>
-                          </select>
-                        </div>
-                        {editBackType!=="none" && (
-                          <input type="number" value={editBackValue} onChange={e=>setEditBackValue(e.target.value)} placeholder={editBackType==="rate"?"バック率（％）例: 10":"バック額（円）例: 500"} style={inp}/>
-                        )}
-                        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"var(--text-secondary)",cursor:"pointer",padding:"2px 0"}}>
-                          <input type="checkbox" checked={editIsDefault} onChange={e=>setEditIsDefault(e.target.checked)} style={{width:16,height:16,cursor:"pointer"}}/>
-                          伝票入力時に最初から表示する（セット料金など）
-                        </label>
-                        <div>
-                          <label style={{...labelStyle,display:"block",marginBottom:2}}>指名種別と連動（選ぶと伝票で自動追加）</label>
-                          <select value={editNominationType} onChange={e=>setEditNominationType(e.target.value)} style={inp}>
-                            <option value="">連動しない</option>
-                            <option value="本指名">本指名 → この品名を自動追加</option>
-                            <option value="場内指名">場内指名 → この品名を自動追加</option>
-                            <option value="同伴">同伴 → この品名を自動追加</option>
-                            <option value="アフター">アフター → この品名を自動追加</option>
-                            <option value="出張">出張 → この品名を自動追加</option>
-                          </select>
-                        </div>
-                        <div style={{display:"flex",gap:6}}>
-                          <button onClick={saveEditMenu} style={{flex:1,padding:"7px",background:"var(--accent)",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>保存</button>
-                          <button onClick={()=>setEditingId(null)} style={{flex:1,padding:"7px",background:"transparent",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>キャンセル</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div style={{minWidth:0}}>
-                          <span style={{fontSize:13,color:"var(--text-secondary)"}}>{m.name}</span>
-                          <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:8}}>
-                            {m.back_type==="fixed" && `バック¥${(m.back_value||0).toLocaleString()}`}
-                            {m.back_type==="rate" && `バック${Math.round((m.back_value||0)*100)}%`}
-                            {(!m.back_type||m.back_type==="none") && "バックなし"}
-                            {m.is_default && <span style={{marginLeft:6,color:"var(--accent)"}}>・最初から表示</span>}
-                            {m.nomination_type && <span style={{marginLeft:6,color:"var(--accent2,#a855f7)"}}>・{m.nomination_type}と連動</span>}
-                          </span>
-                        </div>
-                        <button onClick={()=>startEditMenu(m)} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginLeft:8}}>編集</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* 品名マスタを開くリンク */}
+          <button onClick={()=>setView("menu")} style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,color:"var(--text-secondary)",fontSize:12.5,cursor:"pointer",fontFamily:"var(--font)",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <span>⚙️ 品名マスタを編集（カテゴリ・バック率・最初から表示）</span>
+            <span style={{color:"var(--accent)"}}>開く →</span>
+          </button>
 
           {/* 品目 */}
           <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:8,letterSpacing:"0.08em"}}>注文品目</div>
@@ -1044,6 +979,76 @@ ${rows.map(({ cast, d, dayRows }) => `
               </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* ===== 品名マスタ ===== */}
+      {view==="menu"&&(
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>⚙️ 品名マスタ設定</span>
+            <button onClick={()=>setView("slip")} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>← 伝票入力へ</button>
+          </div>
+              <div style={{border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px",padding:"12px",background:"var(--bg-card)"}}>
+                <p style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.7,margin:"0 0 10px"}}>
+                  各品目にカテゴリとバックを設定すると、伝票入力時に自動でバックが計算されます。指名・同伴は固定額、ボトル・ドリンクは料金に対する％です。
+                </p>
+                {allPresets.map(m=>(
+                  <div key={m.id} style={{borderBottom:"1px solid var(--border)",padding:"8px 0"}}>
+                    {editingId===m.id ? (
+                      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"grid",gridTemplateColumns:"2fr 90px",gap:6}}>
+                          <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="品目名" style={inp}/>
+                          <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} placeholder="単価" style={{...inp,textAlign:"right"}}/>
+                        </div>
+                        <div>
+                          <select value={editBackType} onChange={e=>setEditBackType(e.target.value as BackType)} style={inp}>
+                            <option value="none">バックなし</option>
+                            <option value="fixed">固定額（円）</option>
+                            <option value="rate">料金の％</option>
+                          </select>
+                        </div>
+                        {editBackType!=="none" && (
+                          <input type="number" value={editBackValue} onChange={e=>setEditBackValue(e.target.value)} placeholder={editBackType==="rate"?"バック率（％）例: 10":"バック額（円）例: 500"} style={inp}/>
+                        )}
+                        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"var(--text-secondary)",cursor:"pointer",padding:"2px 0"}}>
+                          <input type="checkbox" checked={editIsDefault} onChange={e=>setEditIsDefault(e.target.checked)} style={{width:16,height:16,cursor:"pointer"}}/>
+                          伝票入力時に最初から表示する（セット料金など）
+                        </label>
+                        <div>
+                          <label style={{...labelStyle,display:"block",marginBottom:2}}>指名種別と連動（選ぶと伝票で自動追加）</label>
+                          <select value={editNominationType} onChange={e=>setEditNominationType(e.target.value)} style={inp}>
+                            <option value="">連動しない</option>
+                            <option value="本指名">本指名 → この品名を自動追加</option>
+                            <option value="場内指名">場内指名 → この品名を自動追加</option>
+                            <option value="同伴">同伴 → この品名を自動追加</option>
+                            <option value="アフター">アフター → この品名を自動追加</option>
+                            <option value="出張">出張 → この品名を自動追加</option>
+                          </select>
+                        </div>
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={saveEditMenu} style={{flex:1,padding:"7px",background:"var(--accent)",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>保存</button>
+                          <button onClick={()=>setEditingId(null)} style={{flex:1,padding:"7px",background:"transparent",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>キャンセル</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{minWidth:0}}>
+                          <span style={{fontSize:13,color:"var(--text-secondary)"}}>{m.name}</span>
+                          <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:8}}>
+                            {m.back_type==="fixed" && `バック¥${(m.back_value||0).toLocaleString()}`}
+                            {m.back_type==="rate" && `バック${Math.round((m.back_value||0)*100)}%`}
+                            {(!m.back_type||m.back_type==="none") && "バックなし"}
+                            {m.is_default && <span style={{marginLeft:6,color:"var(--accent)"}}>・最初から表示</span>}
+                            {m.nomination_type && <span style={{marginLeft:6,color:"var(--accent2,#a855f7)"}}>・{m.nomination_type}と連動</span>}
+                          </span>
+                        </div>
+                        <button onClick={()=>startEditMenu(m)} style={{background:"none",border:"none",color:"var(--accent)",cursor:"pointer",fontSize:12,whiteSpace:"nowrap",marginLeft:8}}>編集</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
         </div>
       )}
 
