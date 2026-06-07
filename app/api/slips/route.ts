@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } });
 
 export async function GET(req: NextRequest) {
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (!shopId) return NextResponse.json([]);
   let query = supabase.from("slips").select("*").eq("shop_id", Number(shopId)).order("date", { ascending: false }).order("created_at", { ascending: false });
   if (date) query = query.eq("date", date);
-  else if (month) query = query.gte("date", `${month}-01`).lte("date", `${month}-31`);
+  else if (month) query = query.gte("date", `${month}-01`).lte("date", monthLastDay(month));
   const { data } = await query;
   // cast_idフィルタはJSONBなのでクライアント側で絞る
   if (castId && data) {

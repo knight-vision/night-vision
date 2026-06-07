@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     .select("cash_sales, card_sales, invoice_sales")
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   const monthlySales = (salesData || []).reduce(
     (sum, r) => sum + (r.cash_sales || 0) + (r.card_sales || 0) + (r.invoice_sales || 0), 0
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     .select("cash_sales, card_sales, invoice_sales")
     .eq("shop_id", shop_id)
     .gte("date", `${prevMonthStr}-01`)
-    .lte("date", `${prevMonthStr}-31`);
+    .lte("date", monthLastDay(prevMonthStr));
 
   const prevMonthlySales = (prevSalesData || []).reduce(
     (sum, r) => sum + (r.cash_sales || 0) + (r.card_sales || 0) + (r.invoice_sales || 0), 0
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     .select("total")
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   const avgSpend = slipsData && slipsData.length > 0
     ? Math.round(slipsData.reduce((sum, s) => sum + (s.total || 0), 0) / slipsData.length)
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
     .select("cast_id, amount, casts(name)")
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   // キャスト別集計
   const castMap: Record<string, { name: string; total: number }> = {};

@@ -11,8 +11,14 @@ export async function GET(req: NextRequest) {
   const castId = req.nextUrl.searchParams.get("cast_id");
   const month = req.nextUrl.searchParams.get("month");
   if (!shopId && !castId) return NextResponse.json([]);
-  const start = `${month}-01`, end = `${month}-31`;
-  let query = supabase.from("cast_sales").select("*").gte("date", start).lte("date", end).order("date");
+  let query = supabase.from("cast_sales").select("*").order("date");
+  if (month) {
+    // 月の正しい範囲: その月の1日 〜 翌月1日の手前（月末が28/30/31でも正しく動く）
+    const [y, mo] = month.split("-").map(Number);
+    const start = `${month}-01`;
+    const nextMonth = mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, "0")}-01`;
+    query = query.gte("date", start).lt("date", nextMonth);
+  }
   if (shopId) query = query.eq("shop_id", Number(shopId));
   if (castId) query = query.eq("cast_id", Number(castId));
   const { data } = await query;

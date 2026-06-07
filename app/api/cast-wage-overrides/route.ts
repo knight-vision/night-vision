@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 export const dynamic = "force-dynamic";
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } });
 
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (!shopId) return NextResponse.json([]);
   let q = sb.from("cast_wage_overrides").select("*").eq("shop_id", Number(shopId));
   if (castId) q = q.eq("cast_id", Number(castId));
-  if (month) q = q.gte("date", `${month}-01`).lte("date", `${month}-31`);
+  if (month) q = q.gte("date", `${month}-01`).lte("date", monthLastDay(month));
   const { data } = await q.order("date");
   return NextResponse.json(data || []);
 }

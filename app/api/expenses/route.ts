@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const month = req.nextUrl.searchParams.get("month");
   if (!shopId) return NextResponse.json([]);
   let q = supabase.from("expenses").select("*").eq("shop_id", Number(shopId)).order("date", { ascending: false });
-  if (month) q = q.gte("date", `${month}-01`).lte("date", `${month}-31`);
+  if (month) q = q.gte("date", `${month}-01`).lte("date", monthLastDay(month));
   const { data } = await q;
   return NextResponse.json(data || []);
 }

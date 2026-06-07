@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 export const dynamic = "force-dynamic";
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } });
 
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!shopId) return NextResponse.json([]);
 
   let q = sb.from("slips").select("id, date, cast_entries").eq("shop_id", Number(shopId)).order("date", { ascending: false });
-  if (month) q = q.gte("date", `${month}-01`).lte("date", `${month}-31`);
+  if (month) q = q.gte("date", `${month}-01`).lte("date", monthLastDay(month));
   const { data, error } = await q;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   // 全カラム取得して返す
   const { data: fullData } = await sb.from("slips").select("*").eq("shop_id", Number(shopId))
     .gte("date", month ? `${month}-01` : "2000-01-01")
-    .lte("date", month ? `${month}-31` : "2099-12-31")
+    .lte("date", month ? monthLastDay(month) : "2099-12-31")
     .order("date", { ascending: false });
 
   if (!fullData) return NextResponse.json([]);

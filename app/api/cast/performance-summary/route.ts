@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     .eq("cast_id", cast_id)
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   // 先月のキャスト売上
   const { data: prevSalesData } = await supabase
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     .eq("cast_id", cast_id)
     .eq("shop_id", shop_id)
     .gte("date", `${prevMonthStr}-01`)
-    .lte("date", `${prevMonthStr}-31`);
+    .lte("date", monthLastDay(prevMonthStr));
 
   const monthlySales = (salesData || []).reduce((sum, s) => sum + (s.amount || 0), 0);
   const prevMonthlySales = (prevSalesData || []).reduce((sum, s) => sum + (s.amount || 0), 0);
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
     .select("date, start_time, end_time")
     .eq("cast_id", cast_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   const shiftCount = shiftsData?.length || 0;
 
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
     .eq("cast_id", cast_id)
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   const allowances = allowancesData || [];
   const totalAllowance = allowances
@@ -107,7 +108,7 @@ export async function GET(req: NextRequest) {
     .select("cast_id, amount")
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`);
+    .lte("date", monthLastDay(monthStr));
 
   const castTotals: Record<string, number> = {};
   for (const s of allCastSales || []) {
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
       .select("amount")
       .eq("cast_id", cast_id)
       .gte("date", `${mStr}-01`)
-      .lte("date", `${mStr}-31`);
+      .lte("date", monthLastDay(mStr));
     const total = (md || []).reduce((sum, s) => sum + (s.amount || 0), 0);
     monthlySalesTrend.push({ month: `${d.getMonth() + 1}月`, total });
   }
@@ -139,7 +140,7 @@ export async function GET(req: NextRequest) {
     .eq("cast_id", cast_id)
     .eq("shop_id", shop_id)
     .gte("date", `${monthStr}-01`)
-    .lte("date", `${monthStr}-31`)
+    .lte("date", monthLastDay(monthStr))
     .order("date");
 
   return NextResponse.json({

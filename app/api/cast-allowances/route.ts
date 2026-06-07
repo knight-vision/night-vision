@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const target = month || new Date().toISOString().slice(0, 7);
   const startDate = `${target}-01`;
-  const endDate = `${target}-31`;
+  const endDate = monthLastDay(target);
 
   let query = supabase
     .from("cast_daily_allowances")

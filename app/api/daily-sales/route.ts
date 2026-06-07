@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { monthLastDay } from "@/lib/dateRange";
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -9,8 +10,8 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
   const shopId = req.nextUrl.searchParams.get("shop_id");
   const month = req.nextUrl.searchParams.get("month");
-  if (!shopId) return NextResponse.json([]);
-  const start = `${month}-01`, end = `${month}-31`;
+  if (!shopId || !month) return NextResponse.json([]);
+  const start = `${month}-01`, end = monthLastDay(month);
   const { data } = await supabase.from("daily_sales").select("*")
     .eq("shop_id", Number(shopId)).gte("date", start).lte("date", end).order("date");
   return NextResponse.json(data || []);
