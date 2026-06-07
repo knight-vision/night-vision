@@ -207,6 +207,13 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     await loadMenus();
   };
 
+  // 伝票入力画面から品名の「毎回表示」をトグル
+  const toggleMenuDefault = async (menuId: string, next: boolean) => {
+    await fetch("/api/shop-menus", { method:"PATCH", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ id: menuId, is_default: next }) });
+    await loadMenus();
+  };
+
   const slipSubtotal = slipItems.reduce((s,i)=>s+i.qty*i.price, 0);
   const slipTax = Math.floor(slipSubtotal*TAX_RATE);
   const slipTotal = slipSubtotal + slipTax;
@@ -355,10 +362,12 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
             // 指名種別は上部キャスト欄から引く（同じキャストの指名種別）
             const castEntry = slipCasts.find(sc => String(sc.cast_id) === String(a.cast_id));
             const stype = castEntry ? (SHIMEI_TO_SALES_TYPE[castEntry.type] || "free") : "free";
-            // slip_allocations に1行ずつ記録
+            // slip_allocations に1行ずつ記録（テーブル未作成でも本体は止めない）
             if (newSlipId) {
-              await fetch("/api/slip-allocations", { method:"POST", headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({ shop_id:shopId, slip_id:newSlipId, menu_id:item.menu_id||null, cast_id:Number(a.cast_id), date:slipDate, category:stype, item_name:item.name, share_ratio:ratio, allocated_sales:allocSales, allocated_back:allocBack }) });
+              try {
+                await fetch("/api/slip-allocations", { method:"POST", headers:{"Content-Type":"application/json"},
+                  body: JSON.stringify({ shop_id:shopId, slip_id:newSlipId, menu_id:item.menu_id||null, cast_id:Number(a.cast_id), date:slipDate, category:stype, item_name:item.name, share_ratio:ratio, allocated_sales:allocSales, allocated_back:allocBack }) });
+              } catch { /* slip_allocations は補助記録なので失敗しても続行 */ }
             }
             // キャスト売上を集計（バックがある品目はバック額、なければ売上額を計上）
             const key = a.cast_id;
@@ -368,12 +377,17 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
           }
         }
         // 集計をcast_salesに反映（バック総額をそのキャストの売上成績として計上）
+        let castSalesErrors = 0;
         for (const [castId, agg] of Object.entries(castAgg)) {
           const amount = agg.back > 0 ? agg.back : agg.sales;
-          await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ shop_id:shopId, cast_id:Number(castId), date:slipDate, sales_type:agg.type, amount, count:1, memo:"" }) });
+          try {
+            const r = await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ shop_id:shopId, cast_id:Number(castId), date:slipDate, sales_type:agg.type, amount, count:1, memo:"" }) });
+            if (!r.ok) castSalesErrors++;
+          } catch { castSalesErrors++; }
         }
-        setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
+        if (castSalesErrors > 0) setMsg(`⚠️ 伝票は保存しましたが、キャスト売上の反映に${castSalesErrors}件失敗しました`);
+        else setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
       }
 
       setSlipSaved(true);
@@ -696,18 +710,18 @@ ${rows.map(({ cast, d, dayRows }) => `
           <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:8,letterSpacing:"0.08em"}}>注文品目</div>
           {slipItems.map((item,i)=>(
             <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
-              {/* プリセット */}
-              <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
-                {allPresets.map(p=>(
-                  <button key={p.id} onClick={()=>setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:p.name,price:p.price,menu_id:p.id,back_type:p.back_type||"none",back_value:p.back_value||0}:x))} style={{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-muted)",fontSize:11,padding:"3px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>{p.name}</button>
-                ))}
-              </div>
               <div style={{display:"grid",gridTemplateColumns:"2fr 72px 110px",gap:8}}>
                 <div>
                   <label style={labelStyle}>品目名</label>
-                  <div style={{...inp,display:"flex",alignItems:"center",color:item.name?"var(--text)":"var(--text-muted)",minHeight:38}}>
-                    {item.name || "上のボタンから選択"}
-                  </div>
+                  <select value={item.menu_id||""} onChange={e=>{
+                    const sel = allPresets.find(p=>p.id===e.target.value);
+                    if (sel) setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:sel.name,price:sel.price,menu_id:sel.id,back_type:sel.back_type||"none",back_value:sel.back_value||0}:x));
+                  }} style={inp}>
+                    <option value="">品目を選択...</option>
+                    {allPresets.map(p=>(
+                      <option key={p.id} value={p.id}>{p.name}（¥{p.price.toLocaleString()}）</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label style={labelStyle}>数量</label>
@@ -725,6 +739,17 @@ ${rows.map(({ cast, d, dayRows }) => `
                 </span>
                 {slipItems.length>1&&<button onClick={()=>setSlipItems(slipItems.filter((_,idx)=>idx!==i))} style={{background:"none",border:"none",color:"var(--text-muted)",cursor:"pointer",fontSize:13}}>削除</button>}
               </div>
+              {/* 伝票入力画面から「毎回表示」設定（選択済み品目のみ） */}
+              {item.menu_id && (() => {
+                const menu = allPresets.find(p=>p.id===item.menu_id);
+                const isDef = !!menu?.is_default;
+                return (
+                  <label style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:isDef?"var(--accent)":"var(--text-muted)",cursor:"pointer",marginTop:4}}>
+                    <input type="checkbox" checked={isDef} onChange={e=>toggleMenuDefault(item.menu_id!, e.target.checked)} style={{width:14,height:14,cursor:"pointer"}}/>
+                    この品目を伝票入力時に最初から表示する
+                  </label>
+                );
+              })()}
 
               {/* 担当キャスト配分（上部キャストが2人以上のときだけ品目別に割り当て） */}
               {(() => {
