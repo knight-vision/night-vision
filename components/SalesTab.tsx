@@ -377,16 +377,18 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
           }
         }
         // 集計をcast_salesに反映（バック総額をそのキャストの売上成績として計上）
+        console.log("[伝票保存] キャスト売上集計:", JSON.stringify(castAgg), "newSlipId:", newSlipId);
         let castSalesErrors = 0;
         for (const [castId, agg] of Object.entries(castAgg)) {
           const amount = agg.back > 0 ? agg.back : agg.sales;
           try {
             const r = await fetch("/api/cast-sales", { method:"POST", headers:{"Content-Type":"application/json"},
               body: JSON.stringify({ shop_id:shopId, cast_id:Number(castId), date:slipDate, sales_type:agg.type, amount, count:1, memo:"" }) });
-            if (!r.ok) castSalesErrors++;
-          } catch { castSalesErrors++; }
+            if (!r.ok) { castSalesErrors++; console.error("[伝票保存] cast-sales失敗:", r.status, await r.text()); }
+          } catch (e) { castSalesErrors++; console.error("[伝票保存] cast-sales例外:", e); }
         }
-        if (castSalesErrors > 0) setMsg(`⚠️ 伝票は保存しましたが、キャスト売上の反映に${castSalesErrors}件失敗しました`);
+        if (Object.keys(castAgg).length === 0) setMsg("⚠️ 伝票は保存しましたが、担当キャストが未選択のため売上に反映されていません");
+        else if (castSalesErrors > 0) setMsg(`⚠️ 伝票は保存しましたが、キャスト売上の反映に${castSalesErrors}件失敗しました`);
         else setMsg(`✅ 保存しました（¥${slipTotal.toLocaleString()}）`);
       }
 
