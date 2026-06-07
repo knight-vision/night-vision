@@ -133,10 +133,10 @@ function calcMinutes(s: string, e: string) { const [sh,sm]=s.split(":").map(Numb
 
 import { canUseSales } from "@/lib/plan";
 
-type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties; initialView?: "slip" | "sales" | "cast_sales" };
+type Props = { shopId: string; shopPlan: string; casts: Cast[]; sectionStyle: React.CSSProperties; inputStyle: React.CSSProperties; labelStyle: React.CSSProperties; btnPrimary: React.CSSProperties; initialView?: "slip" | "slip_list" | "sales" | "cast_sales" };
 
 export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputStyle, labelStyle, btnPrimary, initialView }: Props) {
-  const [view, setView] = useState<"slip"|"sales"|"cast_sales">(initialView || "slip");
+  const [view, setView] = useState<"slip"|"slip_list"|"sales"|"cast_sales">(initialView || "slip");
   const [salesPeriod, setSalesPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [castSalesPeriod, setCastSalesPeriod] = useState<"daily"|"weekly"|"monthly">("monthly");
   const [selectedCastDetail, setSelectedCastDetail] = useState<number|null>(null);
@@ -176,6 +176,10 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   const [editingSlipId, setEditingSlipId] = useState<string|null>(null);
   const [todaySlips, setTodaySlips] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(true);
+  // 伝票一覧（カレンダー）用
+  const [monthSlips, setMonthSlips] = useState<any[]>([]);
+  const [listSelectedDate, setListSelectedDate] = useState(getDateStr(new Date()));
+  const [listMonth, setListMonth] = useState(new Date().toISOString().slice(0,7));
 
   // 品名管理
   const [editingId, setEditingId] = useState<string|null>(null);
@@ -306,6 +310,13 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
     });
   }, [shopMenus, editingSlipId]);
   useEffect(() => { loadTodaySlips(slipDate); }, [slipDate, loadTodaySlips]);
+
+  // 伝票一覧: 月の全伝票を読み込む
+  const loadMonthSlips = useCallback(async (m: string) => {
+    const res = await fetch(`/api/slips?shop_id=${shopId}&month=${m}`);
+    if (res.ok) setMonthSlips(await res.json());
+  }, [shopId]);
+  useEffect(() => { if (view==="slip_list") loadMonthSlips(listMonth); }, [view, listMonth, loadMonthSlips]);
   useEffect(() => {
     if (initialView === "cast_sales") loadSales(month);
   }, [initialView]);
@@ -608,8 +619,8 @@ ${rows.map(({ cast, d, dayRows }) => `
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
-          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); }} style={{
+        {[{key:"slip",label:"📋 伝票入力"},{key:"slip_list",label:"🗂️ 伝票一覧"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
+          <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); if(v.key==="slip_list") loadMonthSlips(listMonth); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
             border:`1px solid ${view===v.key?"transparent":"var(--border)"}`,
@@ -925,6 +936,114 @@ ${rows.map(({ cast, d, dayRows }) => `
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ===== 伝票一覧（カレンダー） ===== */}
+      {view==="slip_list"&&(
+        <div>
+          {/* 月ナビ */}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+            <button onClick={()=>{const d=new Date(listMonth+"-01");d.setMonth(d.getMonth()-1);setListMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>←</button>
+            <span style={{flex:1,textAlign:"center",fontWeight:700,color:"var(--text-primary)",fontSize:14}}>{listMonth.replace("-","年")}月</span>
+            <button onClick={()=>{const d=new Date(listMonth+"-01");d.setMonth(d.getMonth()+1);setListMonth(d.toISOString().slice(0,7));}} style={{padding:"6px 12px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",cursor:"pointer"}}>→</button>
+          </div>
+
+          {/* カレンダー */}
+          {(()=>{
+            const [yy,mm] = listMonth.split("-").map(Number);
+            const first = new Date(yy, mm-1, 1);
+            const startPad = first.getDay(); // 0=日
+            const daysInMonth = new Date(yy, mm, 0).getDate();
+            // 日ごとの集計
+            const byDate: Record<string,{count:number;total:number}> = {};
+            monthSlips.forEach((s:any)=>{
+              if(!byDate[s.date]) byDate[s.date]={count:0,total:0};
+              byDate[s.date].count++; byDate[s.date].total+=s.total||0;
+            });
+            const cells: (string|null)[] = [];
+            for(let i=0;i<startPad;i++) cells.push(null);
+            for(let d=1;d<=daysInMonth;d++) cells.push(`${listMonth}-${String(d).padStart(2,"0")}`);
+            const today = getDateStr(new Date());
+            return (
+              <div style={{...sectionStyle,marginBottom:14}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:6}}>
+                  {["日","月","火","水","木","金","土"].map((w,i)=>(
+                    <div key={w} style={{textAlign:"center",fontSize:10,fontWeight:700,color:i===0?"#ff6b6b":i===6?"#5b9bff":"var(--text-muted)",padding:"2px 0"}}>{w}</div>
+                  ))}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+                  {cells.map((date,i)=>{
+                    if(!date) return <div key={i}/>;
+                    const info = byDate[date];
+                    const day = Number(date.slice(-2));
+                    const dow = new Date(date+"T00:00:00").getDay();
+                    const selected = date===listSelectedDate;
+                    return (
+                      <button key={i} onClick={()=>setListSelectedDate(date)} style={{
+                        aspectRatio:"1",borderRadius:8,cursor:"pointer",fontFamily:"var(--font)",
+                        border:`1px solid ${selected?"var(--accent)":info?"var(--border)":"transparent"}`,
+                        background:selected?"var(--accent)22":info?"var(--bg-input)":"transparent",
+                        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,padding:2,position:"relative",
+                      }}>
+                        <span style={{fontSize:12,fontWeight:selected||date===today?800:500,color:date===today?"var(--accent)":dow===0?"#ff6b6b":dow===6?"#5b9bff":"var(--text-secondary)"}}>{day}</span>
+                        {info && <span style={{fontSize:8,color:"var(--text-muted)",lineHeight:1}}>{info.count}件</span>}
+                        {info && <div style={{width:5,height:5,borderRadius:"50%",background:"var(--accent)"}}/>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* 選択日の伝票一覧 */}
+          {(()=>{
+            const daySlips = monthSlips.filter((s:any)=>s.date===listSelectedDate);
+            const dayTotal = daySlips.reduce((s:number,sl:any)=>s+(sl.total||0),0);
+            return (
+              <div style={{...sectionStyle,marginBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontWeight:700,fontSize:14,color:"var(--text-primary)"}}>{fmtDateLong(listSelectedDate)}</span>
+                  {daySlips.length>0 && <span style={{fontSize:13,color:"var(--accent)",fontWeight:700}}>{daySlips.length}件 ¥{dayTotal.toLocaleString()}</span>}
+                </div>
+                {daySlips.length===0 ? (
+                  <div style={{textAlign:"center",color:"var(--text-muted)",padding:"24px 0",fontSize:13}}>この日の伝票はありません</div>
+                ) : (
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {daySlips.map((slip:any, idx:number)=>{
+                      const castNames = (slip.cast_entries||[]).map((c:any)=>{
+                        const cast = casts.find(x=>String(x.id)===String(c.cast_id));
+                        return cast ? `${cast.name}(${c.type})` : null;
+                      }).filter(Boolean).join("・");
+                      const timeStr = slip.created_at ? new Date(slip.created_at).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}) : "";
+                      return (
+                        <div key={slip.id} style={{background:"var(--bg-card)",border:`1px solid ${editingSlipId===slip.id?"var(--accent)":"var(--border)"}`,borderRadius:12,padding:"12px 14px"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                            <div>
+                              <span style={{fontSize:12,color:"var(--text-muted)",marginRight:8}}>#{daySlips.length-idx}</span>
+                              <span style={{fontSize:12,color:"var(--text-muted)"}}>{timeStr}</span>
+                              <span style={{marginLeft:8,fontSize:12,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,padding:"1px 8px",color:"var(--text-secondary)"}}>{slip.payment}</span>
+                            </div>
+                            <span style={{fontWeight:900,fontSize:16,color:"var(--accent)"}}>¥{slip.total.toLocaleString()}</span>
+                          </div>
+                          {castNames && <div style={{fontSize:12,color:"var(--text-secondary)",marginBottom:4}}>👤 {castNames}</div>}
+                          <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:8}}>
+                            {(slip.items||[]).map((item:any)=>`${item.name}×${item.qty}`).join("　")}
+                          </div>
+                          {slip.memo && <div style={{fontSize:11,color:"var(--text-hint)",marginBottom:8}}>📝 {slip.memo}</div>}
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>{ startEdit(slip); setView("slip"); }} style={{flex:1,padding:"6px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>✏️ 修正</button>
+                            <button onClick={async()=>{ await deleteSlip(slip); loadMonthSlips(listMonth); }} style={{padding:"6px 12px",background:"#ff444418",border:"1px solid #ff444444",borderRadius:8,color:"#ff4444",fontSize:12,cursor:"pointer"}}>削除</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
