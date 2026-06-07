@@ -309,7 +309,7 @@ export default function SalesTab({ shopId, shopPlan, casts, sectionStyle, inputS
   useEffect(() => {
     if (initialView === "cast_sales") loadSales(month);
   }, [initialView]);
-  useEffect(() => { if (view==="sales") { loadSales(month); loadExpenses(month); } }, [view, month, loadSales]);
+  useEffect(() => { if (view==="sales" || view==="cast_sales") { loadSales(month); loadExpenses(month); } }, [view, month, loadSales]);
   useEffect(() => { if (initialView === "cast_sales") loadSales(month); }, [initialView]);
 
   // 伝票保存
