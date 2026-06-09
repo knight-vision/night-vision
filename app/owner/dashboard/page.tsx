@@ -1055,6 +1055,27 @@ export default function OwnerDashboard() {
                 }}
               />
 
+              {/* 5枠ガイド: 埋まっている枠は写真、空き枠は＋でファイル選択 */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 14 }}>
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const slot = [...approvedPhotos, ...pendingPhotos][i];
+                  if (slot) {
+                    return (
+                      <div key={i} style={{ position: "relative", aspectRatio: "3/4", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
+                        <img src={slot.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        {i === 0 && <div style={{ position: "absolute", top: 2, left: 2, fontSize: 9, background: "rgba(0,0,0,0.5)", color: "#fff", padding: "1px 4px", borderRadius: 4 }}>メイン</div>}
+                      </div>
+                    );
+                  }
+                  return (
+                    <button key={i} onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                      style={{ aspectRatio: "3/4", borderRadius: 8, border: "1.5px dashed var(--border)", background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-hint)", fontSize: 22, cursor: uploading ? "default" : "pointer", fontFamily: "var(--font)" }}>
+                      {approvedPhotos.length + pendingPhotos.length < 5 ? "＋" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* 公開中の画像（ドラッグ並び替え・削除） */}
               {approvedPhotos.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
@@ -1070,7 +1091,7 @@ export default function OwnerDashboard() {
                       }}>
                       <span style={{ color: "var(--text-hint)", fontSize: 16, flexShrink: 0 }} title="ドラッグで並び替え">⠿</span>
                       <img src={p.url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: "var(--text-muted)", flex: 1 }}>{idx === 0 ? "🎭 メイン画像" : `${idx + 1}枚目`}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", flex: 1 }}>{idx === 0 ? "🎭 メイン画像（店舗一覧の表示用）" : `${idx + 1}枚目`}</span>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button onClick={() => movePhoto(p.id, "up")} disabled={idx === 0} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--text-muted)", fontSize: 12, opacity: idx === 0 ? 0.3 : 1 }}>↑</button>
                         <button onClick={() => movePhoto(p.id, "down")} disabled={idx === approvedPhotos.length - 1} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--text-muted)", fontSize: 12, opacity: idx === approvedPhotos.length - 1 ? 0.3 : 1 }}>↓</button>
@@ -1080,21 +1101,6 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
               )}
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                style={{
-                  width: "100%", padding: "14px",
-                  background: uploading ? "var(--border-hover)" : "transparent",
-                  border: "2px dashed var(--border-hover)",
-                  borderRadius: 12, color: "var(--accent)",
-                  fontSize: 14, cursor: uploading ? "not-allowed" : "pointer",
-                  fontFamily: "var(--font)",
-                }}
-              >
-                {uploading ? "アップロード中..." : "＋ 画像を追加"}
-              </button>
             </div>
           </div>
           </>)}
