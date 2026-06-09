@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
-import { emailHtml } from "@/lib/emailTemplate";
 import { sendLineMessage } from "@/lib/line";
 
 const supabase = createClient(
@@ -10,7 +8,6 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const MAX_PHOTOS = 5;
 
 // GET: キャストの写真申請一覧
@@ -88,41 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errMsg }, { status: 500 });
     }
 
-    // キャスト名・店名を取得してメール通知
-    const { data: castData } = await supabase.from("casts").select("name, shop_id").eq("id", Number(castId)).single();
-    const castName = castData?.name || "キャスト";
-    let shopName = "お店";
-    if (castData?.shop_id) {
-      const { data: shopData } = await supabase.from("shops").select("name").eq("id", castData.shop_id).single();
-      shopName = shopData?.name || "お店";
-    }
-
-    try {
-      const mailResult = await resend.emails.send({
-        from: "NIGHT VISION <info@night-vision.jp>",
-        to: process.env.ADMIN_EMAIL || "info@night-vision.jp",
-        subject: `【写真審査依頼】${castName}（${shopName}）から写真申請が届きました`,
-        html: emailHtml({
-          title: "📷 キャスト写真の審査依頼",
-          body: `
-            <p style="margin:0 0 12px;color:#c0bdd8;">
-              <strong style="color:#f0eeff;">${shopName}</strong> の
-              <strong style="color:#f0eeff;">${castName}</strong>
-              さんからプロフィール写真の申請が届きました。
-            </p>
-            <div style="margin:12px 0;">
-              <img src="${urlData.publicUrl}" alt="申請写真" style="max-width:240px;border-radius:12px;border:1px solid #2d1b4e;" />
-            </div>
-          `,
-          ctaText: "管理画面で審査する",
-          ctaUrl: "https://www.night-vision.jp/admin/photo-requests",
-        }),
-      });
-      console.log("Mail sent:", JSON.stringify(mailResult));
-    } catch (mailErr: any) {
-      console.error("Mail send error:", mailErr?.message || mailErr);
-    }
-
+    // 審査を廃止したため管理者への審査依頼メールは送らない
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("Cast photo upload error:", err);
