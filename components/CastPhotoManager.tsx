@@ -45,7 +45,7 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
     if (shopId != null) formData.append("shop_id", String(shopId));
     const res = await fetch("/api/cast-photos", { method: "POST", body: formData });
     if (res.ok) {
-      setMsg("写真を申請しました。審査後に掲載されます。");
+      setMsg("写真を設定しました");
       setPendingFile(null); setPreview(null);
       if (inputRef.current) inputRef.current.value = "";
       await load();
@@ -114,7 +114,7 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
   return (
     <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" }}>
       <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 4, letterSpacing: "0.1em" }}>📷 プロフィール写真</div>
-      <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>最大{MAX_PHOTOS}枚まで申請できます。審査後にキャストプロフィールに掲載されます。</div>
+      <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>最大{MAX_PHOTOS}枚まで設定できます。設定するとすぐに反映されます。</div>
 
       {/* 5枠ガイド: 埋まっている枠は写真、空き枠は空枠表示 */}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${MAX_PHOTOS}, 1fr)`, gap: 6, marginBottom: 14 }}>
@@ -150,7 +150,7 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <img src={preview} alt="プレビュー" style={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: 10 }} />
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={handleSubmit} disabled={uploading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)", opacity: uploading ? 0.6 : 1 }}>{uploading ? "申請中..." : "この写真を申請する"}</button>
+                <button onClick={handleSubmit} disabled={uploading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "linear-gradient(135deg, var(--accent), var(--accent2))", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)", opacity: uploading ? 0.6 : 1 }}>{uploading ? "設定中..." : "この写真を設定する"}</button>
                 <button onClick={handleCancel} disabled={uploading} style={{ padding: "10px 16px", borderRadius: 8, background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 13, cursor: "pointer", fontFamily: "var(--font)" }}>取消</button>
               </div>
             </div>

@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       owner_id: null,
       type: "cast_photo",
       url: urlData.publicUrl,
-      status: "pending",
+      status: "approved", // 審査なしで即反映（審査を戻す場合は "pending" に）
       sort_order: nextOrder,
     });
     if (insertError) {

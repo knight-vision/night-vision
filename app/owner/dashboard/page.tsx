@@ -380,25 +380,18 @@ export default function OwnerDashboard() {
       return;
     }
 
-    // photo_requestsに追加（審査待ち）
+    // photo_requestsに追加（審査なしで即反映。審査を戻す場合は status: "pending" に）
     await supabase.from("photo_requests").insert({
       shop_id: parseInt(shopId),
       owner_id: parseInt(ownerId),
       type: fileType,
       url,
-      status: "pending",
+      status: "approved",
       sort_order: photoRequests.length,
     });
 
-    // 管理者に通知
-    await fetch("/api/photo-request-notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shopName: shop?.name, photoType: fileType, url }),
-    });
-
     await fetchPhotoRequests(parseInt(shopId));
-    showMsg("アップロードしました。審査後に反映されます。");
+    showMsg("画像を設定しました");
     setUploading(false);
   }
 

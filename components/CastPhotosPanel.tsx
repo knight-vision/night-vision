@@ -43,7 +43,7 @@ export default function CastPhotosPanel({ castId, shopId }: { castId: string; sh
 
     const res = await fetch("/api/cast-photos", { method: "POST", body: formData });
     if (res.ok) {
-      setMsg("写真を申請しました。管理者の審査後に掲載されます。");
+      setMsg("写真を設定しました");
       setPendingFile(null);
       setPreview(null);
       if (inputRef.current) inputRef.current.value = "";
@@ -83,7 +83,7 @@ export default function CastPhotosPanel({ castId, shopId }: { castId: string; sh
       <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 8 }}>📷 プロフィール写真</div>
         <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.8 }}>
-          最大{MAX_PHOTOS}枚まで申請できます。審査後にキャストプロフィールページに掲載されます。<br/>
+          最大{MAX_PHOTOS}枚まで設定できます。設定するとすぐに反映されます。<br/>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>1枚目がアイコン、2枚目以降はギャラリーに表示されます。</span>
         </p>
 
@@ -147,7 +147,7 @@ export default function CastPhotosPanel({ castId, shopId }: { castId: string; sh
                 border: "none", color: "#fff", fontSize: 13, fontWeight: 800,
                 fontFamily: "var(--font)", opacity: uploading ? 0.6 : 1,
               }}>
-                {uploading ? "送信中..." : "📤 この写真を申請する"}
+                {uploading ? "設定中..." : "📤 この写真を設定する"}
               </button>
               <button onClick={handleCancel} style={{
                 padding: "10px 16px", borderRadius: 10, cursor: "pointer",
