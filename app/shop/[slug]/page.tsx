@@ -357,7 +357,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{cast.name}</div>
                       <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
-                        {cast.age && `${cast.age}歳`}{cast.birthplace && ` / ${cast.birthplace}`}
+                        {cast.age && `${cast.age}歳`}
                       </div>
                       {(cast.today_start || cast.today_end) && (
                         <div style={{ fontSize: 11, color: "var(--online)", marginTop: 4 }}>
@@ -451,7 +451,7 @@ export default async function ShopPage({ params }: { params: { slug: string } })
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{cast.name}</div>
                       <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
-                        {cast.age && `${cast.age}歳`}{cast.birthplace && ` / ${cast.birthplace}`}
+                        {cast.age && `${cast.age}歳`}
                       </div>
                       {cast.comment && (
                         <div style={{ color: "var(--text-secondary)", fontSize: 11, marginTop: 4, lineHeight: 1.5,

@@ -77,16 +77,33 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
     const target = index + dir;
     if (target < 0 || target >= newPhotos.length) return;
     [newPhotos[index], newPhotos[target]] = [newPhotos[target], newPhotos[index]];
+    await persistOrder(newPhotos);
+  };
+
+  // 並び順をまとめて保存
+  const persistOrder = async (ordered: Photo[]) => {
     setLoading(true);
-    for (let i = 0; i < newPhotos.length; i++) {
+    for (let i = 0; i < ordered.length; i++) {
       await fetch("/api/cast-photos", {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: newPhotos[i].id, sort_order: i }),
+        body: JSON.stringify({ id: ordered[i].id, sort_order: i }),
       });
     }
     await load();
     setLoading(false);
     setMsg("順番を変更しました");
+  };
+
+  // ドラッグ並び替え
+  const dragIndex = useRef<number | null>(null);
+  const handleDrop = async (dropIndex: number) => {
+    const from = dragIndex.current;
+    dragIndex.current = null;
+    if (from === null || from === dropIndex) return;
+    const newPhotos = [...approved];
+    const [moved] = newPhotos.splice(from, 1);
+    newPhotos.splice(dropIndex, 0, moved);
+    await persistOrder(newPhotos);
   };
 
   const approved = photos.filter(p => p.status === "approved");
@@ -98,6 +115,28 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
     <div style={{ background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" }}>
       <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700, marginBottom: 4, letterSpacing: "0.1em" }}>📷 プロフィール写真</div>
       <div style={{ fontSize: 11, color: "var(--text-hint)", marginBottom: 12 }}>最大{MAX_PHOTOS}枚まで申請できます。審査後にキャストプロフィールに掲載されます。</div>
+
+      {/* 5枠ガイド: 埋まっている枠は写真、空き枠は空枠表示 */}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${MAX_PHOTOS}, 1fr)`, gap: 6, marginBottom: 14 }}>
+        {Array.from({ length: MAX_PHOTOS }).map((_, i) => {
+          const slotPhoto = [...approved, ...pending][i];
+          if (slotPhoto) {
+            return (
+              <div key={i} style={{ position: "relative", aspectRatio: "3/4", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
+                <img src={slotPhoto.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: slotPhoto.status === "pending" ? 0.55 : 1 }} />
+                {slotPhoto.status === "pending" && <div style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "#f59e0b" }}>審査中</div>}
+                {i === 0 && slotPhoto.status === "approved" && <div style={{ position: "absolute", top: 2, left: 2, fontSize: 9, background: "rgba(0,0,0,0.5)", color: "#fff", padding: "1px 4px", borderRadius: 4 }}>1枚目</div>}
+              </div>
+            );
+          }
+          return (
+            <label key={i} style={{ aspectRatio: "3/4", borderRadius: 8, border: "1.5px dashed var(--border)", background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-hint)", fontSize: 22, cursor: activeCount < MAX_PHOTOS ? "pointer" : "default" }}>
+              {activeCount < MAX_PHOTOS ? "＋" : ""}
+              {activeCount < MAX_PHOTOS && <input type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />}
+            </label>
+          );
+        })}
+      </div>
 
       {/* アップロード */}
       {activeCount < MAX_PHOTOS && (
@@ -125,9 +164,15 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
           <div style={{ fontSize: 11, color: "var(--online)", marginBottom: 6 }}>✅ 掲載中（{approved.length}枚）</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {approved.map((photo, i) => (
-              <div key={photo.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", background: "var(--bg-card)", borderRadius: 8 }}>
+              <div key={photo.id}
+                draggable
+                onDragStart={() => { dragIndex.current = i; }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleDrop(i)}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", background: "var(--bg-card)", borderRadius: 8, cursor: "grab" }}>
+                <span style={{ color: "var(--text-hint)", fontSize: 16, cursor: "grab", flexShrink: 0 }} title="ドラッグで並び替え">⠿</span>
                 <img src={photo.url} alt="" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: "var(--text-muted)", flex: 1 }}>{i === 0 ? "🎭 アイコン" : `${i + 1}枚目`}</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", flex: 1 }}>{i === 0 ? "🎭 1枚目（店舗一覧の表示用）" : `${i + 1}枚目`}</span>
                 <div style={{ display: "flex", gap: 4 }}>
                   <button onClick={() => movePhoto(i, -1)} disabled={i === 0 || loading} style={{ padding: "3px 8px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", opacity: i === 0 ? 0.3 : 1 }}>↑</button>
                   <button onClick={() => movePhoto(i, 1)} disabled={i === approved.length - 1 || loading} style={{ padding: "3px 8px", borderRadius: 6, background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", opacity: i === approved.length - 1 ? 0.3 : 1 }}>↓</button>

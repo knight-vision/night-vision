@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!shopId) return NextResponse.json([], { status: 400 });
   const { data, error } = await supabase
     .from("casts")
-    .select("id, name, age, birthplace, comment, hourly_wage, instagram, x_account, tiktok_account, on_today")
+    .select("id, name, age, comment, hourly_wage, instagram, x_account, tiktok_account, on_today")
     .eq("shop_id", Number(shopId))
     .order("id");
   if (error) return NextResponse.json([], { status: 500 });
@@ -23,10 +23,10 @@ export async function GET(req: NextRequest) {
 // キャスト追加
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { shop_id, name, age, birthplace, comment, hourly_wage, instagram } = body;
+  const { shop_id, name, age, comment, hourly_wage, instagram } = body;
   const { data, error } = await supabase
     .from("casts")
-    .insert({ shop_id: Number(shop_id), name, age: age || null, birthplace: birthplace || null, comment: comment || null, hourly_wage: hourly_wage || 0, instagram: instagram || null })
+    .insert({ shop_id: Number(shop_id), name, age: age || null, comment: comment || null, hourly_wage: hourly_wage || 0, instagram: instagram || null })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -36,10 +36,10 @@ export async function POST(req: NextRequest) {
 // キャスト更新
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { id, name, age, birthplace, comment, hourly_wage, instagram } = body;
+  const { id, name, age, comment, hourly_wage, instagram } = body;
   const { data, error } = await supabase
     .from("casts")
-    .update({ name, age: age || null, birthplace: birthplace || null, comment: comment || null, hourly_wage: hourly_wage || 0, instagram: instagram || null })
+    .update({ name, age: age || null, comment: comment || null, hourly_wage: hourly_wage || 0, instagram: instagram || null })
     .eq("id", Number(id))
     .select()
     .single();

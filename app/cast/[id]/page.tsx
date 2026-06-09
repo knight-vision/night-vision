@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import Image from "next/image";
 import { supabase } from "@/lib/shops";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -49,8 +48,7 @@ export default async function CastPage({ params }: { params: { id: string } }) {
   if (!cast) return null;
 
   const approvedPhotos = await getCastApprovedPhotos(params.id);
-  const iconPhoto = approvedPhotos[0] || null;
-  const galleryPhotos = approvedPhotos.slice(1);
+  const galleryPhotos = approvedPhotos; // 全写真をギャラリーに（アイコン独立をやめる）
 
   return (
     <div>
@@ -62,31 +60,20 @@ export default async function CastPage({ params }: { params: { id: string } }) {
           border: "1px solid var(--border)", padding: "5px 14px", borderRadius: 20,
         }}>← {cast.shops.name}に戻る</Link>
 
+        {/* 写真ギャラリー（全写真を四角・横スワイプ・タップ拡大） */}
+        {galleryPhotos.length > 0 && (
+          <CastPhotoSwiper photos={galleryPhotos} castName={cast.name} />
+        )}
+
         <div style={{
           background: "var(--bg-card)", border: "1px solid var(--border)",
           borderRadius: 20, padding: 28, textAlign: "center", marginBottom: 20,
         }}>
-          {/* アイコン（1枚目の写真 or デフォルト） */}
-          <div style={{
-            width: 100, height: 100, borderRadius: "50%",
-            background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 36, margin: "0 auto 16px", overflow: "hidden",
-            border: "2px solid var(--accent)44",
-          }}>
-            {iconPhoto
-              ? <Image src={iconPhoto} alt={cast.name} width={100} height={100} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : "👩"}
-          </div>
-
           <div style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 4 }}>{cast.shops.name}</div>
           <h1 style={{ color: "var(--text-primary)", fontSize: 26, fontWeight: 800, marginBottom: 6 }}>{cast.name}</h1>
 
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
             <span style={{ color: "var(--text-muted)", fontSize: 13 }}>{cast.age}歳</span>
-            {cast.birthplace && (
-              <span style={{ color: "var(--text-muted)", fontSize: 13 }}>📍 {cast.birthplace}出身</span>
-            )}
           </div>
 
           {cast.on_today !== null && (
@@ -106,14 +93,17 @@ export default async function CastPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
+          {cast.comment && (
           <div style={{
             background: "var(--bg-input)", border: "1px solid var(--border)",
-            borderRadius: 12, padding: "14px 20px",
-            color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7,
-            marginBottom: 20, fontStyle: "italic",
+            borderLeft: "3px solid var(--accent)",
+            borderRadius: 12, padding: "16px 18px",
+            color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.75,
+            marginBottom: 20, textAlign: "left", whiteSpace: "pre-wrap",
           }}>
-            "{cast.comment}"
+            {cast.comment}
           </div>
+          )}
 
           {/* SNSリンク */}
           <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
@@ -154,10 +144,6 @@ export default async function CastPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {/* 写真ギャラリー（2枚目以降をスワイプ） */}
-        {galleryPhotos.length > 0 && (
-          <CastPhotoSwiper photos={galleryPhotos} castName={cast.name} />
-        )}
       </main>
     </div>
   );

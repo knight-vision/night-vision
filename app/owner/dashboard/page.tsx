@@ -100,7 +100,6 @@ type Cast = {
   instagram: string | null;
   x_account: string | null;
   tiktok_account: string | null;
-  birthplace: string | null;
   hourly_wage: number | null;
   icon_photo?: string | null;
   page_views?: number;
@@ -414,7 +413,6 @@ export default function OwnerDashboard() {
         instagram: editCast.instagram,
         x_account: editCast.x_account || null,
         tiktok_account: editCast.tiktok_account || null,
-        birthplace: editCast.birthplace,
         hourly_wage: editCast.hourly_wage ?? null,
       }).eq("id", editCast.id);
     } else {
@@ -426,7 +424,6 @@ export default function OwnerDashboard() {
         instagram: editCast.instagram,
         x_account: editCast.x_account || null,
         tiktok_account: editCast.tiktok_account || null,
-        birthplace: editCast.birthplace,
         hourly_wage: editCast.hourly_wage ?? null,
         on_today: false,
       });
@@ -1203,7 +1200,7 @@ export default function OwnerDashboard() {
             {castSubTab === "list" && (<div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
               <button
-                onClick={() => setEditCast({ shop_id: parseInt(shopId!), name: "", age: 20, comment: "", on_today: false, instagram: "", x_account: "", tiktok_account: "", birthplace: "" })}
+                onClick={() => setEditCast({ shop_id: parseInt(shopId!), name: "", age: 20, comment: "", on_today: false, instagram: "", x_account: "", tiktok_account: "" })}
                 style={{
                   background: "linear-gradient(135deg, var(--accent), var(--accent2))",
                   border: "none", borderRadius: 10, color: "#fff",
@@ -1241,8 +1238,8 @@ export default function OwnerDashboard() {
                     <input value={editCast.tiktok_account ?? ""} onChange={(e) => setEditCast({ ...editCast, tiktok_account: e.target.value })} style={inputStyle} placeholder="@なしで入力" />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={labelStyle}>一言コメント</label>
-                    <input value={editCast.comment ?? ""} onChange={(e) => setEditCast({ ...editCast, comment: e.target.value })} style={inputStyle} />
+                    <label style={labelStyle}>プロフィール</label>
+                    <textarea value={editCast.comment ?? ""} onChange={(e) => setEditCast({ ...editCast, comment: e.target.value })} rows={4} placeholder="自己紹介や趣味など（改行できます）" style={{ ...inputStyle, resize: "vertical", minHeight: 96, lineHeight: 1.6, fontFamily: "var(--font)" }} />
                   </div>
                 </div>
 
