@@ -58,24 +58,25 @@ const DEFAULT_PRESETS: ShopMenu[] = [
   { id: "p8", name: "同伴料", price: 2000, back_type: "fixed", back_value: 1000, nomination_type: "同伴" },
   { id: "p9", name: "延長料", price: 3000, back_type: "none", back_value: 0 },
 ];
-const SHIMEI_TYPES = ["フリー", "場内指名", "本指名", "同伴", "アフター", "出張"];
+const SHIMEI_TYPES = ["フリー", "場内指名", "本指名"];
 
 // 指名種別 → sales_type マッピング
 const SHIMEI_TO_SALES_TYPE: Record<string, string> = {
   "フリー":   "free",
   "本指名":   "honshimei",
   "場内指名": "baai",
-  "同伴":     "douhan",
-  "アフター": "after",
-  "出張":     "trip",
 };
 const PAYMENT_TYPES = ["現金", "カード"];
 const TAX_RATE = 0.1;
 const SALES_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
+  free: { label: "フリー", icon: "🆓" },
   honshimei: { label: "本指名", icon: "⭐" },
   baai: { label: "場内指名", icon: "🎯" },
   douhan: { label: "同伴", icon: "🚗" },
-  bottle: { label: "ボトルバック", icon: "🍾" },
+  after: { label: "アフター", icon: "🌙" },
+  trip: { label: "出張", icon: "✈️" },
+  bottle: { label: "ボトル", icon: "🍾" },
+  drink: { label: "ドリンク", icon: "🥂" },
   other: { label: "その他", icon: "📝" },
 };
 
@@ -618,7 +619,7 @@ ${rows.map(({ cast, d, dayRows }) => `
     <div>
       {/* サブナビ */}
       <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-        {[{key:"slip",label:"📋 伝票入力"},{key:"slip_list",label:"🗂️ 伝票一覧"},{key:"menu",label:"⚙️ 品名マスタ"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
+        {[{key:"slip",label:"📋 伝票入力"},{key:"slip_list",label:"🗂️ 伝票一覧"},{key:"menu",label:"⚙️ メニュー登録"},{key:"sales",label:"📊 店舗売上"}].map(v=>(
           <button key={v.key} onClick={()=>{ setView(v.key as any); if(v.key==="sales") loadSales(month); if(v.key==="slip_list") loadMonthSlips(listMonth); if(v.key==="menu") loadMenus(); }} style={{
             padding:"8px 14px",borderRadius:10,cursor:"pointer",fontFamily:"var(--font)",fontSize:13,fontWeight:view===v.key?700:500,
             background:view===v.key?"linear-gradient(135deg,var(--accent),var(--accent2))":"var(--bg-input)",
@@ -687,22 +688,22 @@ ${rows.map(({ cast, d, dayRows }) => `
 
           {/* 品名マスタを開くリンク */}
           <button onClick={()=>setView("menu")} style={{width:"100%",padding:"10px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,color:"var(--text-secondary)",fontSize:12.5,cursor:"pointer",fontFamily:"var(--font)",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-            <span>⚙️ 品名マスタを編集（カテゴリ・バック率・最初から表示）</span>
+            <span>⚙️ メニューを編集（バック率・最初から表示）</span>
             <span style={{color:"var(--accent)"}}>開く →</span>
           </button>
 
           {/* 品目 */}
-          <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:8,letterSpacing:"0.08em"}}>注文品目</div>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",marginBottom:8,letterSpacing:"0.08em"}}>注文メニュー</div>
           {slipItems.map((item,i)=>(
             <div key={i} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 12px",marginBottom:8}}>
               <div style={{display:"grid",gridTemplateColumns:"2fr 72px 110px",gap:8}}>
                 <div>
-                  <label style={labelStyle}>品目名</label>
+                  <label style={labelStyle}>メニュー</label>
                   <select value={item.menu_id||""} onChange={e=>{
                     const sel = allPresets.find(p=>p.id===e.target.value);
                     if (sel) setSlipItems(slipItems.map((x,idx)=>idx===i?{...x,name:sel.name,price:sel.price,menu_id:sel.id,back_type:sel.back_type||"none",back_value:sel.back_value||0}:x));
                   }} style={inp}>
-                    <option value="">品目を選択...</option>
+                    <option value="">メニューを選択...</option>
                     {allPresets.map(p=>(
                       <option key={p.id} value={p.id}>{p.name}（¥{p.price.toLocaleString()}）</option>
                     ))}
@@ -731,7 +732,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                 return (
                   <label style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:isDef?"var(--accent)":"var(--text-muted)",cursor:"pointer",marginTop:4}}>
                     <input type="checkbox" checked={isDef} onChange={e=>toggleMenuDefault(item.menu_id!, e.target.checked)} style={{width:14,height:14,cursor:"pointer"}}/>
-                    この品目を伝票入力時に最初から表示する
+                    このメニューを伝票入力時に最初から表示する
                   </label>
                 );
               })()}
@@ -745,14 +746,14 @@ ${rows.map(({ cast, d, dayRows }) => `
                   const name = only ? (casts.find(cc=>String(cc.id)===String(only.cast_id))?.name || "") : "";
                   return (
                     <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)",fontSize:11,color:"var(--text-muted)"}}>
-                      {name ? `この品目は「${name}」の担当になります` : "上部でキャストを選ぶと、この品目が担当になります"}
+                      {name ? `このメニューは「${name}」の担当になります` : "上部でキャストを選ぶと、このメニューが担当になります"}
                     </div>
                   );
                 }
                 // 2人以上：品目ごとに担当を割り当て
                 return (
                 <div style={{marginTop:10,paddingTop:10,borderTop:"1px dashed var(--border)"}}>
-                  <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:6}}>この品目の担当（複数なら割合で配分）</div>
+                  <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:6}}>このメニューの担当（複数なら割合で配分）</div>
                   {(item.allocations||[]).map((a,ai)=>{
                   const allocBack = Math.round(itemBackTotal(item)*(a.pct/100));
                   const allocSales = Math.round(item.qty*item.price*(a.pct/100));
@@ -789,7 +790,7 @@ ${rows.map(({ cast, d, dayRows }) => `
               })()}
             </div>
           ))}
-          <button onClick={()=>setSlipItems([...slipItems,{name:"",qty:1,price:0}])} style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",marginBottom:14}}>＋ 品目を追加</button>
+          <button onClick={()=>setSlipItems([...slipItems,{name:"",qty:1,price:0}])} style={{width:"100%",padding:"9px",background:"transparent",border:"1px dashed var(--border)",borderRadius:10,color:"var(--accent)",fontSize:13,cursor:"pointer",fontFamily:"var(--font)",marginBottom:14}}>＋ メニューを追加</button>
 
           {/* 合計 */}
           <div style={{background:"var(--bg-input)",borderRadius:10,padding:"12px 14px",marginBottom:14}}>
@@ -986,7 +987,7 @@ ${rows.map(({ cast, d, dayRows }) => `
       {view==="menu"&&(
         <div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>⚙️ 品名マスタ設定</span>
+            <span style={{fontWeight:700,fontSize:15,color:"var(--text-primary)"}}>⚙️ メニュー登録</span>
             <button onClick={()=>setView("slip")} style={{padding:"6px 14px",borderRadius:8,background:"var(--bg-input)",border:"1px solid var(--border)",color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>← 伝票入力へ</button>
           </div>
               <div style={{border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px",padding:"12px",background:"var(--bg-card)"}}>
@@ -998,7 +999,7 @@ ${rows.map(({ cast, d, dayRows }) => `
                     {editingId===m.id ? (
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
                         <div style={{display:"grid",gridTemplateColumns:"2fr 90px",gap:6}}>
-                          <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="品目名" style={inp}/>
+                          <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="メニュー名" style={inp}/>
                           <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} placeholder="単価" style={{...inp,textAlign:"right"}}/>
                         </div>
                         <div>
@@ -1019,11 +1020,8 @@ ${rows.map(({ cast, d, dayRows }) => `
                           <label style={{...labelStyle,display:"block",marginBottom:2}}>指名種別と連動（選ぶと伝票で自動追加）</label>
                           <select value={editNominationType} onChange={e=>setEditNominationType(e.target.value)} style={inp}>
                             <option value="">連動しない</option>
-                            <option value="本指名">本指名 → この品名を自動追加</option>
-                            <option value="場内指名">場内指名 → この品名を自動追加</option>
-                            <option value="同伴">同伴 → この品名を自動追加</option>
-                            <option value="アフター">アフター → この品名を自動追加</option>
-                            <option value="出張">出張 → この品名を自動追加</option>
+                            <option value="本指名">本指名 → このメニューを自動追加</option>
+                            <option value="場内指名">場内指名 → このメニューを自動追加</option>
                           </select>
                         </div>
                         <div style={{display:"flex",gap:6}}>
