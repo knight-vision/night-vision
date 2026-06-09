@@ -164,6 +164,7 @@ export default function OwnerDashboard() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [casts, setCasts] = useState<Cast[]>([]);
   const [photoRequests, setPhotoRequests] = useState<PhotoRequest[]>([]);
+  const [shopPhotoDragIdx, setShopPhotoDragIdx] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>("today");
   const [castSubTab, setCastSubTab] = useState<"list" | "cast_sales" | "payroll">("list");
   const [shopSubTab, setShopSubTab] = useState<"info" | "jobs" | "tweet">("info");
@@ -461,6 +462,20 @@ export default function OwnerDashboard() {
     const swapIdx = dir === "up" ? idx - 1 : idx + 1;
     const newList = [...photoRequests];
     [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
+    setPhotoRequests(newList);
+    await Promise.all(newList.map((p, i) =>
+      supabase.from("photo_requests").update({ sort_order: i }).eq("id", p.id)
+    ));
+  }
+
+  // ドラッグ並び替え（承認済み画像の表示順で from→to に移動）
+  async function reorderApprovedPhotos(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const approved = photoRequests.filter((p) => p.status === "approved");
+    const others = photoRequests.filter((p) => p.status !== "approved");
+    const [moved] = approved.splice(fromIdx, 1);
+    approved.splice(toIdx, 0, moved);
+    const newList = [...approved, ...others];
     setPhotoRequests(newList);
     await Promise.all(newList.map((p, i) =>
       supabase.from("photo_requests").update({ sort_order: i }).eq("id", p.id)
@@ -1023,9 +1038,9 @@ export default function OwnerDashboard() {
         {/* 店舗画像 */}
           <div>
             <div style={sectionStyle}>
-              <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>画像をアップロード</h3>
+              <h3 style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>店舗画像</h3>
               <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-                アップロードした画像は審査後に公開されます。JPG・PNG・GIF対応。最大10MB。
+                設定するとすぐに公開されます。ドラッグで並び替えできます。JPG・PNG・GIF対応。最大10MB。
               </p>
               <input
                 ref={fileInputRef}
@@ -1039,120 +1054,48 @@ export default function OwnerDashboard() {
                   e.target.value = "";
                 }}
               />
+
+              {/* 公開中の画像（ドラッグ並び替え・削除） */}
+              {approvedPhotos.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                  {approvedPhotos.map((p, idx) => (
+                    <div key={p.id}
+                      draggable
+                      onDragStart={() => setShopPhotoDragIdx(idx)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => { if (shopPhotoDragIdx !== null) reorderApprovedPhotos(shopPhotoDragIdx, idx); setShopPhotoDragIdx(null); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        background: "var(--bg-input)", borderRadius: 10, padding: 8, cursor: "grab",
+                      }}>
+                      <span style={{ color: "var(--text-hint)", fontSize: 16, flexShrink: 0 }} title="ドラッグで並び替え">⠿</span>
+                      <img src={p.url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", flex: 1 }}>{idx === 0 ? "🎭 メイン画像" : `${idx + 1}枚目`}</span>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button onClick={() => movePhoto(p.id, "up")} disabled={idx === 0} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--text-muted)", fontSize: 12, opacity: idx === 0 ? 0.3 : 1 }}>↑</button>
+                        <button onClick={() => movePhoto(p.id, "down")} disabled={idx === approvedPhotos.length - 1} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "var(--text-muted)", fontSize: 12, opacity: idx === approvedPhotos.length - 1 ? 0.3 : 1 }}>↓</button>
+                        <button onClick={() => deletePhoto(p.id)} style={{ background: "#ff444418", border: "1px solid #ff444444", borderRadius: 6, padding: "3px 8px", cursor: "pointer", color: "#ff4444", fontSize: 11 }}>削除</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 style={{
                   width: "100%", padding: "14px",
-                  background: uploading ? "var(--border-hover)" : "var(--bg-input)",
+                  background: uploading ? "var(--border-hover)" : "transparent",
                   border: "2px dashed var(--border-hover)",
-                  borderRadius: 12, color: "var(--text-secondary)",
+                  borderRadius: 12, color: "var(--accent)",
                   fontSize: 14, cursor: uploading ? "not-allowed" : "pointer",
                   fontFamily: "var(--font)",
                 }}
               >
-                {uploading ? "アップロード中..." : "📷 画像を選択してアップロード"}
+                {uploading ? "アップロード中..." : "＋ 画像を追加"}
               </button>
             </div>
-
-            {/* 審査待ち */}
-            {pendingPhotos.length > 0 && (
-              <div style={sectionStyle}>
-                <h3 style={{ color: "#ffd700", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                  審査待ち ({pendingPhotos.length}件)
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {pendingPhotos.map((p) => (
-                    <div key={p.id} style={{
-                      display: "flex", alignItems: "center", gap: 12,
-                      background: "var(--bg-input)", borderRadius: 10, padding: 10,
-                    }}>
-                      <img src={p.url} alt="" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: "#ffd700", fontWeight: 700 }}>審査待ち</div>
-                        <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>
-                          {new Date(p.created_at).toLocaleString("ja-JP")}
-                        </div>
-                      </div>
-                      <button onClick={() => deletePhoto(p.id)} style={{
-                        background: "#ff444420", border: "1px solid #ff444444",
-                        borderRadius: 6, padding: "4px 10px", cursor: "pointer",
-                        color: "#ff4444", fontSize: 11, flexShrink: 0,
-                      }}>取消</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 承認済み */}
-            {approvedPhotos.length > 0 && (
-              <div style={sectionStyle}>
-                <h3 style={{ color: "var(--online)", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                  公開中 ({approvedPhotos.length}件)
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {approvedPhotos.map((p, idx) => (
-                    <div key={p.id} style={{
-                      display: "flex", alignItems: "center", gap: 12,
-                      background: "var(--bg-input)", borderRadius: 10, padding: 10,
-                    }}>
-                      <img src={p.url} alt="" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: "var(--online)", fontWeight: 700 }}>公開中</div>
-                        <div style={{ fontSize: 11, color: "var(--text-hint)", marginTop: 2 }}>
-                          順番: {idx + 1}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        <button onClick={() => movePhoto(p.id, "up")} disabled={idx === 0} style={{
-                          background: "var(--bg-card)", border: "1px solid var(--border)",
-                          borderRadius: 6, padding: "3px 8px", cursor: "pointer",
-                          color: "var(--text-muted)", fontSize: 12,
-                        }}>↑</button>
-                        <button onClick={() => movePhoto(p.id, "down")} disabled={idx === approvedPhotos.length - 1} style={{
-                          background: "var(--bg-card)", border: "1px solid var(--border)",
-                          borderRadius: 6, padding: "3px 8px", cursor: "pointer",
-                          color: "var(--text-muted)", fontSize: 12,
-                        }}>↓</button>
-                        <button onClick={() => deletePhoto(p.id)} style={{
-                          background: "#ff444420", border: "1px solid #ff444444",
-                          borderRadius: 6, padding: "3px 8px", cursor: "pointer",
-                          color: "#ff4444", fontSize: 12,
-                        }}>削除</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 却下済み */}
-            {rejectedPhotos.length > 0 && (
-              <div style={sectionStyle}>
-                <h3 style={{ color: "#ff4444", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                  却下済み ({rejectedPhotos.length}件)
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {rejectedPhotos.map((p) => (
-                    <div key={p.id} style={{
-                      display: "flex", alignItems: "center", gap: 12,
-                      background: "var(--bg-input)", borderRadius: 10, padding: 10,
-                    }}>
-                      <img src={p.url} alt="" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8, flexShrink: 0, opacity: 0.5 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: "#ff4444", fontWeight: 700 }}>却下</div>
-                      </div>
-                      <button onClick={() => deletePhoto(p.id)} style={{
-                        background: "#ff444420", border: "1px solid #ff444444",
-                        borderRadius: 6, padding: "4px 10px", cursor: "pointer",
-                        color: "#ff4444", fontSize: 11, flexShrink: 0,
-                      }}>削除</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
           </>)}
 
