@@ -1313,7 +1313,7 @@ export default function OwnerDashboard() {
                 )}
 
                 {/* キャスト写真管理 */}
-                {editCast.id && <CastPhotoManager castId={editCast.id} />}
+                {editCast.id && <CastPhotoManager castId={editCast.id} shopId={shopId ?? undefined} />}
 
                 {/* 給与明細出力 */}
                 {editCast.id && (
