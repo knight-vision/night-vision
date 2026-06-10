@@ -22,71 +22,67 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data || []);
 }
 
-// POST: 写真アップロード → photo_requestsにpending登録
+// POST: 2アクション
+//  action="sign": Storage直接アップロード用の署名付きURLを発行（4MB制限を回避）
+//  action="register": アップロード済みファイルをphoto_requestsに登録
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const castId = formData.get("cast_id") as string;
-    const shopId = formData.get("shop_id") as string;
-    if (!file || !castId) return NextResponse.json({ error: "必須パラメータ不足" }, { status: 400 });
+    const body = await req.json();
+    const action = body.action;
+    const castId = body.cast_id as string | number;
+    if (!castId) return NextResponse.json({ error: "必須パラメータ不足" }, { status: 400 });
 
-    // 現在の申請数を確認
-    const { count } = await supabase
-      .from("photo_requests")
-      .select("id", { count: "exact" })
-      .eq("cast_id", Number(castId))
-      .neq("status", "rejected");
-    if ((count || 0) >= MAX_PHOTOS) {
-      return NextResponse.json({ error: `写真は最大${MAX_PHOTOS}枚までです` }, { status: 400 });
-    }
-
-    // Storageにアップロード
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const fileName = `cast/${castId}/photo_${Date.now()}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const { error: uploadError } = await supabase.storage
-      .from("shop-images")
-      .upload(fileName, buffer, { contentType: file.type, upsert: false });
-    if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
-
-    const { data: urlData } = supabase.storage.from("shop-images").getPublicUrl(fileName);
-
-    // sort_orderを現在の最大+1に
-    const { data: existing } = await supabase
-      .from("photo_requests")
-      .select("sort_order")
-      .eq("cast_id", Number(castId))
-      .order("sort_order", { ascending: false })
-      .limit(1);
-    const nextOrder = ((existing?.[0]?.sort_order ?? -1) as number) + 1;
-
-    // photo_requestsにpendingで登録
-    const { error: insertError } = await supabase.from("photo_requests").insert({
-      cast_id: Number(castId),
-      shop_id: shopId ? Number(shopId) : null,
-      owner_id: null,
-      type: "cast_photo",
-      url: urlData.publicUrl,
-      status: "approved", // 審査なしで即反映（審査を戻す場合は "pending" に）
-      sort_order: nextOrder,
-    });
-    if (insertError) {
-      console.error("Insert error:", JSON.stringify(insertError));
-      // エラーを日本語で返す
-      let errMsg = "写真の申請に失敗しました。しばらく経ってからお試しください。";
-      if (insertError.message?.includes("violates check constraint")) {
-        errMsg = "写真の種別が正しくありません。管理者にお問い合わせください。";
-      } else if (insertError.message?.includes("violates not-null")) {
-        errMsg = "必須項目が不足しています。";
-      } else if (insertError.message?.includes("duplicate")) {
-        errMsg = "同じ写真がすでに申請されています。";
+    if (action === "sign") {
+      // 枚数チェック
+      const { count } = await supabase
+        .from("photo_requests")
+        .select("id", { count: "exact" })
+        .eq("cast_id", Number(castId))
+        .neq("status", "rejected");
+      if ((count || 0) >= MAX_PHOTOS) {
+        return NextResponse.json({ error: `写真は最大${MAX_PHOTOS}枚までです` }, { status: 400 });
       }
-      return NextResponse.json({ error: errMsg }, { status: 500 });
+      const ext = (body.ext as string || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const fileName = `cast/${castId}/photo_${Date.now()}.${ext}`;
+      // 署名付きアップロードURLを発行（service role）
+      const { data, error } = await supabase.storage
+        .from("shop-images")
+        .createSignedUploadUrl(fileName);
+      if (error || !data) return NextResponse.json({ error: error?.message || "URL発行失敗" }, { status: 500 });
+      const { data: urlData } = supabase.storage.from("shop-images").getPublicUrl(fileName);
+      return NextResponse.json({ token: data.token, path: data.path, publicUrl: urlData.publicUrl });
     }
 
-    // 審査を廃止したため管理者への審査依頼メールは送らない
-    return NextResponse.json({ success: true });
+    if (action === "register") {
+      const publicUrl = body.url as string;
+      const shopId = body.shop_id as string | number | null;
+      if (!publicUrl) return NextResponse.json({ error: "URLがありません" }, { status: 400 });
+
+      const { data: existing } = await supabase
+        .from("photo_requests")
+        .select("sort_order")
+        .eq("cast_id", Number(castId))
+        .order("sort_order", { ascending: false })
+        .limit(1);
+      const nextOrder = ((existing?.[0]?.sort_order ?? -1) as number) + 1;
+
+      const { error: insertError } = await supabase.from("photo_requests").insert({
+        cast_id: Number(castId),
+        shop_id: shopId ? Number(shopId) : null,
+        owner_id: null,
+        type: "cast_photo",
+        url: publicUrl,
+        status: "approved", // 審査なしで即反映（戻す場合は "pending"）
+        sort_order: nextOrder,
+      });
+      if (insertError) {
+        console.error("Insert error:", JSON.stringify(insertError));
+        return NextResponse.json({ error: "写真の登録に失敗しました: " + insertError.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: "不明なアクション" }, { status: 400 });
   } catch (err: any) {
     console.error("Cast photo upload error:", err);
     return NextResponse.json({ error: err?.message || "アップロード失敗" }, { status: 500 });

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { compressImage } from "@/lib/compressImage";
+import { supabase } from "@/lib/shops";
 
 type PhotoRequest = { id: string; url: string; status: string; sort_order: number; reject_reason: string | null };
 
@@ -21,39 +21,50 @@ export default function CastPhotosPanel({ castId, shopId }: { castId: string; sh
     if (res.ok) setPhotos(await res.json());
   };
 
-  // ファイル選択時はプレビューのみ（送信しない）
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ファイル選択時はプレビューのみ（送信しない・圧縮しない＝原寸）
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const active = photos.filter(p => p.status !== "rejected").length;
     if (active >= MAX_PHOTOS) { setMsg(`写真は最大${MAX_PHOTOS}枚までです`); return; }
     if (file.size > 20 * 1024 * 1024) { setMsg("20MB以下の画像を選択してください"); return; }
     setMsg("");
-    let f = file;
-    try { f = await compressImage(file); } catch { /* 失敗時は元ファイル */ }
-    setPendingFile(f);
-    setPreview(URL.createObjectURL(f));
+    setPendingFile(file);
+    setPreview(URL.createObjectURL(file));
   };
 
-  // 手動送信ボタンを押したときにアップロード
+  // 手動送信ボタンを押したときにアップロード（署名URLでStorage直接・無劣化）
   const handleSubmit = async () => {
     if (!pendingFile) return;
     setUploading(true); setMsg("");
-    const formData = new FormData();
-    formData.append("file", pendingFile);
-    formData.append("cast_id", castId);
-    formData.append("shop_id", shopId);
+    try {
+      const ext = pendingFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const signRes = await fetch("/api/cast-photos", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sign", cast_id: castId, ext }),
+      });
+      const signData = await signRes.json();
+      if (!signRes.ok) { setMsg(signData.error || "アップロードの準備に失敗しました"); setUploading(false); return; }
 
-    const res = await fetch("/api/cast-photos", { method: "POST", body: formData });
-    if (res.ok) {
+      const { error: upErr } = await supabase.storage
+        .from("shop-images")
+        .uploadToSignedUrl(signData.path, signData.token, pendingFile, { contentType: pendingFile.type });
+      if (upErr) { setMsg("アップロードに失敗しました: " + upErr.message); setUploading(false); return; }
+
+      const regRes = await fetch("/api/cast-photos", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "register", cast_id: castId, shop_id: shopId, url: signData.publicUrl }),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) { setMsg(regData.error || "登録に失敗しました"); setUploading(false); return; }
+
       setMsg("写真を設定しました");
       setPendingFile(null);
       setPreview(null);
       if (inputRef.current) inputRef.current.value = "";
       await load();
-    } else {
-      const d = await res.json();
-      setMsg(d.error || "アップロードに失敗しました");
+    } catch (e: any) {
+      setMsg("アップロードに失敗しました");
     }
     setUploading(false);
   };

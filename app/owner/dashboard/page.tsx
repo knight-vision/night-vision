@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
-import { compressImage } from "@/lib/compressImage";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
 import CastPhotoManager from "@/components/CastPhotoManager";
@@ -359,27 +358,35 @@ export default function OwnerDashboard() {
     if (!shopId || !ownerId) return;
     if (file.size > 20 * 1024 * 1024) { showMsg("20MB以下の画像を選択してください"); return; }
     setUploading(true);
-    let f = file;
-    try { f = await compressImage(file); } catch { /* 失敗時は元ファイル */ }
-    const formData = new FormData();
-    formData.append("file", f);
-    formData.append("shopId", shopId);
-    formData.append("fileType", fileType);
-    formData.append("ownerId", ownerId);
-    formData.append("sortOrder", String(photoRequests.length));
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      // 1) 署名付きアップロードURLを取得
+      const signRes = await fetch("/api/upload-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sign", shopId, fileType, ext }),
+      });
+      const signData = await signRes.json();
+      if (!signRes.ok) { showMsg(signData.error || "アップロードの準備に失敗しました"); setUploading(false); return; }
 
-    const res = await fetch("/api/upload-image", { method: "POST", body: formData });
-    const { url, error } = await res.json();
+      // 2) Storageへ直接アップロード（原寸・無劣化、Next.jsの4MB制限を回避）
+      const { error: upErr } = await supabase.storage
+        .from("shop-images")
+        .uploadToSignedUrl(signData.path, signData.token, file, { contentType: file.type });
+      if (upErr) { showMsg("アップロードに失敗しました"); setUploading(false); return; }
 
-    if (error || !url) {
-      showMsg(error || "アップロードに失敗しました");
-      setUploading(false);
-      return;
+      // 3) DBに登録
+      const regRes = await fetch("/api/upload-image", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "register", shopId, fileType, ownerId, url: signData.publicUrl, sortOrder: photoRequests.length }),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) { showMsg(regData.error || "登録に失敗しました"); setUploading(false); return; }
+
+      await fetchPhotoRequests(parseInt(shopId));
+      showMsg("画像を設定しました");
+    } catch (e) {
+      showMsg("アップロードに失敗しました");
     }
-
-    // 登録はAPI側（service role）で完了しているので再取得するだけ
-    await fetchPhotoRequests(parseInt(shopId));
-    showMsg("画像を設定しました");
     setUploading(false);
   }
 
