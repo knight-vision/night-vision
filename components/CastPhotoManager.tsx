@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { compressImage } from "@/lib/compressImage";
 
 type Photo = { id: string; url: string; status: string; sort_order: number; reject_reason?: string | null };
 
@@ -23,16 +24,20 @@ export default function CastPhotoManager({ castId, shopId }: { castId: number; s
     if (res.ok) setPhotos(await res.json());
   };
 
-  // ファイル選択 → プレビュー
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ファイル選択 → 圧縮 → プレビュー
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const active = photos.filter(p => p.status !== "rejected").length;
     if (active >= MAX_PHOTOS) { setMsg(`写真は最大${MAX_PHOTOS}枚までです`); return; }
-    if (file.size > 5 * 1024 * 1024) { setMsg("5MB以下の画像を選択してください"); return; }
-    setPendingFile(file);
-    setPreview(URL.createObjectURL(file));
+    if (file.size > 20 * 1024 * 1024) { setMsg("20MB以下の画像を選択してください"); return; }
     setMsg("");
+    let f = file;
+    try {
+      f = await compressImage(file); // 大きい画像は自動でリサイズ・圧縮
+    } catch { /* 圧縮失敗時は元ファイルを使う */ }
+    setPendingFile(f);
+    setPreview(URL.createObjectURL(f));
   };
 
   // アップロード（申請）

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/shops";
+import { compressImage } from "@/lib/compressImage";
 import Header from "@/components/Header";
 import ShiftManagementTab from "@/components/ShiftManagementTab";
 import CastPhotoManager from "@/components/CastPhotoManager";
@@ -356,9 +357,12 @@ export default function OwnerDashboard() {
 
   async function uploadImage(file: File, fileType: string) {
     if (!shopId || !ownerId) return;
+    if (file.size > 20 * 1024 * 1024) { showMsg("20MB以下の画像を選択してください"); return; }
     setUploading(true);
+    let f = file;
+    try { f = await compressImage(file); } catch { /* 失敗時は元ファイル */ }
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", f);
     formData.append("shopId", shopId);
     formData.append("fileType", fileType);
     formData.append("ownerId", ownerId);
