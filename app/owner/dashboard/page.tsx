@@ -230,21 +230,11 @@ export default function OwnerDashboard() {
 
   async function deletePhoto(id: number) {
     if (!confirm("この画像を削除しますか？")) return;
-    const target = photoRequests.find((p) => p.id === id);
-    await supabase.from("photo_requests").delete().eq("id", id);
-
-    // shopsテーブルも更新
-    if (target && target.status === "approved" && shopId) {
-      const remaining = photoRequests
-        .filter((p) => p.id !== id && p.status === "approved")
-        .map((p) => p.url);
-      const newImage = remaining.length > 0 ? remaining[0] : null;
-      await supabase.from("shops").update({
-        image: newImage,
-        photos: remaining,
-      }).eq("id", parseInt(shopId));
-    }
-
+    const res = await fetch("/api/shop-photos", {
+      method: "DELETE", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, shopId }),
+    });
+    if (!res.ok) { showMsg("削除に失敗しました"); return; }
     await fetchPhotoRequests(parseInt(shopId!));
     showMsg("削除しました");
   }
@@ -371,26 +361,19 @@ export default function OwnerDashboard() {
     formData.append("file", file);
     formData.append("shopId", shopId);
     formData.append("fileType", fileType);
+    formData.append("ownerId", ownerId);
+    formData.append("sortOrder", String(photoRequests.length));
 
     const res = await fetch("/api/upload-image", { method: "POST", body: formData });
     const { url, error } = await res.json();
 
     if (error || !url) {
-      showMsg("アップロードに失敗しました");
+      showMsg(error || "アップロードに失敗しました");
       setUploading(false);
       return;
     }
 
-    // photo_requestsに追加（審査なしで即反映。審査を戻す場合は status: "pending" に）
-    await supabase.from("photo_requests").insert({
-      shop_id: parseInt(shopId),
-      owner_id: parseInt(ownerId),
-      type: fileType,
-      url,
-      status: "approved",
-      sort_order: photoRequests.length,
-    });
-
+    // 登録はAPI側（service role）で完了しているので再取得するだけ
     await fetchPhotoRequests(parseInt(shopId));
     showMsg("画像を設定しました");
     setUploading(false);
@@ -456,30 +439,32 @@ export default function OwnerDashboard() {
   }
 
   async function movePhoto(id: number, dir: "up" | "down") {
-    const idx = photoRequests.findIndex((p) => p.id === id);
+    const approved = photoRequests.filter((p) => p.status === "approved");
+    const idx = approved.findIndex((p) => p.id === id);
     if (dir === "up" && idx === 0) return;
-    if (dir === "down" && idx === photoRequests.length - 1) return;
+    if (dir === "down" && idx === approved.length - 1) return;
     const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-    const newList = [...photoRequests];
-    [newList[idx], newList[swapIdx]] = [newList[swapIdx], newList[idx]];
-    setPhotoRequests(newList);
-    await Promise.all(newList.map((p, i) =>
-      supabase.from("photo_requests").update({ sort_order: i }).eq("id", p.id)
-    ));
+    [approved[idx], approved[swapIdx]] = [approved[swapIdx], approved[idx]];
+    await persistShopPhotoOrder(approved.map((p) => p.id));
   }
 
   // ドラッグ並び替え（承認済み画像の表示順で from→to に移動）
   async function reorderApprovedPhotos(fromIdx: number, toIdx: number) {
     if (fromIdx === toIdx) return;
     const approved = photoRequests.filter((p) => p.status === "approved");
-    const others = photoRequests.filter((p) => p.status !== "approved");
     const [moved] = approved.splice(fromIdx, 1);
     approved.splice(toIdx, 0, moved);
-    const newList = [...approved, ...others];
-    setPhotoRequests(newList);
-    await Promise.all(newList.map((p, i) =>
-      supabase.from("photo_requests").update({ sort_order: i }).eq("id", p.id)
-    ));
+    await persistShopPhotoOrder(approved.map((p) => p.id));
+  }
+
+  // 並び順をAPI経由で保存（service role、RLS回避）
+  async function persistShopPhotoOrder(orderedIds: number[]) {
+    const res = await fetch("/api/shop-photos", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds, shopId }),
+    });
+    if (!res.ok) { showMsg("並び替えに失敗しました"); return; }
+    await fetchPhotoRequests(parseInt(shopId!));
   }
 
   async function changePassword() {
