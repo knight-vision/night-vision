@@ -19,13 +19,14 @@ function timeLeft(expiresAt: string): string {
 
 type Props = {
   shopId: string;
+  ownerId: string | null;
   sectionStyle: React.CSSProperties;
   inputStyle: React.CSSProperties;
   labelStyle: React.CSSProperties;
   btnPrimary: React.CSSProperties;
 };
 
-export default function TweetTab({ shopId, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
+export default function TweetTab({ shopId, ownerId, sectionStyle, inputStyle, labelStyle, btnPrimary }: Props) {
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function TweetTab({ shopId, sectionStyle, inputStyle, labelStyle,
     setLoading(true); setMsg("");
     const res = await fetch("/api/tweet", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shop_id: shopId, message: message.trim() }),
+      body: JSON.stringify({ shop_id: shopId, owner_id: ownerId, message: message.trim() }),
     });
     if (res.ok) { setMsg("投稿しました！店舗一覧のアイコンに3時間表示されます。"); setMessage(""); await load(); }
     else { const d = await res.json(); setMsg(d.error || "投稿に失敗しました"); }
@@ -51,7 +52,7 @@ export default function TweetTab({ shopId, sectionStyle, inputStyle, labelStyle,
   };
 
   const deleteTweet = async () => {
-    await fetch("/api/tweet", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId }) });
+    await fetch("/api/tweet", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shop_id: shopId, owner_id: ownerId }) });
     setTweet(null); setMsg("削除しました");
   };
 

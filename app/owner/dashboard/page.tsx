@@ -1105,7 +1105,7 @@ export default function OwnerDashboard() {
             <JobsTab shopId={shopId} shopPlan={shop.plan} shopSlug={shop.slug} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
           )}
           {shopSubTab === "tweet" && shopId && (
-            <TweetTab shopId={shopId} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
+            <TweetTab shopId={shopId} ownerId={ownerId} sectionStyle={sectionStyle} inputStyle={inputStyle} labelStyle={labelStyle} btnPrimary={btnPrimary} />
           )}
         </>
         )}
